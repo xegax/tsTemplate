@@ -5,5 +5,6 @@ build-tsx
 specs
 .tscache
 typings/*
+css/*.css
 !typings/tsd.d.ts
 !typings/typed-react.d.ts

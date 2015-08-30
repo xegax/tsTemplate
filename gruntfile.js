@@ -17,6 +17,13 @@ module.exports = function(grunt) {
         }
       }
     },
+    sass: {
+      dev: {
+        files: {
+          'css/main.css': 'css/main.sass'
+        }
+      }
+    },
     'jasmine_nodejs': {
       options: {
         specSuffix: 'Spec.js'
@@ -33,7 +40,8 @@ module.exports = function(grunt) {
       }
     },
     clean: {
-      all: ['build', 'build-tsx', 'specs']
+      build: ['build', 'build-tsx', 'specs', 'css/*.css'],
+      all: ['build', 'build-tsx', 'specs', 'css/*.css', 'typings/jasmine', 'typings/react']
     }
   });
   
@@ -41,7 +49,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-ts');
   grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-sass');
   
-  grunt.registerTask('default', ['grunt-tsx:dev', 'ts:dev']);
+  grunt.registerTask('default', ['grunt-tsx:dev', 'ts:dev', 'sass:dev']);
   grunt.registerTask('tests', ['grunt-tsx:dev', 'ts:tests', 'jasmine_nodejs:dev']);
 }
