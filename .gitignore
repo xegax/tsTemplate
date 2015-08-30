@@ -1,0 +1,9 @@
+node_modules
+vendor
+build
+build-tsx
+specs
+.tscache
+typings/*
+!typings/tsd.d.ts
+!typings/typed-react.d.ts

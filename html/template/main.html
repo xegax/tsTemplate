@@ -1,0 +1,22 @@
+<html>
+<head>
+  <title>template</title>
+  <script src='../vendor/requirejs/require.js'></script>
+</head>
+<body>
+  <div id='container'></div>
+  <script>
+    requirejs.config({
+      baseUrl: '../build',
+      paths: {
+        'react': '../vendor/react/react.min',
+        'typed-react': '../libs/typed-react'
+      }
+    });
+    
+    require(['main'], function(main) {
+      main.doTest(document.querySelector('#container'));
+    });
+  </script>
+</body>
+</html>
