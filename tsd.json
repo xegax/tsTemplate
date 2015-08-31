@@ -10,6 +10,9 @@
     },
     "react/react.d.ts": {
       "commit": "de1bfe2c1de921da660cc17a5af1de6c095b35eb"
+    },
+    "d3/d3.d.ts": {
+      "commit": "04cf218909016059c09061d0b1b34f6ea63a9f48"
     }
   }
 }
