@@ -1,4 +1,4 @@
-import TypedReact = require('typed-react');
+import TypedReact = require('../TypedReact');
 import React = require('react');
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
 interface State {
 }
 
-class ReactComponent extends TypedReact.Component<Props, State> {
+class Component extends TypedReact.Component<Props, State> {
   getInitialState(): State {
     return {};
   }
@@ -18,16 +18,16 @@ class ReactComponent extends TypedReact.Component<Props, State> {
   
   render() {
     var text = 'ReactComponent text content';
-    var style = {
+    var style: any = {
       border: '1px solid black',
       display: 'inline-block'
     };
     
-    return JSX(`
+    return (
       <div style = {style}>
         {text}
-      </div>`);
+      </div>);
   }
 }
 
-export var Widget = TypedReact.createClass<Props, State>(ReactComponent);
+export var ReactComponent = TypedReact.createClass(Component);

@@ -3,14 +3,15 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
     ts: {
       dev: {
-        src: ['build-tsx/**/*.ts', '!build-tsx/**/*Spec.ts', '!build-tsx/template/**/*'],
+        src: ['src/main.tsx'],
         outDir: 'build',
         options: {
-          module: 'amd'
+          module: 'amd',
+          additionalFlags: '--jsx react'
         }
       },
       tests: {
-        src: ['build-tsx/**/*.ts', '!build-tsx/template/**/*'],
+        src: ['src/**/*Spec.ts'],
         outDir: 'specs',
         options: {
           module: 'commonjs'
@@ -32,25 +33,18 @@ module.exports = function(grunt) {
         specs: 'specs/**'
       }
     },
-    'grunt-tsx': {
-      dev: {
-        ext: 'ts',
-        srcDir: 'src',
-        dstDir: 'build-tsx'
-      }
-    },
     clean: {
-      build: ['build', 'build-tsx', 'specs', 'css/*.css'],
-      all: ['build', 'build-tsx', 'specs', 'css/*.css', 'typings/jasmine', 'typings/react']
+      build: ['build', 'specs', 'css/*.css'],
+      all: ['build', 'specs', 'css/*.css', 'typings/jasmine', 'typings/react', 'typings/d3']
     }
   });
   
-  grunt.loadNpmTasks('grunt-tsx');
   grunt.loadNpmTasks('grunt-ts');
   grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-sass');
   
-  grunt.registerTask('default', ['grunt-tsx:dev', 'ts:dev', 'sass:dev']);
-  grunt.registerTask('tests', ['grunt-tsx:dev', 'ts:tests', 'jasmine_nodejs:dev']);
+  grunt.registerTask('default', ['ts:dev', 'sass:dev']);
+  grunt.registerTask('dev', ['ts:dev', 'sass:dev']);
+  grunt.registerTask('tests', ['ts:dev', 'ts:tests', 'jasmine_nodejs:dev']);
 }
