@@ -1,9 +1,11 @@
 module.exports = function(grunt) {
+  require('./makeIndex')(grunt);
+  
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     ts: {
       dev: {
-        src: ['src/main.tsx'],
+        src: ['src/**/*'],
         outDir: 'build',
         options: {
           module: 'amd',
@@ -15,6 +17,26 @@ module.exports = function(grunt) {
         outDir: 'specs',
         options: {
           module: 'commonjs'
+        }
+      }
+    },
+    requirejs: {
+      options: {
+        baseUrl: 'build',
+        paths: {
+          'react': 'empty:'
+        }
+      },
+      dev: {
+        options: {
+          optimize: 'none',
+          name: 'index',
+          out: 'build/out.js'
+        }
+      },
+      dist: {
+        options: {
+          optimize: 'uglify2'
         }
       }
     },
@@ -36,15 +58,23 @@ module.exports = function(grunt) {
     clean: {
       build: ['build', 'specs', 'css/*.css'],
       all: ['build', 'specs', 'css/*.css', 'typings/jasmine', 'typings/react', 'typings/d3']
+    },
+    makeIndex: {
+      dev: {
+        baseUrl: 'build',
+        src: ['build/**/*.js'],
+        dest: 'build/index.js'
+      }
     }
   });
   
   grunt.loadNpmTasks('grunt-ts');
   grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-requirejs');
   grunt.loadNpmTasks('grunt-sass');
   
-  grunt.registerTask('default', ['ts:dev', 'sass:dev']);
-  grunt.registerTask('dev', ['ts:dev', 'sass:dev']);
+  grunt.registerTask('default', ['ts:dev', 'makeIndex:dev', 'requirejs:dev','sass:dev']);
+  grunt.registerTask('dev', ['default']);
   grunt.registerTask('tests', ['ts:dev', 'ts:tests', 'jasmine_nodejs:dev']);
 }

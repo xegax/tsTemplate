@@ -1,6 +1,6 @@
 import React = require('react');
 
-class Mixin<P, S> implements React.Mixin<P, S> {
+export class Mixin<P, S> implements React.Mixin<P, S> {
   refs: {
       [key: string]: React.Component<any, any>;
   };
