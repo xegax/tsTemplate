@@ -13,10 +13,11 @@ module.exports = function(grunt) {
         }
       },
       tests: {
-        src: ['src/**/*Spec.ts'],
-        outDir: 'specs',
+        src: ['specs/**/*Spec.ts', 'specs/**/*Spec.tsx'],
+        outDir: 'build',
         options: {
-          module: 'commonjs'
+          module: 'amd',
+          additionalFlags: '--jsx react'
         }
       }
     },
@@ -24,7 +25,8 @@ module.exports = function(grunt) {
       options: {
         baseUrl: 'build',
         paths: {
-          'react': 'empty:'
+          'react': 'empty:',
+          'd3': 'empty:'
         }
       },
       dev: {
@@ -47,17 +49,33 @@ module.exports = function(grunt) {
         }
       }
     },
-    'jasmine_nodejs': {
-      options: {
-        specSuffix: 'Spec.js'
-      },
-      dev: {
-        specs: 'specs/**'
+    jasmine: {
+      default: {
+        src: ['build/specs/*Spec.js'],
+        options: {
+          template: require('grunt-template-jasmine-requirejs'),
+          templateOptions: {
+            requireConfig: {
+              baseUrl: 'build/src',
+              paths: {
+                'd3': '../../vendor/d3/d3',
+                'react': '../../vendor/react/react',
+                'phantom-bind-polyfill': '../../node_modules/phantomjs-polyfill/bind-polyfill'
+              },
+              shim: {
+                'd3': {
+                  'exports': 'd3'
+                }
+              },
+              deps: ['phantom-bind-polyfill']
+            }
+          }
+        }
       }
     },
     clean: {
-      build: ['build', 'specs', 'css/*.css'],
-      all: ['build', 'specs', 'css/*.css', 'typings/jasmine', 'typings/react', 'typings/d3']
+      build: ['build', 'css/*.css'],
+      all: ['build', 'css/*.css', 'typings/jasmine', 'typings/react', 'typings/d3']
     },
     makeIndex: {
       dev: {
@@ -72,9 +90,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jasmine-nodejs');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-requirejs');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
+  grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-sass');
   
-  grunt.registerTask('default', ['ts:dev', 'makeIndex:dev', 'requirejs:dev','sass:dev']);
+  grunt.registerTask('default', ['clean:build', 'ts:dev', 'makeIndex:dev', 'requirejs:dev','sass:dev']);
   grunt.registerTask('dev', ['default']);
-  grunt.registerTask('tests', ['ts:dev', 'ts:tests', 'jasmine_nodejs:dev']);
+  grunt.registerTask('tests', ['clean:build', 'ts:tests', 'jasmine']);
 }

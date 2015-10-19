@@ -14,7 +14,7 @@ module.exports = function(grunt) {
       if (dir === '.')
         dir = '';
       else
-        dir += '/';
+        dir = dir.replace(/\\/g, '/') + '/';
       modules.push('"' + dir + path.basename(filepath, '.js') + '"');
     });
     
