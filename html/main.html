@@ -10,13 +10,12 @@
     requirejs.config({
       baseUrl: '../build',
       paths: {
-        'react': '../vendor/react/react.min'
+        'react': '../vendor/react/react.min',
+        'd3': '../vendor/d3/d3.min'
       }
     });
     
-    require(['main'], function(main) {
-      main.doTest(document.querySelector('#container'));
-    });
+    require(['examples/Popup']);
   </script>
 </body>
 </html>

@@ -1,10 +1,6 @@
+build
 node_modules
 vendor
-build
-build-tsx
-specs
 .tscache
-typings/*
-css/*.css
-!typings/tsd.d.ts
-!typings/typed-react.d.ts
+src/**/*.js.map
+src/**/*.js

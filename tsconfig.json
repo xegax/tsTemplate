@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "es3",
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "jsx": "react"
+  },
+  "exclude": [
+    "node_modules",
+    "styles",
+    "html",
+    "build"
+  ]
+}
