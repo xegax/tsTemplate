@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="../vendor/requirejs/require.js" charset="utf-8"></script>
+    <link type='text/css' rel='stylesheet' href='../build/styles.css' />
+    <script src="http://localhost:35729/livereload.js"></script>
+</head>
+<body class='webui'>
+  <script>
+    requirejs.config({
+      baseUrl: '../src',
+      paths: {
+        'd3': '../vendor/d3/d3.min',
+        'react': '../vendor/react/react',
+        'react-dom': '../vendor/react/react-dom'
+      },
+      shim: {
+        'd3': {
+          'exports': 'd3'
+        }
+      }
+    });
+
+    require(['examples-main/examples-selector']);
+  </script>
+</body>
+</html>

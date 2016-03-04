@@ -1,4 +1,5 @@
 module.exports = function(grunt) {
+  require('./make-examples-list')(grunt);
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     ts: {
@@ -27,6 +28,12 @@ module.exports = function(grunt) {
         }
       }
     },
+    'make-examples-list': {
+      default: {
+        src: 'src',
+        dst: 'src/examples/data-examples.ts'
+      }
+    },
     sass: {
       default: {
         files: {
@@ -45,6 +52,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-sass');
   
-  grunt.registerTask('default', ['clean', 'ts', 'requirejs:dev','sass']);
+  grunt.registerTask('default', ['clean', 'make-examples-list', 'ts', 'requirejs:dev','sass']);
   grunt.registerTask('dev', ['default']);
 }
