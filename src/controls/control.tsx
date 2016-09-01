@@ -1,7 +1,15 @@
 import * as React from 'react';
 
-export class Control extends React.Component<{}, {}> {
+interface Props {
+  text?: string;  
+}
+
+export class Control extends React.Component<Props, {}> {
+  static defaultProps = {
+    text: 'Control'
+  };
+  
   render() {
-    return <div>{"Control"}</div>;
+    return <div className='background'>{this.props.text}</div>;
   }
 }

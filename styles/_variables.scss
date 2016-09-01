@@ -1,0 +1,7 @@
+$error-bg-color: #FE938C;
+$warning-bg-color: #E6B89C;
+$success-bg-color: #EEF5DB;
+
+@function get-border-color($color) {
+  @return $border-color;
+}

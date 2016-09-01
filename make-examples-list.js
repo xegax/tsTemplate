@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
   grunt.registerMultiTask('make-examples-list', 'Make list of examples.', function() {
     var src = this.data.src || 'src';
-    var dst = this.data.dst || 'src/examples/data-examples.ts';
+    var dst = this.data.dst || 'src/examples-main/examples-list.ts';
 
     var list = makeList(src, dst);
     grunt.log.ok(list.length + ' examples found.');

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {examplesList} from 'examples/data-examples';
+import {examplesList} from 'examples-main/examples-list';
 
 interface WindowExt extends Window {
   module: any;

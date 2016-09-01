@@ -3,4 +3,4 @@ node_modules
 .tscache
 src/**/*.js.map
 src/**/*.js
-src/examples/data-examples.ts
+src/examples-main/examples-list.ts
