@@ -1,0 +1,38 @@
+.scrollbar {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  background-color: gold;
+
+  &--button {
+    border: 1px solid gray;
+    box-sizing: border-box;
+    position: absolute;
+    display: inline-block;
+    background-color: silver;
+  }
+
+  &--up {
+    top: 0px;
+  }
+
+  &--down {
+    bottom: 0px;
+  }
+
+  &--left {
+    left: 0px;
+  }
+
+  &--right {
+    right: 0px;
+  }
+
+  &--thumb {
+    border: 1px solid black;
+    box-sizing: border-box;
+    position: absolute;
+    display: inline-block;
+    background-color: lightblue;
+  }
+}
