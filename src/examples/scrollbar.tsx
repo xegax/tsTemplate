@@ -4,14 +4,61 @@ import {VerticalScrollbar, HorizontalScrollbar} from 'controls/scrollbar';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 
-class Test extends React.Component<{}, {}> {
+class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
+  img: HTMLImageElement;
+  scroll: HTMLDivElement;
+  scrollX: number;
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      imgWidth: 999
+    };
+  }
+
+  /*componentWillReceiveProps(newProps) {
+    if (this.state.imgWidth - this.state.imgLeft < newProps.width) {
+      this.setState({imgLeft: this.state.imgWidth - newProps.width});
+    }
+  }*/
+
+  setScrollX(x: number) {
+    this.scrollX = x;
+    this.scroll.scrollLeft = x;
+  }
+
+  renderImage() {
+    return (
+      <img
+        onLoad = {e => this.setState({imgWidth: this.img.width})}
+        ref = {e => this.img = e}
+        src='../images/example1.jpg'
+      />
+    );
+  }
+
+  renderDiv(width, height) {
+    return (
+      <div
+        style={{display: 'block', width, height}}
+      />
+    );
+  }
+
+
   render() {
     return (
       <div style={{display: 'flex', flexDirection: 'column', height: 500}}>
-        <div style={{flexGrow: 1, backgroundColor: 'silver'}}></div>
+        <div
+          onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }} 
+          id = 'scroll'
+          ref = {e => this.scroll = e}
+          style={{overflowX: 'auto', overflowY: 'hidden', flexGrow: 1, position: 'relative'}}>
+          {this.renderDiv(999, 1000)}
+        </div>
         <div style={{flexGrow: 1, minHeight: 16, maxHeight: 16}}>
           <FitToParent>
-            <HorizontalScrollbar/>
+            <HorizontalScrollbar value = {this.scrollX} maxValue = {this.state.imgWidth - this.props.width} onChanging={value => this.setScrollX(value)}/>
           </FitToParent>
         </div>
       </div>
@@ -19,4 +66,4 @@ class Test extends React.Component<{}, {}> {
   }
 }
 
-ReactDOM.render(<Test/>, createContainer());
+ReactDOM.render(<FitToParent><Test/></FitToParent>, createContainer());
