@@ -10,6 +10,7 @@ interface Props {
   vertical?: boolean;
 
   onMouseDownThumb?: (e: React.MouseEvent) => void;
+  onMouseDownButton?: (button: number, e: React.MouseEvent) => void;
 }
 
 interface State {
@@ -54,8 +55,22 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
       top: thumbStart + this.props.range[0]
     };
 
-    let buttonUp = this.props.buttons ? <div style={buttonStyles} className={className(classes.button, classes.up)}/> : null;
-    let buttonDown = this.props.buttons ? <div style={buttonStyles} className={className(classes.button, classes.down)}/> : null;
+    let buttonUp = this.props.buttons ? (
+      <div
+        onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
+        style={buttonStyles}
+        className={className(classes.button, classes.up)}
+      />
+    ) : null;
+
+    let buttonDown = this.props.buttons ? (
+      <div
+        onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
+        style={buttonStyles}
+        className={className(classes.button, classes.down)}
+      />
+    ) : null;
+
     return (
       <div style={styles} className={classes.scrollbar}>
         {buttonUp}
@@ -94,6 +109,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
       <div
         style={buttonStyles}
         className={className(classes.button, classes.left)}
+        onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
       />
     ) : null;
 
@@ -101,6 +117,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
       <div
         style={buttonStyles}
         className={className(classes.button, classes.right)}
+        onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
       />
     ) : null;
 
