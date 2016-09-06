@@ -62,7 +62,7 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number, imgHeig
               onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }} 
               id = 'scroll'
               ref = {e => this.scroll = e}
-              style={{overflowX: 'auto', overflowY: 'hidden', flexGrow: 1, position: 'relative'}}>
+              style={{overflowX: 'auto', overflowY: 'auto', flexGrow: 1, position: 'relative'}}>
               {this.renderDiv(999, 1000)}
             </div>
             <div style={{flexGrow: 1, minWidth: 16, maxWidth: 16, lineHeight: 0}}>
@@ -70,7 +70,7 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number, imgHeig
                 <VerticalScrollbar
                   step = {5}
                   value = {this.scrollY}
-                  maxValue = {this.state.imgHeight - (this.height - 16)}
+                  maxValue = {this.state.imgHeight - (this.height - 32)}
                   onChanged = {value => this.setScrollY(value)}
                   onChanging = {value => this.setScrollY(value)}
                 />
