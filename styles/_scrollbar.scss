@@ -2,14 +2,24 @@
   position: relative;
   display: inline-block;
   box-sizing: border-box;
-  background-color: gold;
+  background-color: #f1f1f1;
 
   &--button {
-    border: 1px solid gray;
     box-sizing: border-box;
     position: absolute;
     display: inline-block;
-    background-color: silver;
+    background-color: transparent;
+    color: #505050;
+    text-align: center;
+
+    &:hover {
+      background-color: #d2d2d2;
+    }
+
+    &:active {
+      background-color: #787878;
+      color: white;
+    }
   }
 
   &--up {
@@ -22,6 +32,7 @@
 
   &--left {
     left: 0px;
+    
   }
 
   &--right {
@@ -29,10 +40,17 @@
   }
 
   &--thumb {
-    border: 1px solid black;
+    border: 1px solid #f1f1f1;
     box-sizing: border-box;
     position: absolute;
     display: inline-block;
-    background-color: lightblue;
+    background-color: #c1c1c1;
+
+    &:hover {
+      background-color: #a9a9a9;
+    }
+    &:active {
+      background-color: #787878;
+    }
   }
 }

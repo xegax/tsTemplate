@@ -60,7 +60,9 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
         style={buttonStyles}
         className={className(classes.button, classes.up)}
-      />
+      >
+        <i className='fa fa-caret-up' aria-hidden='true'/>
+      </div>
     ) : null;
 
     let buttonDown = this.props.buttons ? (
@@ -68,7 +70,9 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
         style={buttonStyles}
         className={className(classes.button, classes.down)}
-      />
+      >
+        <i className='fa fa-caret-down' aria-hidden='true'/>
+      </div>
     ) : null;
 
     return (
@@ -110,7 +114,9 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         style={buttonStyles}
         className={className(classes.button, classes.left)}
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
-      />
+      >
+        <i className='fa fa-caret-left' aria-hidden='true'/>
+      </div>
     ) : null;
 
     let buttonRight = this.props.buttons ? (
@@ -118,7 +124,9 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         style={buttonStyles}
         className={className(classes.button, classes.right)}
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
-      />
+      >
+        <i className='fa fa-caret-right' aria-hidden='true'/>
+      </div>
     ) : null;
 
     return (

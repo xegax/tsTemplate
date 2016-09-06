@@ -4,15 +4,18 @@ import {VerticalScrollbar, HorizontalScrollbar} from 'controls/scrollbar';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 
-class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
+class Test extends React.Component<{width?: number}, {imgWidth?: number, imgHeight?: number}> {
   img: HTMLImageElement;
   scroll: HTMLDivElement;
   scrollX: number = 50;
+  scrollY: number = 0;
+  height = 500;
 
   constructor(props) {
     super(props);
     this.state = {
-      imgWidth: 999
+      imgWidth: 999,
+      imgHeight: 1000
     };
   }
 
@@ -25,6 +28,11 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
   setScrollX(x: number) {
     this.scrollX = x;
     this.scroll.scrollLeft = x;
+  }
+
+  setScrollY(y: number) {
+    this.scrollY = y;
+    this.scroll.scrollTop = y;
   }
 
   renderImage() {
@@ -48,26 +56,39 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
 
   render() {
     return (
-      <div style={{display: 'flex', flexDirection: 'column', height: 500}}>
-        <div
-          onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }} 
-          id = 'scroll'
-          ref = {e => this.scroll = e}
-          style={{overflowX: 'auto', overflowY: 'hidden', flexGrow: 1, position: 'relative'}}>
-          {this.renderDiv(999, 1000)}
+        <div style={{display: 'flex', flexDirection: 'column', height: this.height}}>
+          <div style={{display: 'flex', flexDirection: 'row'}}>
+            <div
+              onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }} 
+              id = 'scroll'
+              ref = {e => this.scroll = e}
+              style={{overflowX: 'auto', overflowY: 'hidden', flexGrow: 1, position: 'relative'}}>
+              {this.renderDiv(999, 1000)}
+            </div>
+            <div style={{flexGrow: 1, minWidth: 16, maxWidth: 16, lineHeight: 0}}>
+              <FitToParent>
+                <VerticalScrollbar
+                  step = {5}
+                  value = {this.scrollY}
+                  maxValue = {this.state.imgHeight - (this.height - 16)}
+                  onChanged = {value => this.setScrollY(value)}
+                  onChanging = {value => this.setScrollY(value)}
+                />
+              </FitToParent>
+            </div>
+          </div>
+          <div style={{flexGrow: 1, minHeight: 16, maxHeight: 16}}>
+            <FitToParent>
+              <HorizontalScrollbar
+                step = {5}
+                value = {this.scrollX}
+                maxValue = {this.state.imgWidth - this.props.width + 16}
+                onChanged = {value => this.setScrollX(value)}
+                onChanging = {value => this.setScrollX(value)}
+              />
+            </FitToParent>
+          </div>
         </div>
-        <div style={{flexGrow: 1, minHeight: 16, maxHeight: 16}}>
-          <FitToParent>
-            <HorizontalScrollbar
-              step = {5}
-              value = {this.scrollX}
-              maxValue = {this.state.imgWidth - this.props.width}
-              onChanged = {value => this.setScrollX(value)}
-              onChanging = {value => this.setScrollX(value)}
-            />
-          </FitToParent>
-        </div>
-      </div>
     );
   }
 }
