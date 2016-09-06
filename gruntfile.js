@@ -101,4 +101,5 @@ module.exports = function(grunt) {
   
   grunt.registerTask('default', ['clean', 'make-examples-list', 'ts', 'sass']);
   grunt.registerTask('dev', ['default']);
+  grunt.registerTask('debug', ['default', 'watch']);
 }
