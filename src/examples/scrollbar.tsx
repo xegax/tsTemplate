@@ -7,7 +7,7 @@ import {FitToParent} from 'common/fittoparent';
 class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
   img: HTMLImageElement;
   scroll: HTMLDivElement;
-  scrollX: number;
+  scrollX: number = 50;
 
   constructor(props) {
     super(props);
@@ -58,7 +58,13 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number}> {
         </div>
         <div style={{flexGrow: 1, minHeight: 16, maxHeight: 16}}>
           <FitToParent>
-            <HorizontalScrollbar value = {this.scrollX} maxValue = {this.state.imgWidth - this.props.width} onChanging={value => this.setScrollX(value)}/>
+            <HorizontalScrollbar
+              step = {5}
+              value = {this.scrollX}
+              maxValue = {this.state.imgWidth - this.props.width}
+              onChanged = {value => this.setScrollX(value)}
+              onChanging = {value => this.setScrollX(value)}
+            />
           </FitToParent>
         </div>
       </div>

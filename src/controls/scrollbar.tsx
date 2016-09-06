@@ -2,16 +2,19 @@ import * as React from 'react';
 import {ScrollbarRenderer} from 'controls/scrollbar-renderer';
 import {startDragging} from 'common/start-dragging';
 import * as d3 from 'd3';
+import {clamp} from 'common/common';
+import {Timer} from 'common/timer';
 
 interface Props {
   width?: number;
   height?: number;
   noButtons?: boolean;
   nativeBehaviour?: boolean;  // as native scrollbar
-
-  maxValue?: number;
+  
+  step?: number;
   value?: number;
-
+  maxValue?: number;
+  
   onChanging?: (value: number) => void;
   onChanged?: (value: number) => void;
 };
@@ -19,36 +22,68 @@ interface Props {
 interface State {
   pos?: number;
   size?: number;
+  stepVector?: number;
 };
 
 class Scrollbar extends React.Component<Props, State> {
   protected vertical: boolean;
   protected scale: d3.scale.Linear<number, number>;
+  protected timer = new Timer(() => {
+    this.nextStep();
+    this.timer.run(50);
+  });
 
   componentWillReceiveProps(newProps) {
-    let res;
-    let minThumbSize;
     if (this.vertical) {
-      minThumbSize = newProps.width;
-      res = this.getThumbSizeAndScale(newProps.height, newProps.width, newProps);
+      var minThumbSize = newProps.width;
+      var {scale, thumbSize} = this.getScaleAndThumbSize(newProps.height, newProps.width, newProps);
     } else {
-      minThumbSize = newProps.height;
-      res = this.getThumbSizeAndScale(newProps.width, newProps.height, newProps);
+      var minThumbSize = newProps.height;
+      var {scale, thumbSize} = this.getScaleAndThumbSize(newProps.width, newProps.height, newProps);
     }
-    let pos = this.scale(this.state.pos);
-    this.scale = res.scale;
-    let newSize = Math.max(res.thumbSize, minThumbSize);
+    let prevValue = this.scale(this.state.pos);
+    this.scale = scale;
     
     let value = newProps.value;
     if (value == null) {
-      value = pos;
+      value = prevValue;
     }
-    let newPos = this.scale.invert(value);
-    
-    this.setState({pos: newPos, size: newSize});
+    let pos = this.scale.invert(value);
+    let size = Math.max(thumbSize, minThumbSize);
+    this.setState({pos, size});
   }
 
-  onMouseDownThumb = e => {
+  protected onMouseDownButton = (button, e) => {
+    let stepVector = (button == 0) ? -1 : 1;
+    this.setState({stepVector});
+    startDragging({x: 0, y:0}, {
+      onDragEnd: () => {
+        this.timer.stop();
+      }
+    })(e);
+    this.timer.run(500);
+    this.nextStep(stepVector);
+  }
+
+  protected nextStep(stepVector?: number) {
+    let value = this.props.value;
+    if (value == null)
+      value = this.scale(this.state.pos);
+
+    if (stepVector == null)
+      stepVector = this.state.stepVector;
+
+    if (stepVector == -1) {
+      var newValue = Math.max(0, value + stepVector * this.props.step);
+    } else {
+      var newValue = Math.min(Math.max(0, this.props.maxValue), value + stepVector * this.props.step);
+    }
+    if (value != newValue) {
+      this.props.onChanged && this.props.onChanged(newValue);
+    }
+  }
+
+  protected onMouseDownThumb = e => {
     let pos;
     let args = {x: 0, y: 0};
     if (this.vertical) {
@@ -57,7 +92,7 @@ class Scrollbar extends React.Component<Props, State> {
       args.x = this.state.pos;
     }
 
-    let rangeBounds = this.getRangeBounds(this.state.size, this.props);
+    const rangeBounds = this.getRangeBounds(this.state.size, this.props);
     startDragging(args, {
       onDragging: args => {
         let newState;
@@ -67,11 +102,9 @@ class Scrollbar extends React.Component<Props, State> {
           pos = args.x;
         }
 
-        pos = Math.max(pos, rangeBounds[0]);
-        pos = Math.min(pos, rangeBounds[1]);
-        this.props.onChanging && this.props.onChanging(this.scale(pos));
-
+        pos = clamp(pos, rangeBounds);
         this.setState({pos});
+        this.props.onChanging && this.props.onChanging(this.scale(pos));
       },
       onDragEnd: args => {
         this.props.onChanged && this.props.onChanged(this.scale(this.state.pos));
@@ -79,27 +112,27 @@ class Scrollbar extends React.Component<Props, State> {
     })(e);
   };
 
-  getThumbSizeAndScale(availableLength: number, buttonSize: number, props: Props) {
-    let minThumbSize = buttonSize;
+  protected getScaleAndThumbSize(availableSpace: number, buttonSize: number, props: Props) {
+    const minThumbSize = buttonSize;
     if (props.noButtons == false)
-      availableLength -= buttonSize * 2;
+      availableSpace -= buttonSize * 2;
 
     let maxValue = props.maxValue;
     if (this.props.nativeBehaviour)
-      maxValue += availableLength;
+      maxValue += availableSpace;
 
-    let thumbSize = Math.max(availableLength * availableLength / maxValue, minThumbSize);
-    thumbSize = Math.min(thumbSize, availableLength);
+    let thumbSize = clamp(availableSpace * availableSpace / maxValue, [minThumbSize, availableSpace]);
 
     return {
       scale: d3.scale.linear()
         .domain(this.getRangeBounds(thumbSize, props))
-        .range([0, props.maxValue]).clamp(true),
+        .range([0, props.maxValue])
+        .clamp(true),
       thumbSize
     };
   }
 
-  getRangeBounds(thumbSize: number, props: Props): Array<number> {
+  protected getRangeBounds(thumbSize: number, props: Props): Array<number> {
     let buttonSize = this.vertical ? props.width : props.height;
     let length = this.vertical ? props.height : props.width;
 
@@ -113,21 +146,24 @@ class Scrollbar extends React.Component<Props, State> {
 
 export class VerticalScrollbar extends Scrollbar {
   static defaultProps = {
-    range: [0, 1],
+    step: 1,
+    value: 0,
+    maxValue: 1,
     width: 16,
     noButtons: false,
     nativeBehaviour: true
   };
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     this.vertical = true;
 
-    let res = this.getThumbSizeAndScale(props.height, props.width, props);
-    this.scale = res.scale;
+    let {scale, thumbSize} = this.getScaleAndThumbSize(props.height, props.width, props);
+    this.scale = scale;
     this.state = {
       pos: 0,
-      size: res.thumbSize
+      size: thumbSize,
+      stepVector: 0
     };
   }
 
@@ -140,6 +176,7 @@ export class VerticalScrollbar extends Scrollbar {
         thickness={props.width}
         buttons={!props.noButtons}
         vertical={true}
+        onMouseDownButton={this.onMouseDownButton}
         onMouseDownThumb={this.onMouseDownThumb}
       />
     );
@@ -148,21 +185,24 @@ export class VerticalScrollbar extends Scrollbar {
 
 export class HorizontalScrollbar extends Scrollbar {
   static defaultProps = {
-    range: [0, 1],
+    step: 1,
+    value: 0,
+    maxValue: 1,
     height: 16,
     noButtons: false,
-    nativeBehaviour: true
+    nativeBehaviour: true,
   };
 
   constructor(props: Props) {
     super(props);
     this.vertical = false;
 
-    let res = this.getThumbSizeAndScale(props.width, props.height, props);
-    this.scale = res.scale;
+    let {scale, thumbSize} = this.getScaleAndThumbSize(props.width, props.height, props);
+    this.scale = scale;
     this.state = {
       pos: 0,
-      size: res.thumbSize
+      size: thumbSize,
+      stepVector: 0
     };
   }
 
@@ -175,6 +215,7 @@ export class HorizontalScrollbar extends Scrollbar {
         thickness={props.height}
         buttons={!props.noButtons}
         vertical={false}
+        onMouseDownButton={this.onMouseDownButton}
         onMouseDownThumb={this.onMouseDownThumb}
       />
     );
