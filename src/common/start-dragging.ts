@@ -40,7 +40,7 @@ export function startDragging(args: Params, handler: DragHandler) {
       let xOffs = event.pageX - clickPoint.x;
       let yOffs = event.pageY - clickPoint.y;
 
-      if (!started && Math.sqrt(xOffs * xOffs + yOffs * yOffs) > minDist) {
+      if (!started && (minDist == 0 || Math.sqrt(xOffs * xOffs + yOffs * yOffs) > minDist)) {
         started = true;
         handler.onDragStart && handler.onDragStart({x: dragValues.x, y: dragValues.y, event});
       }
@@ -64,6 +64,9 @@ export function startDragging(args: Params, handler: DragHandler) {
       handler.onDragEnd && handler.onDragEnd({x: dragValues.x, y: dragValues.y, event});
       event.preventDefault();
     };
+
+    if (minDist == 0)
+      onMouseMove(event);
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
