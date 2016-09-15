@@ -1,0 +1,54 @@
+$button-shadow-size: 2px;
+$option-padding: 8px;
+
+.test-card {
+  @include user-select-none;
+  margin: auto;
+  width: 400px;
+  padding: 0px 10px 10px 10px;
+  background-color: lightskyblue;
+  border-radius: 8px;
+  font-size: 200%;
+
+  i {
+    cursor: pointer;
+  }
+
+  &--title {
+    font-size: 150%;
+    padding: 10px;
+  }
+
+  &--option {
+    box-sizing: border-box;
+    cursor: pointer;
+    background-color: lightcyan;
+    border-radius: 4px;
+    padding: $option-padding;
+    margin: 8px;
+    margin-bottom: 20px;
+    border-right: $button-shadow-size solid gray;
+    border-bottom: $button-shadow-size solid gray;
+
+    &:active {
+      border-left: $button-shadow-size solid gray;
+      border-top: $button-shadow-size solid gray;
+      border-right: none;
+      border-bottom: none;
+    }
+  }
+
+  &--right {
+    background-color: lightgreen;
+  }
+
+  &--wrong {
+    background-color: lightsalmon;
+  }
+
+  &--next {
+    background-color: blue;
+    color: white;
+    display: inline-block;
+  }
+}
