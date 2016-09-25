@@ -18,6 +18,8 @@ interface State {
 
 const classes = {
   scrollbar: 'scrollbar',
+  vertical: 'vert',
+  horizontal: 'horz',
   thumb: 'scrollbar--thumb',
   button: 'scrollbar--button',
   up: 'scrollbar--up',
@@ -76,7 +78,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
     ) : null;
 
     return (
-      <div style={styles} className={classes.scrollbar}>
+      <div style={styles} className={className(classes.scrollbar, classes.vertical)}>
         {buttonUp}
         {buttonDown}
         <div
@@ -130,7 +132,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
     ) : null;
 
     return (
-      <div style={styles} className={classes.scrollbar}>
+      <div style={styles} className={className(classes.scrollbar, classes.horizontal)}>
         {buttonLeft}
         {buttonRight}
         <div

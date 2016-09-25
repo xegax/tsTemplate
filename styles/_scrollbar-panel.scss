@@ -1,0 +1,21 @@
+.scrollbar--panel {
+  overflow: hidden;
+  position: relative;
+
+  &--content {
+    background-color: gray;
+    overflow: hidden;
+  }
+
+  &>.scrollbar.horz {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+  }
+
+  &>.scrollbar.vert {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+  }
+}
