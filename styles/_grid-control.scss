@@ -1,0 +1,20 @@
+.grid_control {
+  overflow: hidden;
+
+  .grid_control--header {
+    .grid_render--cell {
+      padding: 4px;
+      background-color: #cfcfcf;
+    }
+  }
+
+  .grid_control--body {
+    .grid_render--cell {
+      padding: 4px;
+    }
+
+    .grid_render--cell_topmost {
+      border-top: none;
+    }
+  }
+}
