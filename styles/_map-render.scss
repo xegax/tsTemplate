@@ -1,0 +1,23 @@
+.map_render {
+  position: relative;
+  background-color: white;
+
+  &--column {
+    position: absolute;
+  }
+
+  &--cell {
+    box-sizing: border-box;
+    border-left: 1px solid black;
+    border-top: 1px solid black;
+    overflow: hidden;
+  }
+
+  &--cell_rightmost {
+    border-right: 1px solid black;
+  }
+
+  &--cell_lowermost {
+    border-bottom: 1px solid black;
+  }
+}

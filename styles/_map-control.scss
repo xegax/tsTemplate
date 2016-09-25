@@ -1,0 +1,20 @@
+.map_control {
+  overflow: hidden;
+
+  .map_control--header {
+    .map_render--cell {
+      padding: 4px;
+      background-color: #cfcfcf;
+    }
+  }
+
+  .map_control--body {
+    .map_render--cell {
+      padding: 4px;
+    }
+
+    .map_render--cell_topmost {
+      border-top: none;
+    }
+  }
+}
