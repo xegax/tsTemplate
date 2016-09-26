@@ -1,4 +1,5 @@
-export let dict = [
+
+let dict1 = [
   ['you',           'ты'],
   ['name',          'имя'],
   ['who',           'кто'],
@@ -40,3 +41,14 @@ export let dict = [
   ['wash', 'мыть'],
   ['fire', 'огонь']
 ];
+
+let dict2 = [
+  ['tiger', 'тигр'],
+  ['lion', 'лев'],
+  ['zebra', 'зебра'],
+  ['snake', 'змея'],
+  ['crocodile','крокодил'],
+  ['monkey', 'обезьяна']
+];
+
+export let dict = dict2;

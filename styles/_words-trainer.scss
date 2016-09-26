@@ -4,11 +4,11 @@ $option-padding: 8px;
 .test-card {
   @include user-select-none;
   margin: auto;
-  width: 400px;
+  width: 300px;
   padding: 0px 10px 10px 10px;
   background-color: lightskyblue;
   border-radius: 8px;
-  font-size: 200%;
+  font-size: 150%;
 
   i {
     cursor: pointer;

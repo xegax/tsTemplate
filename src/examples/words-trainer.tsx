@@ -29,12 +29,26 @@ class TrainerModel extends Publisher {
   private currIndex: number = 0;
   private item: Exercise;
   private rightOptionIndex: number;
-  private optionsPerItem: number = 5;
+  private optionsPerItem: number = 4;
   private stat: TrainerStat;
+  private invertOriginTranslate = false;
 
   constructor(dict: Array<DictItem>) {
     super();
     this.setDicts(dict);
+  }
+
+  getOriginToTranslate() {
+    return this.invertOriginTranslate;
+  }
+
+  setOriginToTranslate(value: boolean) {
+    if (this.invertOriginTranslate == value)
+      return;
+
+    this.invertOriginTranslate = value;
+    this.updateVersion(TrainerModelEvents.TrainerUpdate);
+    this.setDicts(this.dict);
   }
 
   getIndex(): number {
@@ -103,11 +117,23 @@ class TrainerModel extends Publisher {
     return this.order.length;
   }
 
+  private getItemOrigin(item: DictItem) {
+    if (this.invertOriginTranslate)
+      return item.value[1];
+    return item.value[0];
+  }
+
+  private getItemTranslate(item: DictItem) {
+    if (this.invertOriginTranslate)
+      return item.value[0];
+    return item.value[1];
+  }
+
   private selectItem(index: number) {
     let dictItem = this.getItemByIndex(index);
     let item = {
-      title: dictItem.value[0],
-      options: [dictItem.value[1]]
+      title: this.getItemOrigin(dictItem),
+      options: [this.getItemTranslate(dictItem)]
     };
 
     const count = this.getItemCount();
@@ -115,9 +141,10 @@ class TrainerModel extends Publisher {
     while(--tries >= 0) {
       let idx = Math.round(Math.random() * (count - 1));
       let option = this.getItemByIndex(idx % count);
-      if (item.options.indexOf(option.value[1]) != -1)
+      if (item.options.indexOf(this.getItemTranslate(option)) != -1)
         continue;
-      item.options.push(option.value[1]);
+      
+      item.options.push(this.getItemTranslate(option));
       if (item.options.length >= this.optionsPerItem)
         break;
     }
@@ -127,7 +154,7 @@ class TrainerModel extends Publisher {
       item.options.sort(() => Math.round(Math.random() * 10) >= 5 ? -1 : 1);
 
     this.item = item;
-    this.rightOptionIndex = this.item.options.indexOf(dictItem.value[1]);
+    this.rightOptionIndex = this.item.options.indexOf(this.getItemTranslate(dictItem));
   }
 }
 
@@ -197,43 +224,92 @@ class WorkBook extends React.Component<Props, State> {
   }
 
   applySelection() {
-    this.props.model.selectOption(this.state.choice);
+    let model = this.props.model;
+    model.selectOption(this.state.choice);
     this.setState({choice: -1});
-    play(this.props.model.getItem().title);
+    play(model.getItem().title);
+  }
+
+  renderTitle(item: Exercise) {
+    return (
+      <div className={classes.TITLE}>
+        <i onClick={e => play(item.title)} className={classes.SPEACH}/>
+        {item.title}
+      </div>
+    );
+  }
+
+  renderOption(item: string, i: number) {
+    let model = this.props.model;
+    let choice = this.state.choice;
+    let choiceIsValid = choice != -1;
+    let isRight = i == model.getRightOptionIndex();
+    
+    const classValue = className(
+      classes.OPTION,
+      choiceIsValid && isRight && classes.RIGHT,
+      choice == i && !isRight && classes.WRONG
+    );
+
+    return (
+      <div className={classValue} onClick={e => this.selectOption(i)}>
+        {item}
+      </div>
+    );
+  }
+
+  renderOptions(item: Exercise) {
+    return (
+      <div className={classes.OPTIONS}>
+        {item.options.map((item, i) => this.renderOption(item, i))}
+      </div>
+    );
+  }
+
+  renderNextButton() {
+    let choiceIsValid = this.state.choice != -1;
+    let classValue = className(
+      classes.OPTION,
+      classes.NEXT,
+      !choiceIsValid && classes.HIDE
+    );
+
+    return (
+      <div className={classValue} onClick={e => this.applySelection()}>Дальше</div>
+    );
+  }
+
+  renderModes() {
+    return (
+      <div>
+        <div>
+          <label onClick={e => this.props.model.setOriginToTranslate(false)}>
+            <input checked={!this.props.model.getOriginToTranslate()} type='radio'/>Англейский <i className={'fa fa-arrow-right'}/> Русский
+          </label>
+        </div>
+        <div>
+          <label onClick={e => this.props.model.setOriginToTranslate(true)}>
+            <input checked={this.props.model.getOriginToTranslate()} type='radio'/>Русский <i className={'fa fa-arrow-right'}/> Английский
+          </label>
+        </div>
+      </div>
+    );
   }
 
   render() {
     let model = this.props.model;
-    let item = model.getItem();
+    let item: Exercise = model.getItem();
     let stat = model.getStat();
     let perc = Math.round((stat.total - stat.wrong) * 100 / stat.total) || 0;
-    let choice = this.state.choice;
-    
-    let apply = null;
-    if (choice != -1) {
-      apply = <div>Дальше</div>;
-    }
 
     return (
       <div>
+        {this.renderModes()}
         <h3>Тест {model.getIndex() + 1} из {model.getTotal()} (верно: {stat.total - stat.wrong} - {perc}%, не верно: {stat.wrong})</h3>
         <div className={classes.TEST_CARD}>
-          <div className={classes.TITLE}><i onClick={e => play(this.props.model.getItem().title)} className={classes.SPEACH}/> {item.title}</div>
-          <div className={classes.OPTIONS}>
-            {item.options.map((item, i) => (
-              <div
-                className={
-                  className(
-                    classes.OPTION,
-                    choice != -1 && i == model.getRightOptionIndex() && classes.RIGHT,
-                    choice != -1 && i != model.getRightOptionIndex() && choice == i && classes.WRONG
-                    )} onClick={e => this.selectOption(i)}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-          <div className={className(classes.OPTION, classes.NEXT, choice == -1 && classes.HIDE)} onClick={e => this.applySelection()}>Дальше</div>
+          {this.renderTitle(item)}
+          {this.renderOptions(item)}
+          {this.renderNextButton()}
         </div>
       </div>
     );
