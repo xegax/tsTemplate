@@ -23,9 +23,6 @@ interface Props {
   cellWidth?: number;
   cellHeight?: number;
 
-  scrollLeft?: number;
-  scrollTop?: number;
-
   aligned?: boolean;
   renderCell?(column: number, row: number): React.ReactInstance;
   
@@ -105,6 +102,14 @@ export class MapControl extends React.Component<Props, State> {
     this.setState({clientWidth: width, clientHeight: height});
   };
 
+  scrollToRow(row: number) {
+    this.setState({scrollTop: this.props.cellHeight * row});
+  }
+
+  scrollToColumn(column: number) {
+    this.setState({scrollLeft: this.props.cellWidth * column});
+  }
+
   render() {
     const {
       width, height,
@@ -157,6 +162,9 @@ export class MapControl extends React.Component<Props, State> {
 
           vScroll={vScroll}
           hScroll={hScroll}
+
+          scrollLeft={scrollLeft}
+          scrollTop={scrollTop}
         >
           <MapRender
             className = {classes.body}

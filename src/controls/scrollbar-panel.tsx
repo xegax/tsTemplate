@@ -72,17 +72,23 @@ export class ScrollbarPanel extends React.Component<Props, State> {
     
     let size = this.getClientSize(newProps, newProps.width, newProps.height);
 
-    /*if (newProps.scrollLeft != null && this.state.scrollLeft != newProps.scrollLeft) {
-      let eventData3 = {scrollLeft: newProps.scrollLeft, scrollTop: this.state.scrollTop};
+    if (newProps.scrollTop != null && this.state.scrollTop != newProps.scrollTop) {
+      let eventData = {scrollTop: newProps.scrollTop, scrollLeft: this.state.scrollLeft};
+      state.scrollTop = newProps.scrollTop;
+      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
+    }
+
+    if (newProps.scrollLeft != null && this.state.scrollLeft != newProps.scrollLeft) {
+      let eventData = {scrollTop: this.state.scrollTop, scrollLeft: newProps.scrollLeft};
       state.scrollLeft = newProps.scrollLeft;
-      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData3));
-    }*/
+      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
+    }
 
     if (!isEqual([this.state.clientWidth, this.state.clientHeight], size)) {
       state.clientWidth = size[0];
       state.clientHeight = size[1];
-      let eventData1 = {width: size[0], height: size[1]};
-      events.push(() => this.props.onClientSize && this.props.onClientSize(eventData1));
+      let eventData = {width: size[0], height: size[1]};
+      events.push(() => this.props.onClientSize && this.props.onClientSize(eventData));
     }
 
     if (newProps.contentWidth - this.state.scrollLeft < size[0]) {
@@ -106,8 +112,8 @@ export class ScrollbarPanel extends React.Component<Props, State> {
       if (scrollTop == null)
         scrollTop = this.state.scrollTop;
       
-      let eventData2 = {scrollLeft, scrollTop};
-      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData2));
+      let eventData = {scrollLeft, scrollTop};
+      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
     }
 
     let runEvents = () => events.forEach(e => e());
