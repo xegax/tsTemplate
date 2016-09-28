@@ -1,7 +1,8 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {MapRender} from 'controls/map-render';
+import {MapRender, Props as MapRenderProps, Cell} from 'controls/map-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
+import {KeyCode} from 'common/keycode';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -10,7 +11,7 @@ interface ChangeEvent {
   scrollTop: number;
 }
 
-interface Props {
+interface Props extends React.Props<any> {
   width?: number;
   height?: number;
 
@@ -24,8 +25,11 @@ interface Props {
   cellHeight?: number;
 
   aligned?: boolean;
-  renderCell?(column: number, row: number): React.ReactInstance;
+  selectable?: boolean;
+  renderCell?(column: number, row: number): Cell;
   
+  style?: React.CSSProperties;
+
   onChanged?(event: ChangeEvent);
 }
 
@@ -34,12 +38,14 @@ interface State {
   clientHeight?: number;
   scrollLeft?: number;
   scrollTop?: number;
+  selectRow?: number;
 }
 
 const classes = {
   control: 'map_control',
   header: 'map_control--header',
-  body: 'map_control--body'
+  body: 'map_control--body',
+  selectedRow: 'map_control--selected_row'
 };
 
 export class MapControl extends React.Component<Props, State> {
@@ -59,9 +65,10 @@ export class MapControl extends React.Component<Props, State> {
     cellHeight: 30,
 
     aligned: false,
+    selectable: true,
 
-    renderCell: (column: number, row: number) => {
-      return column + ':' + row;
+    renderCell: (column: number, row: number): Cell => {
+      return {element: column + ':' + row};
     }
   };
 
@@ -69,19 +76,22 @@ export class MapControl extends React.Component<Props, State> {
     super(props);
     this.state = {
       scrollLeft: 0,
-      scrollTop: 0
+      scrollTop: 0,
+      selectRow: 0
     };
   }
 
   private onScrolling = (event) => {
     let {scrollLeft, scrollTop} = event;
+    let {cellWidth, cellHeight, aligned} = this.props;
     
-    if (this.props.aligned) {
-      scrollTop = Math.floor(scrollTop / this.props.cellHeight) * this.props.cellHeight;
-      scrollLeft = Math.floor(scrollLeft / this.props.cellWidth) * this.props.cellWidth;
+    if (aligned) {
+      scrollTop = Math.floor(scrollTop / cellHeight) * cellHeight;
+      scrollLeft = Math.floor(scrollLeft / cellWidth) * cellWidth;
     }
     
     this.setState({scrollLeft, scrollTop});
+    this.onChanged();
   };
 
   private onChanged() {
@@ -100,6 +110,7 @@ export class MapControl extends React.Component<Props, State> {
   private onClientSize = (event) => {
     let {width, height} = event;
     this.setState({clientWidth: width, clientHeight: height});
+    this.onChanged();
   };
 
   scrollToRow(row: number) {
@@ -108,6 +119,71 @@ export class MapControl extends React.Component<Props, State> {
 
   scrollToColumn(column: number) {
     this.setState({scrollLeft: this.props.cellWidth * column});
+  }
+
+  private onKeyDown = (event) => {
+    let {keyCode} = event;
+    
+    let map = this.refs['body'] as MapRender;
+    const onlyFullVisible = true;
+    let rows = map.getRowsRange(onlyFullVisible);
+
+    let selectRow = this.state.selectRow;
+    
+    if(keyCode == KeyCode.ArrowDown)
+      selectRow = Math.min(this.props.rows - 1, selectRow + 1);
+
+    if (keyCode == KeyCode.ArrowUp)
+      selectRow = Math.max(0, selectRow - 1);  
+
+    if (selectRow > rows[1])
+        this.scrollToRow(selectRow - (rows[1] - rows[0]));
+
+    if (selectRow < rows[0])
+        this.scrollToRow(selectRow);
+
+    if (selectRow != this.state.selectRow)
+      this.setState({selectRow});
+  }
+
+  private renderBody() {
+    const {
+      cellWidth, cellHeight,
+      columns, rows,
+      renderCell
+    } = this.props;
+    
+    const {
+      clientWidth, clientHeight,
+      scrollLeft, scrollTop
+    } = this.state;
+
+    let props: MapRenderProps = {
+      className: classes.body,
+      ref: 'body',
+      width: clientWidth,
+      height: clientHeight,
+      cellWidth,
+      cellHeight,
+      columns,
+      rows,
+      renderCell,
+      scrollLeft,
+      scrollTop
+    };
+
+    if (this.props.selectable) {
+      props.onKeyDown = this.onKeyDown;
+      props.tabIndex = 1;
+      props.renderCell = (column: number, row: number) => {
+        let cell: Cell = {element: [column, row].join(':')};
+        if (row == this.state.selectRow)
+          cell.className = classes.selectedRow;
+        return cell;
+      };
+    }
+
+    return <MapRender {...props}/>;
   }
 
   render() {
@@ -130,7 +206,7 @@ export class MapControl extends React.Component<Props, State> {
     let contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
     return (
-      <div className={classes.control}>
+      <div className={classes.control} style={this.props.style}>
         <MapRender
           className = {classes.header}
           width = {clientWidth}
@@ -166,24 +242,7 @@ export class MapControl extends React.Component<Props, State> {
           scrollLeft={scrollLeft}
           scrollTop={scrollTop}
         >
-          <MapRender
-            className = {classes.body}
-            ref = {e => this.map = e}
-
-            width = {clientWidth}
-            height = {clientHeight}
-
-            cellWidth = {cellWidth}
-            cellHeight = {cellHeight}
-
-            columns = {columns}
-            rows = {rows}
-
-            renderCell = {renderCell}
-            
-            scrollLeft={scrollLeft}
-            scrollTop={scrollTop}
-          />
+          {this.renderBody()}
         </ScrollbarPanel>
       </div>
     );

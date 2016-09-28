@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {className} from 'common/common';
+import {assign} from 'lodash';
 
 const classes = {
   control: 'map_render',
@@ -11,7 +12,12 @@ const classes = {
   leftmost: 'map_render--cell_leftmost'
 };
 
-interface Props {
+export interface Cell {
+  element: React.ReactInstance | string;
+  className?: string;
+}
+
+export interface Props extends React.HTMLProps<any> {
   className?: string;
 
   width?: number;
@@ -26,15 +32,20 @@ interface Props {
   scrollLeft?: number;  // [0; cellWidth * columns - width]
   scrollTop?: number;   // [0; cellHeight * rows - height]
 
-  renderCell?(column: number, row: number): React.ReactInstance;
+  renderCell?(column: number, row: number): Cell;
 }
 
 interface State {
 }
 
 export class MapRender extends React.Component<Props, State> {
-  renderCell(column: number, row: number) {
-    return '' + column + ':' + row;
+  protected renderCell(column: number, row: number): Cell {
+    if (this.props.renderCell)
+      return this.props.renderCell(column, row);
+
+    return {
+      element: '' + column + ':' + row
+    };
   }
 
   protected axisRange(size: number, cellSize: number, scroll: number, cells: number) {
@@ -64,12 +75,15 @@ export class MapRender extends React.Component<Props, State> {
         height: this.props.cellHeight
       };
       
+      let cell = this.renderCell(column, rowIdx);
+
       let cn = className(
         classes.cell,
         column == 0 && classes.leftmost,
         r == 0 && classes.topmost,
         column == this.props.columns - 1 && classes.rightmost,
-        rowIdx == this.props.rows - 1 && classes.lowermost
+        rowIdx == this.props.rows - 1 && classes.lowermost,
+        cell.className
       );
 
       cellsArr.push(
@@ -77,7 +91,7 @@ export class MapRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
-        >{this.renderCell(column, rowIdx)}</div>);
+        >{cell.element}</div>);
     }
     return cellsArr;
   }
@@ -119,9 +133,19 @@ export class MapRender extends React.Component<Props, State> {
     return [cols.idx, cols.idx + cols.num];
   }
 
-  getRowsRange(): Array<number> {
-    let rows = this.axisRangeRows();
-    return [rows.idx, rows.idx + rows.num];
+  getRowsRange(onlyFullVisible: boolean = false): Array<number> {
+    let {offs, idx, num} = this.axisRangeRows();
+    if (onlyFullVisible == true) {
+      let {cellHeight, height} = this.props;
+
+      if (offs != 0) {
+        height -= cellHeight + offs;
+        idx++;
+      }
+
+      num = Math.floor(height / cellHeight) - 1;
+    }
+    return [idx, idx + num];
   }
 
   render() {
@@ -130,8 +154,16 @@ export class MapRender extends React.Component<Props, State> {
       height: this.props.height
     };
 
+    let props = assign({},
+      this.props, {
+      className: className(classes.control, this.props.className),
+      style: assign({}, this.props.style, style)
+    });
+
     return (
-      <div className={className(classes.control, this.props.className)} style={style}>{this.renderColumns()}</div>
+      <div {...props}>
+        {this.renderColumns()}
+      </div>
     );
   }
 }

@@ -25,7 +25,13 @@ class Test extends React.Component<Props, State> {
 
   render() {
     let {width, height} = this.props;
-    let style = {display: 'flex', flexDirection: 'column', width, height};
+    let style = {
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'absolute',
+      left: 0, top: 0, bottom: 0, right: 0
+    };
+
     return (
       <div style={style}>
         <div style={{padding: 4}}>
@@ -51,14 +57,15 @@ class Test extends React.Component<Props, State> {
         <div style={{flexGrow: 1}}>
           <FitToParent>
             <MapControl
+              aligned
+              style={{position: 'absolute'}}
               ref = {e => this.map = e}
               rows={100}
               columns={400}
             />
           </FitToParent>
         </div>
-        </div>
-      );
+      </div>);
   }
 }
 
@@ -70,4 +77,4 @@ cont.style.left = '5px';
 cont.style.right = '5px';
 
 
-ReactDOM.render(<FitToParent><Test/></FitToParent>, cont);
+ReactDOM.render(<Test/>, cont);
