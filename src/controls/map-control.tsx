@@ -121,29 +121,50 @@ export class MapControl extends React.Component<Props, State> {
     this.setState({scrollLeft: this.props.cellWidth * column});
   }
 
-  private onKeyDown = (event) => {
-    let {keyCode} = event;
-    
-    let map = this.refs['body'] as MapRender;
-    const onlyFullVisible = true;
-    let rows = map.getRowsRange(onlyFullVisible);
+  selectRow(selectRow: number) {
+    selectRow = Math.max(0, selectRow);
+    selectRow = Math.min(this.props.rows - 1, selectRow);
 
-    let selectRow = this.state.selectRow;
-    
-    if(keyCode == KeyCode.ArrowDown)
-      selectRow = Math.min(this.props.rows - 1, selectRow + 1);
+    if (this.state.selectRow != selectRow) {
+      let map = this.refs['body'] as MapRender;
+      const onlyFullVisible = true;
+      let rows = map.getRowsRange(onlyFullVisible);
 
-    if (keyCode == KeyCode.ArrowUp)
-      selectRow = Math.max(0, selectRow - 1);  
-
-    if (selectRow > rows[1])
+      if (selectRow > rows[1])
         this.scrollToRow(selectRow - (rows[1] - rows[0]));
 
-    if (selectRow < rows[0])
-        this.scrollToRow(selectRow);
+      if (selectRow < rows[0])
+          this.scrollToRow(selectRow);
 
-    if (selectRow != this.state.selectRow)
-      this.setState({selectRow});
+      this.setState({selectRow});  
+    }
+  }
+
+  private getTimeLimitHandler(handler: (event) => void, timePerCall: number = 100) {
+    let lastTime = 0;
+    return (event) => {
+      let time = new Date().getTime();
+      if (time - lastTime < timePerCall)
+        return;
+      lastTime = time;
+      handler(event);
+    };
+  }
+
+  private onKeyDown = this.getTimeLimitHandler((event) => {
+    let {keyCode} = event;
+    let selectRow = this.state.selectRow;
+    if(keyCode == KeyCode.ArrowDown)
+      selectRow++;
+
+    if (keyCode == KeyCode.ArrowUp)
+      selectRow--;
+    
+    this.selectRow(selectRow);
+  });
+
+  private onSelectCell = (column: number, row: number) => {
+    this.selectRow(row);
   }
 
   private renderBody() {
@@ -169,7 +190,8 @@ export class MapControl extends React.Component<Props, State> {
       rows,
       renderCell,
       scrollLeft,
-      scrollTop
+      scrollTop,
+      onSelectCell: this.onSelectCell
     };
 
     if (this.props.selectable) {

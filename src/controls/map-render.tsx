@@ -33,6 +33,7 @@ export interface Props extends React.HTMLProps<any> {
   scrollTop?: number;   // [0; cellHeight * rows - height]
 
   renderCell?(column: number, row: number): Cell;
+  onSelectCell?(column: number, row: number);
 }
 
 interface State {
@@ -91,6 +92,7 @@ export class MapRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
+          onClick={e => this.props.onSelectCell && this.props.onSelectCell(column, rowIdx)}
         >{cell.element}</div>);
     }
     return cellsArr;
