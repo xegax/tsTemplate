@@ -49,10 +49,9 @@ const classes = {
   control: 'map_control',
   header: 'map_control--header',
   body: 'map_control--body',
-  selectedRow: 'map_control--selected_row'
+  selectedRow: 'map_control--selected_row',
+  resizeHandle: 'map_control--header--resize_handle'
 };
-
-const resizeHandleSize = 5;
 
 export class MapControl extends React.Component<Props, State> {
   private map: MapRender;
@@ -72,8 +71,8 @@ export class MapControl extends React.Component<Props, State> {
     cellWidthMinMax: [50, 300],
 
     aligned: false,
-    selectable: true,
-    resizable: true,
+    selectable: false,
+    resizable: false,
 
     renderCell: (column: number, row: number): Cell => {
       return {element: column + ':' + row};
@@ -245,12 +244,16 @@ export class MapControl extends React.Component<Props, State> {
   }
 
   renderHeaderCell = (column: number): Cell => {
+    let resizeHandle = this.props.resizable ? (
+      <div
+        onMouseDown={e => this.resizeColumns(e, column)}
+        className={classes.resizeHandle}
+      />
+    ) : null;
+
     let element: JSX.Element = (
       <div style={{height: '100%', position: 'relative'}}>
-        <div
-          onMouseDown={e => this.resizeColumns(e, column)}
-          style={{position: 'absolute', height: '100%', width: resizeHandleSize, right: 0, cursor: 'w-resize'}}
-        />
+        {resizeHandle}
         {column}
       </div>
     );

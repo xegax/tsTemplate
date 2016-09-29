@@ -1,14 +1,22 @@
 .map_control {
   overflow: hidden;
 
-  .map_control--header {
+  &--header {
+    &--resize_handle {
+      right: 0px;
+      height: 100%;
+      width: 5px;
+      position: absolute;
+      cursor: w-resize;
+    }
+
     .map_render--cell {
       padding: 0px;
       background-color: #cfcfcf;
     }
   }
 
-  .map_control--body {
+  &--body {
     .map_render--cell {
       padding: 0px;
     }
@@ -18,7 +26,7 @@
     }
   }
 
-  .map_control--selected_row {
+  &--selected_row {
     background-color: lightcoral;
   }
 }

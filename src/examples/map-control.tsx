@@ -57,7 +57,7 @@ class Test extends React.Component<Props, State> {
         <div style={{flexGrow: 1}}>
           <FitToParent>
             <MapControl
-              aligned
+              resizable aligned selectable
               style={{position: 'absolute'}}
               ref = {e => this.map = e}
               rows={100}
