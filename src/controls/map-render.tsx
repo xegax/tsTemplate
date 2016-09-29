@@ -13,7 +13,7 @@ const classes = {
 };
 
 export interface Cell {
-  element: React.ReactInstance | string;
+  element: JSX.Element | string;
   className?: string;
 }
 

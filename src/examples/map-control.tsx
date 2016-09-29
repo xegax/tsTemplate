@@ -61,7 +61,7 @@ class Test extends React.Component<Props, State> {
               style={{position: 'absolute'}}
               ref = {e => this.map = e}
               rows={100}
-              columns={400}
+              columns={20}
             />
           </FitToParent>
         </div>
