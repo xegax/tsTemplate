@@ -58,6 +58,7 @@ class Test extends React.Component<Props, State> {
           <FitToParent>
             <MapControl
               resizable aligned selectable
+              renderHeader={(column) => ({ element: '[' + column + ']' })}
               style={{position: 'absolute'}}
               ref = {e => this.map = e}
               rows={100}

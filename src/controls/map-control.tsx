@@ -30,6 +30,7 @@ interface Props extends React.Props<any> {
   selectable?: boolean;
   resizable?: boolean;
   renderCell?(column: number, row: number): Cell;
+  renderHeader?(column: number): Cell;
   
   style?: React.CSSProperties;
 
@@ -251,10 +252,20 @@ export class MapControl extends React.Component<Props, State> {
       />
     ) : null;
 
+    let className: string;
+    let headerCell: JSX.Element | string = '' + column;
+    if (this.props.renderHeader) {
+      let cell = this.props.renderHeader(column);
+      headerCell = cell.element;
+      className = cell.className;
+    }
+
     let element: JSX.Element = (
-      <div style={{height: '100%', position: 'relative'}}>
+      <div
+        className={className}
+        style={{height: '100%', position: 'relative'}}>
         {resizeHandle}
-        {column}
+        {headerCell}
       </div>
     );
     return {
