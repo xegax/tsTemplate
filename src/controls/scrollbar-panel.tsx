@@ -67,28 +67,38 @@ export class ScrollbarPanel extends React.Component<Props, State> {
   }
 
   private getUpdatedState(newProps: Props, props: Props, defferEvent: boolean): State {
-    let events = [];
     let state: State = {};
     
     let size = this.getClientSize(newProps, newProps.width, newProps.height);
 
+    let scrolled = 0;
+    let scrollEvent: ScrollEvent = {
+      scrollLeft: this.state.scrollLeft,
+      scrollTop: this.state.scrollTop
+    };
+
+    let resized = 0;
+    let sizeEvent: SizeEvent = {
+      width: size[0],
+      height: size[1]
+    };
+
     if (newProps.scrollTop != null && this.state.scrollTop != newProps.scrollTop) {
-      let eventData = {scrollTop: newProps.scrollTop, scrollLeft: this.state.scrollLeft};
+      scrollEvent.scrollTop = newProps.scrollTop;
       state.scrollTop = newProps.scrollTop;
-      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
+      scrolled++;
     }
 
     if (newProps.scrollLeft != null && this.state.scrollLeft != newProps.scrollLeft) {
-      let eventData = {scrollTop: this.state.scrollTop, scrollLeft: newProps.scrollLeft};
+      scrollEvent.scrollLeft = newProps.scrollLeft;
       state.scrollLeft = newProps.scrollLeft;
-      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
+      scrolled++;
     }
 
     if (!isEqual([this.state.clientWidth, this.state.clientHeight], size)) {
       state.clientWidth = size[0];
       state.clientHeight = size[1];
-      let eventData = {width: size[0], height: size[1]};
-      events.push(() => this.props.onClientSize && this.props.onClientSize(eventData));
+      resized++;
     }
 
     if (newProps.contentWidth - this.state.scrollLeft < size[0]) {
@@ -112,9 +122,17 @@ export class ScrollbarPanel extends React.Component<Props, State> {
       if (scrollTop == null)
         scrollTop = this.state.scrollTop;
       
-      let eventData = {scrollLeft, scrollTop};
-      events.push(() => this.props.onScrolling && this.props.onScrolling(eventData));
+      scrollEvent.scrollLeft = scrollLeft;
+      scrollEvent.scrollTop = scrollTop;
+      scrolled++;
     }
+
+    let events = [];
+    if (scrolled && this.props.onScrolling)
+      events.push(() => this.props.onScrolling(scrollEvent));
+    
+    if (resized && this.props.onClientSize)
+      events.push(() => this.props.onClientSize(sizeEvent));
 
     let runEvents = () => events.forEach(e => e());
     if (defferEvent)
@@ -152,11 +170,9 @@ export class ScrollbarPanel extends React.Component<Props, State> {
   private onScrolling(scrollLeft: number, scrollTop: number) {
     if (scrollLeft == this.state.scrollLeft && scrollTop == this.state.scrollTop)
       return;
-    this.setState({scrollLeft, scrollTop});
 
-    this.props.onScrolling && this.props.onScrolling({
-      scrollLeft: this.state.scrollLeft,
-      scrollTop: this.state.scrollTop
+    this.setState({scrollLeft, scrollTop}, () => {
+      this.props.onScrolling && this.props.onScrolling({scrollLeft, scrollTop});
     });
   }
 

@@ -147,7 +147,7 @@ export class MapRender extends React.Component<Props, State> {
 
       num = Math.floor(height / cellHeight) - 1;
     }
-    return [idx, idx + num];
+    return [idx, Math.min(idx + num, this.props.rows - 1)];
   }
 
   render() {
