@@ -140,7 +140,7 @@ class Test extends React.Component<Props, State> {
     return (
       <FitToParent>
         <GridControl
-          aligned
+          aligned resizable
           onChanged={this.onChanged}
           renderCell={this.renderCell}
           renderHeader={this.renderHeader}

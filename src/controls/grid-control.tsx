@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
+import {startDragging} from 'common/start-dragging';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -27,6 +28,8 @@ interface Props {
   scrollTop?: number;
 
   aligned?: boolean;
+  resizable?: boolean;
+
   renderHeader?(column: number): Cell;
   renderCell?(column: number, row: number): Cell;
   
@@ -44,7 +47,8 @@ interface State {
 const classes = {
   control: 'grid_control',
   header: 'grid_control--header',
-  body: 'grid_control--body'
+  body: 'grid_control--body',
+  resizeHandle: 'grid_control--header--resize_handle'
 }; 
 
 export class GridControl extends React.Component<Props, State> {
@@ -63,6 +67,7 @@ export class GridControl extends React.Component<Props, State> {
     cellHeight: 30,
 
     aligned: false,
+    resizable: false,
 
     renderHeader: (column: number) => ({ element: '' + column }),
     renderCell: (column: number, row: number) => ({ element: [column, row].join(':') })
@@ -116,6 +121,62 @@ export class GridControl extends React.Component<Props, State> {
     this.setState({clientWidth: width, clientHeight: height}, () => this.onChanged());
   };
 
+  getMouseRelativeTo(target: Element, event: React.MouseEvent) {
+    let rect = target.getBoundingClientRect();
+    return {x: event.pageX - rect.left, y: event.pageY - rect.top};
+  }
+
+  resizeColumns = (event: React.MouseEvent, column: number) => {
+    if (this.props.resizable == false)
+      return;
+
+    let colWidth = this.props.columns[column];
+    let cellWidthMinMax = [10, 300];
+
+    let header = ReactDOM.findDOMNode(this.refs['header']);
+    let point = this.getMouseRelativeTo(header as Element, event);
+
+    let columnsSize = this.state.columnsSize - colWidth;
+    startDragging({x: colWidth, y: 0}, {
+      onDragging: (event) => {
+        let cellWidth = Math.max(cellWidthMinMax[0], event.x);
+        cellWidth = Math.min(cellWidth, cellWidthMinMax[1]);
+
+        this.props.columns[column] = cellWidth;
+        this.setState({columnsSize: columnsSize + cellWidth});
+      }
+    })(event as any as MouseEvent);
+  }
+
+  renderHeaderCell = (column: number): Cell => {
+    let resizeHandle = this.props.resizable ? (
+      <div
+        onMouseDown={e => this.resizeColumns(e, column)}
+        className={classes.resizeHandle}
+      />
+    ) : null;
+
+    let className: string;
+    let headerCell: JSX.Element | string = '' + column;
+    if (this.props.renderHeader) {
+      let cell = this.props.renderHeader(column);
+      headerCell = cell.element;
+      className = cell.className;
+    }
+
+    let element: JSX.Element = (
+      <div
+        className={className}
+        style={{height: '100%', position: 'relative'}}>
+        {resizeHandle}
+        {headerCell}
+      </div>
+    );
+    return {
+      element
+    };
+  };
+
   private renderHeader() {
     const {
       cellHeight,
@@ -130,6 +191,7 @@ export class GridControl extends React.Component<Props, State> {
 
     return (
       <GridRender
+        ref = 'header'
         className = {classes.header}
         width = {clientWidth}
         height = {cellHeight}
@@ -139,7 +201,7 @@ export class GridControl extends React.Component<Props, State> {
         columns = {columns}
         rows = {1}
           
-        renderCell = {renderHeader}
+        renderCell = {this.renderHeaderCell}
           
         scrollLeft = {scrollLeft}
         scrollTop = {0}

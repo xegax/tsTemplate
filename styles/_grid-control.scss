@@ -1,16 +1,23 @@
 .grid_control {
   overflow: hidden;
 
-  .grid_control--header {
+  &--header {
+    &--resize_handle {
+      right: 0px;
+      height: 100%;
+      width: 5px;
+      position: absolute;
+      cursor: w-resize;
+    }
     .grid_render--cell {
-      padding: 4px;
+      padding: 0;
       background-color: #cfcfcf;
     }
   }
 
-  .grid_control--body {
+  &--body {
     .grid_render--cell {
-      padding: 4px;
+      padding: 0;
     }
 
     .grid_render--cell_topmost {
