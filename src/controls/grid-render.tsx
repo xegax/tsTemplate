@@ -11,6 +11,11 @@ const classes = {
   leftmost: 'grid_render--cell_leftmost'
 };
 
+export interface Cell {
+  element: JSX.Element | string;
+  className?: string;
+}
+
 export interface Props {
   className?: string;
 
@@ -25,7 +30,7 @@ export interface Props {
   scrollLeft?: number;  // [0; cellWidth * columns - width]
   scrollTop?: number;   // [0; cellHeight * rows - height]
 
-  renderCell?(column: number, row: number): React.ReactInstance;
+  renderCell?(column: number, row: number): Cell
 }
 
 interface State {
@@ -34,9 +39,13 @@ interface State {
 }
 
 export class GridRender extends React.Component<Props, State> {
-  static defaultProps = {
+  static defaultProps: Props = {
+    columns: [],
+    rows: 0,
+    cellHeight: 20,
     width: 0,
-    height: 0
+    height: 0,
+    renderCell: (c, r) => ({element: [c, r].join(':')}),
   };
 
   constructor(props) {
@@ -67,7 +76,11 @@ export class GridRender extends React.Component<Props, State> {
   }
 
   renderCell(column: number, row: number) {
-    return '' + column + ':' + row;
+    if (this.props.renderCell) {
+      return this.props.renderCell(column, row).element;
+    } else {
+      return null;
+    }
   }
 
   protected axisRange(size: number, cellSize: number, scroll: number, cells: number) {
@@ -122,7 +135,10 @@ export class GridRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
-        >{this.renderCell(column, rowIdx)}</div>);
+        >
+          {this.renderCell(column, rowIdx)}
+        </div>
+      );
     }
     return cellsArr;
   }
@@ -166,7 +182,7 @@ export class GridRender extends React.Component<Props, State> {
 
   getRowsRange(): Array<number> {
     let rows = this.axisRangeRows();
-    return [rows.idx, rows.idx + rows.num];
+    return [rows.idx, Math.min(rows.idx + rows.num, this.props.rows - 1)];
   }
 
   render() {

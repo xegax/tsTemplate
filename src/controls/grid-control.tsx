@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {GridRender} from 'controls/grid-render';
+import {GridRender, Cell} from 'controls/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 
 interface ChangeEvent {
@@ -27,7 +27,8 @@ interface Props {
   scrollTop?: number;
 
   aligned?: boolean;
-  renderCell?(column: number, row: number): React.ReactInstance;
+  renderHeader?(column: number): Cell;
+  renderCell?(column: number, row: number): Cell;
   
   onChanged?(event: ChangeEvent);
 }
@@ -49,23 +50,22 @@ const classes = {
 export class GridControl extends React.Component<Props, State> {
   private map: GridRender;
 
-  static defaultProps = {
+  static defaultProps: Props = {
     vScroll: true,
     hScroll: true,
 
     width: 0,
     height: 0,
 
-    columns: 0,
+    columns: [],
     rows: 0,
 
     cellHeight: 30,
 
     aligned: false,
 
-    renderCell: (column: number, row: number) => {
-      return column + ':' + row;
-    }
+    renderHeader: (column: number) => ({ element: '' + column }),
+    renderCell: (column: number, row: number) => ({ element: [column, row].join(':') })
   };
 
   constructor(props) {
@@ -90,13 +90,13 @@ export class GridControl extends React.Component<Props, State> {
   private onScrolling = (event) => {
     let {scrollLeft, scrollTop} = event;
     
-    if (this.props.aligned) {
-      scrollTop = Math.floor(scrollTop / this.props.cellHeight) * this.props.cellHeight;
-      //scrollLeft = Math.floor(scrollLeft / this.props.cellWidth) * this.props.cellWidth;
-    }
-    
-    this.setState({scrollLeft, scrollTop});
+    this.setState({scrollLeft, scrollTop}, () => this.onChanged());
   };
+
+  private getScrollTop() {
+    let {cellHeight, aligned} = this.props;
+    return aligned ? Math.floor(this.state.scrollTop / cellHeight) * cellHeight : this.state.scrollTop;
+  }
 
   private onChanged() {
     if (!this.props.onChanged)
@@ -113,15 +113,79 @@ export class GridControl extends React.Component<Props, State> {
 
   private onClientSize = (event) => {
     let {width, height} = event;
-    this.setState({clientWidth: width, clientHeight: height});
+    this.setState({clientWidth: width, clientHeight: height}, () => this.onChanged());
   };
+
+  private renderHeader() {
+    const {
+      cellHeight,
+      columns,
+      renderHeader
+    } = this.props;
+    
+    const {
+      clientWidth,
+      scrollLeft
+    } = this.state;
+
+    return (
+      <GridRender
+        className = {classes.header}
+        width = {clientWidth}
+        height = {cellHeight}
+
+        cellHeight = {cellHeight}
+          
+        columns = {columns}
+        rows = {1}
+          
+        renderCell = {renderHeader}
+          
+        scrollLeft = {scrollLeft}
+        scrollTop = {0}
+      />
+    );
+  }
+
+  private renderBody() {
+    const {
+      cellHeight,
+      columns, rows,
+      renderCell
+    } = this.props;
+    
+    const {
+      clientWidth, clientHeight,
+      scrollLeft
+    } = this.state;
+
+    return (
+      <GridRender
+        className = {classes.body}
+        ref = {e => this.map = e}
+
+        width = {clientWidth}
+        height = {clientHeight}
+
+        cellHeight = {cellHeight}
+
+        columns = {columns}
+        rows = {rows}
+
+        renderCell = {renderCell}
+            
+        scrollLeft = {scrollLeft}
+        scrollTop = {this.getScrollTop()}
+      />
+    );
+  }
 
   render() {
     const {
       width, height,
-      cellWidth, cellHeight,
+      cellHeight,
       columns, rows,
-      renderCell,
+      renderHeader,
       aligned,
       vScroll,
       hScroll
@@ -137,21 +201,7 @@ export class GridControl extends React.Component<Props, State> {
 
     return (
       <div className={classes.control}>
-        <GridRender
-          className = {classes.header}
-          width = {clientWidth}
-          height = {cellHeight}
-
-          cellHeight = {cellHeight}
-          
-          columns = {columns}
-          rows = {1}
-          
-          renderCell = {renderCell}
-          
-          scrollLeft={scrollLeft}
-          scrollTop={0}
-        />
+        {this.renderHeader()}
         <ScrollbarPanel
           width={width}
           height={height - cellHeight}
@@ -163,28 +213,12 @@ export class GridControl extends React.Component<Props, State> {
           onClientSize = {this.onClientSize}
 
           vScrollStep={aligned ? cellHeight : 10}
-          hScrollStep={aligned ? cellWidth : 10}
+          hScrollStep={10}
 
           vScroll={vScroll}
           hScroll={hScroll}
         >
-          <GridRender
-            className = {classes.body}
-            ref = {e => this.map = e}
-
-            width = {clientWidth}
-            height = {clientHeight}
-
-            cellHeight = {cellHeight}
-
-            columns = {columns}
-            rows = {rows}
-
-            renderCell = {renderCell}
-            
-            scrollLeft={scrollLeft}
-            scrollTop={scrollTop}
-          />
+          {this.renderBody()}
         </ScrollbarPanel>
       </div>
     );

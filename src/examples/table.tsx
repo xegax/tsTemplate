@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {createContainer} from 'examples-main/helpers';
 import {MapControl} from 'controls/map-control';
+import {GridControl} from 'controls/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 interface State {
+  columnSizes?: Array<number>;
 }
 
 interface Cell {
@@ -57,6 +59,28 @@ class Test extends React.Component<Props, State> {
   private columns = Array<number>();
   private rows = Array<number>();
 
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      columnSizes: this.makeColumnSizes(props)
+    };
+  }
+
+  makeColumnSizes(props: Props) {
+    let columns = props.model.getColumnsNum();
+    let columnSizes = Array<number>(columns);
+    for (let n = 0; n < columnSizes.length; n++) {
+      columnSizes[n] = 150;
+    }
+
+    return columnSizes;
+  }
+
+  componentWillReceiveProps(newProps: Props) {
+    let columnSizes = this.makeColumnSizes(newProps);
+    this.setState({columnSizes});
+  }
+
   onUpdate = (eventMask) => {
     this.forceUpdate();
   }
@@ -88,7 +112,7 @@ class Test extends React.Component<Props, State> {
     return {element: this.header[column - this.columns[0]]};
   }
 
-  render() {
+  renderMapControl() {
     let {model} = this.props;
     let columns = model.getColumnsNum();
     let rows = model.getRowsNum();
@@ -106,6 +130,30 @@ class Test extends React.Component<Props, State> {
         />
       </FitToParent>
     );
+  }
+
+  renderGridControl() {
+    let {model} = this.props;
+    let {columnSizes} = this.state;
+    let columns = model.getColumnsNum();
+    let rows = model.getRowsNum();
+    return (
+      <FitToParent>
+        <GridControl
+          aligned
+          onChanged={this.onChanged}
+          renderCell={this.renderCell}
+          renderHeader={this.renderHeader}
+          rows={rows}
+          columns={columnSizes}
+          cellHeight={46}
+        />
+      </FitToParent>
+    );
+  }
+
+  render() {
+    return this.renderGridControl();
   }
 }
 
