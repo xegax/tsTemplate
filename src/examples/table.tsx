@@ -24,6 +24,33 @@ interface Model {
   getRowsNum(): number;
 }
 
+function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Array<string>): Model {
+  if (!colNames)
+    colNames = Object.keys(data[0]);
+
+  let model: Model = {
+    getColumnsRange: (range: Array<number>) => colNames.slice(range[0], range[1] + 1),
+    getCellsRange: (columns: Array<number>, rows: Array<number>) => {
+      let cells = Array<Array<string>>(columns[1] - columns[0] + 1);
+      for (let c = 0; c < cells.length; c++) {
+        let rowArr = cells[c] = Array<string>(rows[1] - rows[0] + 1);
+        for (let r = 0; r < rowArr.length; r++) {
+          try {
+            rowArr[r] = '' + data[r + rows[0]][colNames[c + columns[0]]];
+          } catch(e) {
+            console.log(e);
+          }
+        }
+      }
+      return cells;
+    },
+    getColumnsNum: () => colNames.length,
+    getRowsNum: () => data.length
+  };
+
+  return model;
+}
+
 class Test extends React.Component<Props, State> {
   private cells = Array<Array<string>>();
   private header = Array<string>();
@@ -35,7 +62,6 @@ class Test extends React.Component<Props, State> {
   }
 
   onChanged = (event) => {
-    console.log(JSON.stringify(event.rows, null, 2));
     this.columns = event.columns.slice();
     this.rows = event.rows.slice();
     this.cells = this.props.model.getCellsRange(this.columns, this.rows);
@@ -91,28 +117,6 @@ interface Data {
   images: Array<string>;
 }
 
-d3.json('../src/data/full.json', (err, data: Array<Data>) => {
-  const colNames = ['title', 'file', 'images', 'type'];
-
-  let model = {
-    getColumnsRange: (range: Array<number>) => colNames.slice(range[0], range[1] + 1),
-    getCellsRange: (columns: Array<number>, rows: Array<number>) => {
-      let cells = Array<Array<string>>(columns[1] - columns[0] + 1);
-      for (let c = 0; c < cells.length; c++) {
-        let rowArr = cells[c] = Array<string>(rows[1] - rows[0] + 1);
-        for (let r = 0; r < rowArr.length; r++) {
-          try {
-            rowArr[r] = '' + data[r + rows[0]][colNames[c + columns[0]]];
-          } catch(e) {
-            console.log(e);
-          }
-        }
-      }
-      return cells;
-    },
-    getColumnsNum: () => colNames.length,
-    getRowsNum: () => data.length
-  };
-
-  ReactDOM.render(<Test model={model}/>, createContainer(null, 700));
+d3.json('../src/data/full.json', (err, data: Array<{[key: string]: string}>) => {
+  ReactDOM.render(<Test model={makeJSONArrayModel(data)}/>, createContainer(null, 700));
 });
