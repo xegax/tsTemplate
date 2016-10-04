@@ -1,8 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {Control} from 'controls/control';
+import {getContainer} from 'examples-main/helpers';
 
-let cont = document.createElement('div');
-document.body.appendChild(cont);
-
-ReactDOM.render(<Control />, cont);
+ReactDOM.render(<Control />, getContainer());

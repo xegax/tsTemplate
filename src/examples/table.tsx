@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {createContainer} from 'examples-main/helpers';
+import {getContainer} from 'examples-main/helpers';
 import {MapControl} from 'controls/map-control';
 import {GridControl} from 'controls/grid-control';
 import * as d3 from 'd3';
@@ -140,6 +140,7 @@ class Test extends React.Component<Props, State> {
     return (
       <FitToParent>
         <GridControl
+          style={{position: 'absolute'}}
           aligned resizable
           onChanged={this.onChanged}
           renderCell={this.renderCell}
@@ -157,14 +158,7 @@ class Test extends React.Component<Props, State> {
   }
 }
 
-
-interface Data {
-  title: string;
-  file: string;
-  type: string;
-  images: Array<string>;
-}
-
+document.body.style.overflow = 'hidden';
 d3.json('../src/data/full.json', (err, data: Array<{[key: string]: string}>) => {
-  ReactDOM.render(<Test model={makeJSONArrayModel(data)}/>, createContainer(null, 700));
+  ReactDOM.render(<Test model={makeJSONArrayModel(data)}/>, getContainer());
 });

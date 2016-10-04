@@ -2,20 +2,33 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {examplesList} from 'examples-main/examples-list';
 
-interface WindowExt extends Window {
-  module: any;
-}
-declare var window: WindowExt;
-
 interface Folder {
   path: string;
   files: number[];
 }
 
-var header = document.createElement('div');
-header.id = 'top';
-header.style.margin = '5px';
-document.body.appendChild(header);
+let cont = document.createElement('div');
+cont.style.display = 'flex';
+cont.style.flexDirection = 'column';
+cont.style.position = 'absolute';
+cont.style.top = '0px';
+cont.style.left = '0px';
+cont.style.bottom = '0px';
+cont.style.right = '0px';
+
+let header = document.createElement('div');
+header.style.flexGrow = '0';
+header.style.padding = '8px';
+header.style.fontSize = '18px';
+header.style.backgroundColor = '#f0f0f0';
+
+cont.appendChild(header);
+document.body.appendChild(cont);
+
+let container = document.createElement('div');
+container.style.flexGrow = '1';
+container.id = 'container';
+cont.appendChild(container);
 
 function getFolders(examples: string[]) {
   let pathsMap = {};
@@ -65,8 +78,8 @@ function renderFolders(parent: HTMLElement, folders: Folder[], sel: number[]) {
     });
   });
 
-  ReactDOM.render(<div>
-    Selected example: <select defaultValue={sel.join('-')} style={{width: '50%'}} onChange={onSelectExample}>
+  ReactDOM.render(<div style={{display: 'flex', flexDirection: 'row'}}>
+    <span style={{color: 'gray'}}>Selected example:</span> <select defaultValue={sel.join('-')} style={{flexGrow: 1}} onChange={onSelectExample}>
       {options}
     </select>
   </div>, parent);
@@ -85,7 +98,6 @@ function parseSelectionFromUrl() {
   return [0, 0];
 }
 
-let lastModule = '';
 export function onSelectExample(event) {
   let folderFilePair = optionToModule(event.target.value);
 
@@ -95,44 +107,27 @@ export function onSelectExample(event) {
       folderIdx: folderFilePair[0],
       fileIdx: folderFilePair[1]
     }, 'example ' + selection, '#selection=' + selection);
+    location.reload();
   } catch (e) {
     location.href = '#selection=' + selection;
   }
   loadExample(folderFilePair);
 }
 
-function clearBody() {
-  while (document.body.firstChild) {
-    document.body.removeChild(document.body.lastChild);
-  }
-}
-
-function showHeader() {
-  document.body.insertBefore(header, document.body.firstChild);
-}
-
 function loadExample(sel?: number[]) {
   sel = sel || parseSelectionFromUrl();
   let folder = folders[sel[0]];
   let module = folder.path + folder.files[sel[1]];
-  lastModule && requirejs.undef(lastModule);
-  lastModule = module;
 
-  clearBody();
   try {
-    requirejs([module], (m) => {
-      window.module = m;
-      showHeader();
-    });
+    requirejs([module]);
   } catch (e) {
     console.log(e);
   }
 }
 
 window.addEventListener('popstate', (event) => {
-  let sel = parseSelectionFromUrl();
-  renderFolders(header, folders, sel);
-  loadExample(sel);
+  location.reload();
 });
 
 let sel = parseSelectionFromUrl();

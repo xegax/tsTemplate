@@ -34,6 +34,7 @@ interface Props {
   renderCell?(column: number, row: number): Cell;
   
   onChanged?(event: ChangeEvent);
+  style?: React.CSSProperties;
 }
 
 interface State {
@@ -131,7 +132,7 @@ export class GridControl extends React.Component<Props, State> {
       return;
 
     let colWidth = this.props.columns[column];
-    let cellWidthMinMax = [10, 300];
+    let cellWidthMinMax = [10, 99999];
 
     let header = ReactDOM.findDOMNode(this.refs['header']);
     let point = this.getMouseRelativeTo(header as Element, event);
@@ -262,7 +263,7 @@ export class GridControl extends React.Component<Props, State> {
     let contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
     return (
-      <div className={classes.control}>
+      <div className={classes.control} style={this.props.style}>
         {this.renderHeader()}
         <ScrollbarPanel
           width={width}

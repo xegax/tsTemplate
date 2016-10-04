@@ -16,7 +16,7 @@ class Test extends React.Component<Props, {}> {
     let {width, height} = this.props;
     return (
         <GridControl
-          aligned
+          aligned resizable
           width={width}
           height={height}
           rows={this.props.rows}
