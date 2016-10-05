@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {GridRender, Cell} from 'controls/grid-render';
+import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
 
@@ -42,6 +42,7 @@ interface State {
   clientHeight?: number;
   scrollLeft?: number;
   scrollTop?: number;
+  columns?: Array<number>;
   columnsSize?: number;
 }
 
@@ -79,12 +80,20 @@ export class GridControl extends React.Component<Props, State> {
     this.state = {
       scrollLeft: 0,
       scrollTop: 0,
-      columnsSize: this.getColumnsSize(props.columns)
+      columnsSize: this.getColumnsSize(props.columns),
+      columns: props.columns.slice()
     };
   }
 
   componentWillReceiveProps(newProps) {
-    this.setState({columnsSize: this.getColumnsSize(newProps.columns)});
+    this.setColumns(newProps.columns);
+  }
+
+  setColumns(columns: Array<number>, callback?: () => void) {
+    this.setState({
+      columnsSize: this.getColumnsSize(columns),
+      columns: columns.slice()
+    }, callback);
   }
 
   private getColumnsSize(columns: Array<number>) {
@@ -117,6 +126,14 @@ export class GridControl extends React.Component<Props, State> {
     });
   }
 
+  getColumnsRange() {
+    return this.map.getColumnsRange();
+  }
+
+  getRowsRange() {
+    return this.map.getRowsRange();
+  }
+
   private onClientSize = (event) => {
     let {width, height} = event;
     this.setState({clientWidth: width, clientHeight: height}, () => this.onChanged());
@@ -131,7 +148,7 @@ export class GridControl extends React.Component<Props, State> {
     if (this.props.resizable == false)
       return;
 
-    let colWidth = this.props.columns[column];
+    let colWidth = this.state.columns[column];
     let cellWidthMinMax = [10, 99999];
 
     let header = ReactDOM.findDOMNode(this.refs['header']);
@@ -143,7 +160,7 @@ export class GridControl extends React.Component<Props, State> {
         let cellWidth = Math.max(cellWidthMinMax[0], event.x);
         cellWidth = Math.min(cellWidth, cellWidthMinMax[1]);
 
-        this.props.columns[column] = cellWidth;
+        this.state.columns[column] = cellWidth;
         this.setState({columnsSize: columnsSize + cellWidth});
       }
     })(event as any as MouseEvent);

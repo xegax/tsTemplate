@@ -2,7 +2,7 @@ import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
-import {GridControl} from 'controls/grid-control';
+import {GridControl} from 'controls/grid/grid-control';
 
 interface Props {
   width?: number;
