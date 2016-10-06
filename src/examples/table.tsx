@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {MapControl} from 'controls/map-control';
+import {MapControl} from 'controls/map/map-control';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';

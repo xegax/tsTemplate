@@ -2,7 +2,7 @@ import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
-import {MapControl} from 'controls/map-control';
+import {MapControl} from 'controls/map/map-control';
 
 interface Props {
   width?: number;
