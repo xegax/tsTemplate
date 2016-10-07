@@ -92,7 +92,7 @@ export class GridControl extends React.Component<Props, State> {
   setColumns(columns: Array<number>, callback?: () => void) {
     this.setState({
       columnsSize: this.getColumnsSize(columns),
-      columns: columns.slice()
+      columns
     }, callback);
   }
 
