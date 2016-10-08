@@ -20,6 +20,7 @@ export interface GridModel extends Publisher {
 
   setColumns(columns: Array<number>);
   getColumns(): Array<number>;
+  getColumnsSizes(): Array<number>;
 
   setCellHeight(cellHeight: number);
   getCellHeight(): number;
@@ -50,6 +51,7 @@ export interface GridModel extends Publisher {
 export class GridModelBase extends Publisher implements GridModel {
   private cellHeight: number = 30;
   private columns = Array<number>();
+  private columnsProps = Array<number>();
   private columnsSizeSumm: number = 0;
 
   private rows: number = 0;
@@ -92,20 +94,20 @@ export class GridModelBase extends Publisher implements GridModel {
   }
 
   setColumns(columns: Array<number>) {
-    this.columns = columns
-    
-    let s = 0;
-    for(let n = 0; n < columns.length; n++)
-      s += columns[n];
-    this.columnsSizeSumm = s;
+    this.columnsProps = columns.slice();
+    this.resizeColumns();
 
     this.updateColumnsRange();
     this.updateStartColumn();
     this.updateVersion(GridModelEvent.COLUMNS, 1);
   }
 
-  getColumns(): Array<number> {
+  getColumnsSizes(): Array<number> {
     return this.columns.slice();
+  }
+
+  getColumns(): Array<number> {
+    return this.columnsProps.slice();
   }
 
   getSummOfSizes(): number {
@@ -130,6 +132,7 @@ export class GridModelBase extends Publisher implements GridModel {
       return;
 
     this.width = width;
+    this.resizeColumns();
     this.updateColumnsRange();
     this.updateRowsRange();
     this.updateVersion(GridModelEvent.WIDTH, 1);
@@ -234,6 +237,37 @@ export class GridModelBase extends Publisher implements GridModel {
 
   getStartColumnOffs() {
     return this.startColumnOffs;
+  }
+
+  private resizeColumns() {
+    let fixedSize = 0;
+    let props = 0;
+    let scale = 1;
+    for (let n = 0; n < this.columnsProps.length; n++) {
+      if (this.columnsProps[n] > 1) {
+        fixedSize += this.columnsProps[n];
+      } else {
+        props += this.columnsProps[n];
+      }
+    }
+
+    if (props != 1)
+      scale = 1 / props;
+    
+    this.columns = this.columnsProps.slice();
+    for (let n = 0; n < this.columns.length; n++) {
+      if (this.columnsProps[n] > 1) {
+        this.columns[n] = this.columnsProps[n];
+      } else {
+        this.columns[n] = this.columnsProps[n] * (this.width - fixedSize) * scale;
+      }
+    }
+    
+    let s = 0;
+    for (let n = 0; n < this.columns.length; n++)
+      s += this.columns[n];
+
+    this.columnsSizeSumm = s;
   }
 
   private updateStartColumn() {

@@ -24,6 +24,7 @@ interface Model {
   getColumnsRange(columns: Array<number>): Array<string>;
   getCellsRange(columns: Array<number>, rows: Array<number>): Array<Array<string>>;
   getColumnsNum(): number;
+  getColumnSizes(): Array<number>;
   getRowsNum(): number;
 }
 
@@ -34,6 +35,12 @@ function inRange(value, range: Array<number>) {
 function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Array<string>): Model {
   if (!colNames)
     colNames = Object.keys(data[0]);
+
+  let columnSizes = colNames.map(name => {
+    if (['type', 'images'].indexOf(name) != -1)
+      return 50;
+    return 0.5;
+  });
 
   let model: Model = {
     getColumnsRange: (range: Array<number>) => colNames.slice(range[0], range[1] + 1),
@@ -52,7 +59,8 @@ function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Arr
       return cells;
     },
     getColumnsNum: () => colNames.length,
-    getRowsNum: () => data.length
+    getRowsNum: () => data.length,
+    getColumnSizes: () => columnSizes
   };
 
   return model;
@@ -85,13 +93,7 @@ class Table extends React.Component<Props, State> {
   }
 
   private makeColumnSizes(props: Props) {
-    let columns = props.model.getColumnsNum();
-    let columnSizes = Array<number>(columns);
-    for (let n = 0; n < columnSizes.length; n++) {
-      columnSizes[n] = 150;
-    }
-
-    return columnSizes;
+    return props.model.getColumnSizes().slice();
   }
 
   componentWillReceiveProps(newProps: Props) {
