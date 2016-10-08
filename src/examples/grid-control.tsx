@@ -3,12 +3,12 @@ import * as React from 'react';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 import {GridControl} from 'controls/grid/grid-control';
+import {GridModel, GridModelBase} from 'controls/grid/grid-model';
 
 interface Props {
   width?: number;
   height?: number;
-  columns?: Array<number>
-  rows: number;
+  model: GridModel;
 }
 
 class Test extends React.Component<Props, {}> {
@@ -19,8 +19,7 @@ class Test extends React.Component<Props, {}> {
           aligned resizable
           width={width}
           height={height}
-          rows={this.props.rows}
-          columns={this.props.columns}
+          model={this.props.model}
         />
       );
   }
@@ -38,4 +37,8 @@ for(let n = 0; n < columns.length; n++) {
   columns[n] = 100 + (n % 5) * 10;
 }
 
-ReactDOM.render(<FitToParent><Test columns={columns} rows={999999}/></FitToParent>, cont);
+let model = new GridModelBase();
+model.setColumns(columns);
+model.setRows(9999999);
+
+ReactDOM.render(<FitToParent><Test model={model}/></FitToParent>, cont);

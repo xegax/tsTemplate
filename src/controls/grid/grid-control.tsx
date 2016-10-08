@@ -3,6 +3,7 @@ import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
+import {GridModel, GridModelEvent, GridModelBase} from 'controls/grid/grid-model';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -18,14 +19,8 @@ interface Props {
   vScroll?: boolean;
   hScroll?: boolean;
 
-  columns?: Array<number>;
-  rows?: number;
-
-  cellWidth?: number;
-  cellHeight?: number;
-
-  scrollLeft?: number;
-  scrollTop?: number;
+  model: GridModel;
+  header?: GridModel;
 
   aligned?: boolean;
   resizable?: boolean;
@@ -33,7 +28,6 @@ interface Props {
   renderHeader?(column: number): Cell;
   renderCell?(column: number, row: number): Cell;
   
-  onChanged?(event: ChangeEvent);
   style?: React.CSSProperties;
 }
 
@@ -44,6 +38,7 @@ interface State {
   scrollTop?: number;
   columns?: Array<number>;
   columnsSize?: number;
+  header?: GridModel;
 }
 
 const classes = {
@@ -62,11 +57,8 @@ export class GridControl extends React.Component<Props, State> {
 
     width: 0,
     height: 0,
-
-    columns: [],
-    rows: 0,
-
-    cellHeight: 30,
+    model: new GridModelBase(),
+    header: null,
 
     aligned: false,
     resizable: false,
@@ -75,68 +67,60 @@ export class GridControl extends React.Component<Props, State> {
     renderCell: (column: number, row: number) => ({ element: [column, row].join(':') })
   };
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     this.state = {
       scrollLeft: 0,
-      scrollTop: 0,
-      columnsSize: this.getColumnsSize(props.columns),
-      columns: props.columns.slice()
+      scrollTop: 0
     };
+    
+    if (!props.header) {
+      let header = this.state.header = new GridModelBase();
+      header.setColumns(props.model.getColumns());
+      header.setRows(1);
+    }
+    props.model.addSubscriber(this.onModelChanged);
   }
 
-  componentWillReceiveProps(newProps) {
-    this.setColumns(newProps.columns);
+  onModelChanged = (eventMask) => {
+    if (eventMask & GridModelEvent.COLUMNS) {
+      this.state.header.setColumns(this.props.model.getColumns());
+      this.state.header.notifySubscribers();
+    }
+    this.forceUpdate();
   }
 
-  setColumns(columns: Array<number>, callback?: () => void) {
-    this.setState({
-      columnsSize: this.getColumnsSize(columns),
-      columns
-    }, callback);
+  componentWillUnmount() {
+    this.props.model.removeSubscriber(this.onModelChanged);
   }
 
-  private getColumnsSize(columns: Array<number>) {
-    let size = 0;
-    columns.forEach(s => size += s);
-    return size;
+  componentWillReceiveProps(newProps: Props) {
+    if (newProps.model != this.props.model) {
+      this.props.model.removeSubscriber(this.onModelChanged);
+      newProps.model.addSubscriber(this.onModelChanged);
+    }
   }
 
   private onScrolling = (event) => {
     let {scrollLeft, scrollTop} = event;
     
-    this.setState({scrollLeft, scrollTop}, () => this.onChanged());
+    let body = this.props.model;
+    let header = this.state.header;
+
+    body.setScrollLeft(scrollLeft);
+    body.setScrollTop(scrollTop);
+    body.notifySubscribers();
+
+    header.setScrollLeft(scrollLeft);
+    header.notifySubscribers();
   };
-
-  private getScrollTop() {
-    let {cellHeight, aligned} = this.props;
-    return aligned ? Math.floor(this.state.scrollTop / cellHeight) * cellHeight : this.state.scrollTop;
-  }
-
-  private onChanged() {
-    if (!this.props.onChanged)
-      return;
-
-    let {scrollLeft, scrollTop} = this.state;
-    this.props.onChanged({
-      scrollLeft,
-      scrollTop,
-      columns: this.map.getColumnsRange(),
-      rows: this.map.getRowsRange()
-    });
-  }
-
-  getColumnsRange() {
-    return this.map.getColumnsRange();
-  }
-
-  getRowsRange() {
-    return this.map.getRowsRange();
-  }
 
   private onClientSize = (event) => {
     let {width, height} = event;
-    this.setState({clientWidth: width, clientHeight: height}, () => this.onChanged());
+    this.setState({clientWidth: width, clientHeight: height});
+    this.state.header.setWidth(width);
+    this.props.model.setWidth(width);
+    this.props.model.setHeight(height);
   };
 
   getMouseRelativeTo(target: Element, event: React.MouseEvent) {
@@ -144,99 +128,27 @@ export class GridControl extends React.Component<Props, State> {
     return {x: event.pageX - rect.left, y: event.pageY - rect.top};
   }
 
-  resizeColumns = (event: React.MouseEvent, column: number) => {
-    if (this.props.resizable == false)
-      return;
-
-    let colWidth = this.state.columns[column];
-    let cellWidthMinMax = [10, 99999];
-
-    let header = ReactDOM.findDOMNode(this.refs['header']);
-    let point = this.getMouseRelativeTo(header as Element, event);
-
-    let columnsSize = this.state.columnsSize - colWidth;
-    startDragging({x: colWidth, y: 0}, {
-      onDragging: (event) => {
-        let cellWidth = Math.max(cellWidthMinMax[0], event.x);
-        cellWidth = Math.min(cellWidth, cellWidthMinMax[1]);
-
-        this.state.columns[column] = cellWidth;
-        this.setState({columnsSize: columnsSize + cellWidth});
-      }
-    })(event as any as MouseEvent);
-  }
-
-  renderHeaderCell = (column: number): Cell => {
-    let resizeHandle = this.props.resizable ? (
-      <div
-        onMouseDown={e => this.resizeColumns(e, column)}
-        className={classes.resizeHandle}
-      />
-    ) : null;
-
-    let className: string;
-    let headerCell: JSX.Element | string = '' + column;
-    if (this.props.renderHeader) {
-      let cell = this.props.renderHeader(column);
-      headerCell = cell.element;
-      className = cell.className;
-    }
-
-    let element: JSX.Element = (
-      <div
-        className={className}
-        style={{height: '100%', position: 'relative'}}>
-        {resizeHandle}
-        {headerCell}
-      </div>
-    );
-    return {
-      element
-    };
-  };
-
   private renderHeader() {
-    const {
-      cellHeight,
-      columns,
-      renderHeader
-    } = this.props;
-    
-    const {
-      clientWidth,
-      scrollLeft
-    } = this.state;
-
+    const {clientWidth} = this.state;
+    let cellHeight = this.state.header.getCellHeight();
     return (
       <GridRender
-        ref = 'header'
         className = {classes.header}
         width = {clientWidth}
         height = {cellHeight}
-
-        cellHeight = {cellHeight}
-          
-        columns = {columns}
-        rows = {1}
-          
-        renderCell = {this.renderHeaderCell}
-          
-        scrollLeft = {scrollLeft}
-        scrollTop = {0}
+        model = {this.state.header}
+        renderCell = {this.props.renderHeader}
       />
     );
   }
 
   private renderBody() {
     const {
-      cellHeight,
-      columns, rows,
       renderCell
     } = this.props;
     
     const {
-      clientWidth, clientHeight,
-      scrollLeft
+      clientWidth, clientHeight
     } = this.state;
 
     return (
@@ -247,24 +159,19 @@ export class GridControl extends React.Component<Props, State> {
         width = {clientWidth}
         height = {clientHeight}
 
-        cellHeight = {cellHeight}
-
-        columns = {columns}
-        rows = {rows}
+        model = {this.props.model}
 
         renderCell = {renderCell}
-            
-        scrollLeft = {scrollLeft}
-        scrollTop = {this.getScrollTop()}
       />
     );
   }
 
   render() {
+    let cellHeight = this.props.model.getCellHeight();
+    let rows = this.props.model.getRows();
+
     const {
       width, height,
-      cellHeight,
-      columns, rows,
       renderHeader,
       aligned,
       vScroll,
@@ -276,7 +183,7 @@ export class GridControl extends React.Component<Props, State> {
       scrollLeft, scrollTop
     } = this.state;
 
-    let contentWidth = this.state.columnsSize;
+    let contentWidth = this.props.model.getSummOfSizes();
     let contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
     return (

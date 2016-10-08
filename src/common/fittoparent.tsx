@@ -16,9 +16,6 @@ interface State {
 
 export var globTimer: Timer = new Timer();
 
-// класс занимается растягиванием реактивных контролов по размеру не реактивного родителя,
-// для этого он передаёт своим дочерним элементам width и height родителя
-
 export class FitToParent extends React.Component<Props, State> {
   static defaultProps = {
     fitX: true,

@@ -5,6 +5,7 @@ import {MapControl} from 'controls/map/map-control';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
+import {GridModelBase, GridModelEvent} from 'controls/grid/grid-model';
 
 interface Props {
   model: Model;
@@ -62,12 +63,25 @@ class Table extends React.Component<Props, State> {
   private header = Array<string>();
   private columns = Array<number>();
   private rows = Array<number>();
+  private model = new GridModelBase();
 
   constructor(props: Props) {
     super(props);
     this.state = {
       columnSizes: this.makeColumnSizes(props)
     };
+
+    this.model.addSubscriber(this.onModelChanged);
+    
+    this.model.setColumns(this.makeColumnSizes(props));
+    this.model.setRows(props.model.getRowsNum());
+    this.onChanged(props);
+  }
+
+  private onModelChanged = (eventMask) => {
+    if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
+      this.onChanged(this.props);
+    }
   }
 
   private makeColumnSizes(props: Props) {
@@ -81,20 +95,10 @@ class Table extends React.Component<Props, State> {
   }
 
   componentWillReceiveProps(newProps: Props) {
-    setTimeout(() => {
-
-    }, 1);
-
-    let grid = this.refs['grid'] as GridControl;
-    let columnSizes = this.makeColumnSizes(newProps);
-    grid.setColumns(columnSizes, () => {
-      this.updateCells(newProps, grid.getColumnsRange(), grid.getRowsRange());
-      this.setState({columnSizes});
-    });
-  }
-
-  private onUpdate = (eventMask) => {
-    this.forceUpdate();
+    this.model.setColumns(this.makeColumnSizes(newProps));
+    this.model.setRows(newProps.model.getRowsNum());
+    this.onChanged(newProps);
+    this.forceUpdate(() => this.model.notifySubscribers());
   }
 
   private updateCells(props: Props, colsRange: Array<number>, rowsRange: Array<number>) {
@@ -105,9 +109,8 @@ class Table extends React.Component<Props, State> {
     this.header = props.model.getColumnsRange(colsRange);
   }
 
-  private onChanged = (event) => {
-    this.updateCells(this.props, event.columns, event.rows);
-    this.forceUpdate();
+  private onChanged = (props: Props) => {
+    this.updateCells(props, this.model.getColumnsRange(), this.model.getRowsRange());
   }
 
   renderCell = (column, row) => {
@@ -127,43 +130,16 @@ class Table extends React.Component<Props, State> {
     return {element: this.header[column - this.columns[0]]};
   }
 
-  renderMapControl() {
-    let {model} = this.props;
-    let columns = model.getColumnsNum();
-    let rows = model.getRowsNum();
-    return (
-      <FitToParent>
-        <MapControl
-          selectable resizable alignedRows
-          onChanged={this.onChanged}
-          renderCell={this.renderCell}
-          renderHeader={this.renderHeader}
-          columns={columns}
-          rows={rows}
-          cellHeight={46}
-          cellWidth={300}
-        />
-      </FitToParent>
-    );
-  }
-
   renderGridControl() {
-    let {model} = this.props;
-    let {columnSizes} = this.state;
-    let columns = model.getColumnsNum();
-    let rows = model.getRowsNum();
     return (
       <FitToParent>
         <GridControl
           ref='grid'
           style={{position: 'absolute'}}
           aligned resizable
-          onChanged={this.onChanged}
           renderCell={this.renderCell}
           renderHeader={this.renderHeader}
-          rows={rows}
-          columns={columnSizes}
-          cellHeight={46}
+          model={this.model}
         />
       </FitToParent>
     );
