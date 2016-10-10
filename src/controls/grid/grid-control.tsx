@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
-import {GridModel, GridModelEvent, GridModelBase} from 'controls/grid/grid-model';
+import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {assign} from 'lodash';
 
 interface ChangeEvent {
@@ -57,7 +57,7 @@ export class GridControl extends React.Component<Props, State> {
 
     width: 0,
     height: 0,
-    model: new GridModelBase(),
+    model: new GridModel(),
     header: null,
 
     resizable: false,
@@ -74,7 +74,7 @@ export class GridControl extends React.Component<Props, State> {
     };
     
     if (!props.header) {
-      let header = this.state.header = new GridModelBase();
+      let header = this.state.header = new GridModel();
       header.setColumns(props.model.getColumns());
       header.setRows(1);
     }
@@ -130,7 +130,7 @@ export class GridControl extends React.Component<Props, State> {
   private onResizeColumn(column: number, event: React.MouseEvent) {
     let size = this.props.model.getColumnSize(column);
     startDragging({x: size, y: 0}, {
-      onDragging: (event) => {
+      onDragging: event => {
         this.props.model.setColumnSize(column, event.x);
       }
     })(event as any as MouseEvent);

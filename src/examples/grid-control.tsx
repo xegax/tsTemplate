@@ -3,7 +3,7 @@ import * as React from 'react';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 import {GridControl} from 'controls/grid/grid-control';
-import {GridModel, GridModelBase} from 'controls/grid/grid-model';
+import {GridModel} from 'controls/grid/grid-model';
 
 interface Props {
   width?: number;
@@ -16,7 +16,7 @@ class Test extends React.Component<Props, {}> {
     let {width, height} = this.props;
     return (
         <GridControl
-          aligned resizable
+          resizable
           width={width}
           height={height}
           model={this.props.model}
@@ -37,7 +37,7 @@ for(let n = 0; n < columns.length; n++) {
   columns[n] = 100 + (n % 5) * 10;
 }
 
-let model = new GridModelBase();
+let model = new GridModel();
 model.setColumns(columns);
 model.setRows(9999999);
 

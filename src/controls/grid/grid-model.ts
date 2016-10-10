@@ -14,45 +14,7 @@ export enum GridModelEvent {
   ROWS_ALIGNED  = 1 << 10
 }
 
-export interface GridModel extends Publisher {
-  setRowsAligned(value: boolean);
-  isRowsAligned(): boolean;
-
-  setRows(rows: number);
-  getRows(): number;
-
-  setColumns(columns: Array<number>);
-  getColumns(): Array<number>;
-  getColumnsSizes(): Array<number>;
-
-  setCellHeight(cellHeight: number);
-  getCellHeight(): number;
-
-  setWidth(width: number);
-  getWidth(): number;
-
-  setHeight(height: number);
-  getHeight(): number;
-
-  setScrollLeft(scrollLeft: number);
-  getScrollLeft(): number;
-
-  setScrollTop(scrollTop: number);
-  getScrollTop(): number;
-
-  getAxisRangeColumns(): {idx: number, offs: number, num: number};
-  getAxisRangeRows(): {idx: number, offs: number, num: number};
-
-  getColumnSize(column: number): number;
-  setColumnSize(column: number, size: number);
-  getColumnsNum(): number;
-
-  getSummOfSizes(): number;
-
-  getStartColumnOffs(): number;
-}
-
-export class GridModelBase extends Publisher implements GridModel {
+export class GridModel extends Publisher {
   private cellHeight: number = 30;
   private columns = Array<number>();
   private columnsProps = Array<number>();
@@ -242,6 +204,24 @@ export class GridModelBase extends Publisher implements GridModel {
     this.resizeColumns();
     this.updateColumnsRange();
     this.updateVersion(GridModelEvent.COLUMNS);
+  }
+
+  getSizeToProp(size: number) {
+    let fixedSize = 0;
+    let props = 0;
+    let scale = 1;
+    for (let n = 0; n < this.columnsProps.length; n++) {
+      if (this.columnsProps[n] > 1) {
+        fixedSize += this.columnsProps[n];
+      } else {
+        props += this.columnsProps[n];
+      }
+    }
+
+    if (props != 1)
+      scale = 1 / props;
+
+    return size / (this.width - (fixedSize - size));
   }
 
   getColumnsNum() {

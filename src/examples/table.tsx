@@ -5,7 +5,7 @@ import {MapControl} from 'controls/map/map-control';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
-import {GridModelBase, GridModelEvent} from 'controls/grid/grid-model';
+import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 
 interface Props {
   model: Model;
@@ -71,7 +71,7 @@ class Table extends React.Component<Props, State> {
   private header = Array<string>();
   private columns = Array<number>();
   private rows = Array<number>();
-  private model = new GridModelBase();
+  private model = new GridModel();
 
   constructor(props: Props) {
     super(props);
