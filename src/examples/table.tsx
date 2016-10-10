@@ -138,7 +138,7 @@ class Table extends React.Component<Props, State> {
         <GridControl
           ref='grid'
           style={{position: 'absolute'}}
-          aligned resizable
+          resizable
           renderCell={this.renderCell}
           renderHeader={this.renderHeader}
           model={this.model}

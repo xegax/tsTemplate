@@ -15,6 +15,9 @@ export enum GridModelEvent {
 }
 
 export interface GridModel extends Publisher {
+  setRowsAligned(value: boolean);
+  isRowsAligned(): boolean;
+
   setRows(rows: number);
   getRows(): number;
 
@@ -41,6 +44,7 @@ export interface GridModel extends Publisher {
   getAxisRangeRows(): {idx: number, offs: number, num: number};
 
   getColumnSize(column: number): number;
+  setColumnSize(column: number, size: number);
   getColumnsNum(): number;
 
   getSummOfSizes(): number;
@@ -229,6 +233,15 @@ export class GridModelBase extends Publisher implements GridModel {
 
   getColumnSize(column: number) {
     return this.columns[column];
+  }
+
+  setColumnSize(column: number, size: number) {
+    if (this.columnsProps[column] == size)
+      return;
+    this.columnsProps[column] = size;
+    this.resizeColumns();
+    this.updateColumnsRange();
+    this.updateVersion(GridModelEvent.COLUMNS);
   }
 
   getColumnsNum() {

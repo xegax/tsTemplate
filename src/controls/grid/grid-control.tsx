@@ -4,6 +4,7 @@ import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
 import {GridModel, GridModelEvent, GridModelBase} from 'controls/grid/grid-model';
+import {assign} from 'lodash';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -22,7 +23,6 @@ interface Props {
   model: GridModel;
   header?: GridModel;
 
-  aligned?: boolean;
   resizable?: boolean;
 
   renderHeader?(column: number): Cell;
@@ -60,7 +60,6 @@ export class GridControl extends React.Component<Props, State> {
     model: new GridModelBase(),
     header: null,
 
-    aligned: false,
     resizable: false,
 
     renderHeader: (column: number) => ({ element: '' + column }),
@@ -128,16 +127,41 @@ export class GridControl extends React.Component<Props, State> {
     return {x: event.pageX - rect.left, y: event.pageY - rect.top};
   }
 
+  private onResizeColumn(column: number, event: React.MouseEvent) {
+    let size = this.props.model.getColumnSize(column);
+    startDragging({x: size, y: 0}, {
+      onDragging: (event) => {
+        this.props.model.setColumnSize(column, event.x);
+      }
+    })(event as any as MouseEvent);
+  }
+
+  private renderHeaderCell = (column: number) => {
+    if (this.props.resizable == false)
+      return this.props.renderHeader(column);
+
+    let cell = assign({}, this.props.renderHeader(column));
+    let resizer = (
+      <div
+        className={classes.resizeHandle}
+        onMouseDown={e => this.onResizeColumn(column, e)}
+      />
+    );
+    cell.element = <div style={{height: '100%'}}>{cell.element}{resizer}</div>;
+    return cell;
+  }
+
   private renderHeader() {
     const {clientWidth} = this.state;
     let cellHeight = this.state.header.getCellHeight();
+
     return (
       <GridRender
         className = {classes.header}
         width = {clientWidth}
         height = {cellHeight}
         model = {this.state.header}
-        renderCell = {this.props.renderHeader}
+        renderCell = {this.renderHeaderCell}
       />
     );
   }
@@ -173,7 +197,6 @@ export class GridControl extends React.Component<Props, State> {
     const {
       width, height,
       renderHeader,
-      aligned,
       vScroll,
       hScroll
     } = this.props;
@@ -183,6 +206,7 @@ export class GridControl extends React.Component<Props, State> {
       scrollLeft, scrollTop
     } = this.state;
 
+    let aligned = this.props.model.isRowsAligned();
     let contentWidth = this.props.model.getSummOfSizes();
     let contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
