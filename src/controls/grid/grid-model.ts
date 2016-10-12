@@ -11,7 +11,9 @@ export enum GridModelEvent {
   START_COLUMN  = 1 << 7,
   COLUMNS_RENDER_RANGE = 1 << 8,
   ROWS_RENDER_RANGE    = 1 << 9,
-  ROWS_ALIGNED  = 1 << 10
+  ROWS_ALIGNED  = 1 << 10,
+  CELL_SELECTION = 1 << 11,
+  ROW_SELECT = 1 << 12
 }
 
 export class GridModel extends Publisher {
@@ -33,6 +35,10 @@ export class GridModel extends Publisher {
   private rowsRenderRange = [0, 0];
 
   private rowsAligned: boolean = true;
+  private cellSelectable: boolean = false;
+
+  private selectRow: number = 0;
+  private selectColumn: number = 0;
 
   setRows(rows: number): GridModel {
     if (rows == this.rows)
@@ -57,6 +63,17 @@ export class GridModel extends Publisher {
 
   isRowsAligned() {
     return this.rowsAligned;
+  }
+
+  isCellSelectable() {
+    return this.cellSelectable;
+  }
+
+  setCellSelectable(value: boolean) {
+    if (this.cellSelectable == value)
+      return;
+    this.cellSelectable = value;
+    this.updateVersion(GridModelEvent.CELL_SELECTION, 1);
   }
 
   setColumns(columns: Array<number>) {
@@ -184,13 +201,22 @@ export class GridModel extends Publisher {
     return this.rowsRenderRange.slice();
   }
 
-  getAxisRangeRows() {
+  getAxisRangeRows(onlyFullVisible?: boolean) {
     let scrollTop = this.scrollTop;
     if (this.rowsAligned) {
       scrollTop = Math.floor(scrollTop / this.cellHeight) * this.cellHeight;
     }
 
-    return this.getAxisRange(this.height, this.cellHeight, scrollTop, this.rows);
+    let res = this.getAxisRange(this.height, this.cellHeight, scrollTop, this.rows);
+    if (onlyFullVisible === true) {
+      let {cellHeight, height} = this;
+      if (res.offs != 0) {
+          height -= cellHeight + res.offs;
+          res.idx++;
+      }
+      res.num = Math.floor(height / cellHeight) - 1;
+    }
+    return res;
   }
 
   getColumnSize(column: number) {
@@ -230,6 +256,47 @@ export class GridModel extends Publisher {
 
   getStartColumnOffs() {
     return this.startColumnOffs;
+  }
+
+  scrollToRow(row: number) {
+    row = Math.max(0, row);
+    row = Math.min(this.rows - 1, row);
+
+    const rows = this.getAxisRangeRows(true);
+    const range = [rows.idx, rows.idx + rows.num - 1];
+
+    if (row < range[0])
+      this.setScrollTop(row * this.cellHeight);
+    if (row > range[1])
+      this.setScrollTop((row - rows.num) * this.cellHeight);
+  }
+
+  setSelectRow(row: number) {
+    if (!this.cellSelectable)
+      return;
+
+    row = Math.max(0, row);
+    row = Math.min(this.rows - 1, row);
+
+    if (this.selectRow == row)
+      return;
+
+    this.selectRow = row;
+    this.scrollToRow(row);
+
+    this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+  }
+
+  getSelectRow(): number {
+    return this.selectRow;
+  }
+
+  isRowSelect(row: number): boolean {
+    return this.cellSelectable && row == this.selectRow;
+  }
+
+  isCellSelect(column: number, row: number): boolean {
+    return row == this.selectRow && this.selectColumn == column;
   }
 
   private resizeColumns() {

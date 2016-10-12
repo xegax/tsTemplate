@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {className} from 'common/common';
 import {GridModel} from 'controls/grid/grid-model';
+import {KeyCode} from 'common/keycode';
 
 const classes = {
   control: 'grid_render',
@@ -9,7 +10,8 @@ const classes = {
   rightmost: 'grid_render--cell_rightmost',
   lowermost: 'grid_render--cell_lowermost',
   topmost: 'grid_render--cell_topmost',
-  leftmost: 'grid_render--cell_leftmost'
+  leftmost: 'grid_render--cell_leftmost',
+  selectCell: 'grid_render--cell_select'
 };
 
 export interface Cell {
@@ -59,14 +61,6 @@ export class GridRender extends React.Component<Props, {}> {
     model.setHeight(newProps.height);
   }
 
-  renderCell(column: number, row: number) {
-    if (this.props.renderCell) {
-      return this.props.renderCell(column, row).element;
-    } else {
-      return null;
-    }
-  }
-
   private getRows() {
     return this.props.model.getRows();
   }
@@ -83,12 +77,15 @@ export class GridRender extends React.Component<Props, {}> {
         height: cellHeight
       };
       
+      let cell = this.props.renderCell(column, rowIdx);
       let cn = className(
         classes.cell,
         column == 0 && classes.leftmost,
         r == 0 && classes.topmost,
         column == columnsNum - 1 && classes.rightmost,
-        rowIdx == rowsNum - 1 && classes.lowermost
+        rowIdx == rowsNum - 1 && classes.lowermost,
+        this.props.model.isRowSelect(rowIdx) && classes.selectCell,
+        cell && cell.className
       );
 
       cellsArr.push(
@@ -96,8 +93,9 @@ export class GridRender extends React.Component<Props, {}> {
           key={r}
           style={style}
           className={cn}
+          onClick={e => this.props.model.setSelectRow(rowIdx)}
         >
-          {this.renderCell(column, rowIdx)}
+          {cell.element}
         </div>
       );
     }
@@ -147,14 +145,34 @@ export class GridRender extends React.Component<Props, {}> {
     return [rows.idx, Math.min(rows.idx + rows.num, this.getRows() - 1)];
   }
 
+  onKeyDown = (event: React.KeyboardEvent) => {
+    let xoffs = 0, row = this.props.model.getSelectRow();
+    if (event.keyCode == KeyCode.ArrowUp) {
+      row--;
+    }
+
+    if (event.keyCode == KeyCode.ArrowDown) {
+      row++;
+    }
+    this.props.model.setSelectRow(row);
+  }
+
   render() {
     let style = {
       width: this.props.width,
       height: this.props.height
     };
+    const selectable = this.props.model.isCellSelectable();
 
     return (
-      <div className={className(classes.control, this.props.className)} style={style}>{this.renderColumns()}</div>
+      <div
+        tabIndex={selectable ? 1 : null}
+        className={className(classes.control, this.props.className)}
+        style={style}
+        onKeyDown={this.onKeyDown}
+      >
+        {this.renderColumns()}
+      </div>
     );
   }
 }

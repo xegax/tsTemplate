@@ -83,6 +83,7 @@ class Table extends React.Component<Props, State> {
     
     this.model.setColumns(this.makeColumnSizes(props));
     this.model.setRows(props.model.getRowsNum());
+    this.model.setCellSelectable(true);
     this.onChanged(props);
   }
 

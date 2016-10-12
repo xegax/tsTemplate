@@ -34,10 +34,6 @@ interface Props {
 interface State {
   clientWidth?: number;
   clientHeight?: number;
-  scrollLeft?: number;
-  scrollTop?: number;
-  columns?: Array<number>;
-  columnsSize?: number;
   header?: GridModel;
 }
 
@@ -68,10 +64,7 @@ export class GridControl extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {
-      scrollLeft: 0,
-      scrollTop: 0
-    };
+    this.state = {};
     
     if (!props.header) {
       let header = this.state.header = new GridModel();
@@ -202,13 +195,12 @@ export class GridControl extends React.Component<Props, State> {
     } = this.props;
     
     const {
-      clientWidth, clientHeight,
-      scrollLeft, scrollTop
+      clientWidth, clientHeight
     } = this.state;
 
-    let aligned = this.props.model.isRowsAligned();
-    let contentWidth = this.props.model.getSummOfSizes();
-    let contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
+    const aligned = this.props.model.isRowsAligned();
+    const contentWidth = this.props.model.getSummOfSizes();
+    const contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
     return (
       <div className={classes.control} style={this.props.style}>
@@ -228,6 +220,9 @@ export class GridControl extends React.Component<Props, State> {
 
           vScroll={vScroll}
           hScroll={hScroll}
+
+          scrollLeft={this.props.model.getScrollLeft()}
+          scrollTop={this.props.model.getScrollTop()}
         >
           {this.renderBody()}
         </ScrollbarPanel>
