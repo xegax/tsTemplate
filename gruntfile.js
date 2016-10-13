@@ -1,7 +1,5 @@
 module.exports = function(grunt) {
   function tsConfig(config) {
-    grunt.loadNpmTasks('grunt-ts');
-  
     config.ts = {
       default: {
         tsconfig: true
@@ -10,8 +8,6 @@ module.exports = function(grunt) {
   }
   
   function watchConfig(config) {
-    grunt.loadNpmTasks('grunt-contrib-watch');
-    
     var tsCache = require('./node_modules/grunt-ts/tasks/modules/cacheUtils');
     grunt.event.on('watch', function(action, filepath, target) {
       if (target !== 'ts') {
@@ -68,8 +64,6 @@ module.exports = function(grunt) {
   }
   
   function sassConfig(config) {
-    grunt.loadNpmTasks('grunt-sass');
-    
     config.sass = {
       default: {
         files: {
@@ -80,10 +74,19 @@ module.exports = function(grunt) {
   }
   
   function cleanConfig(config) {
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    
     config.clean = {
       default: ['build', 'styles/*.css', 'src/*/*.js', 'src/*/*.js.map']
+    };
+  }
+  
+  function tslintConfig(config) {
+    config.tslint = {
+      options: {
+        configuration: grunt.file.readJSON('tslint.json')
+      },
+      all: {
+        src: ['src/**/*.ts', 'src/**/*.tsx', '!src/**/data-example-*.ts']
+      }
     };
   }
   
@@ -96,10 +99,13 @@ module.exports = function(grunt) {
   makeExamplesConfig(config);
   sassConfig(config);
   cleanConfig(config);
+  tslintConfig(config);
   
   grunt.initConfig(config); 
+  require('load-grunt-tasks')(grunt);
   
   grunt.registerTask('default', ['clean', 'make-examples-list', 'ts', 'sass']);
+  grunt.registerTask('tslint', ['tslint:all']);
   grunt.registerTask('dev', ['default']);
   grunt.registerTask('debug', ['default', 'watch']);
 }
