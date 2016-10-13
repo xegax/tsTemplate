@@ -79,7 +79,10 @@ function renderFolders(parent: HTMLElement, folders: Folder[], sel: number[]) {
   });
 
   ReactDOM.render(<div style={{display: 'flex', flexDirection: 'row'}}>
-    <span style={{color: 'gray'}}>Selected example:</span> <select defaultValue={sel.join('-')} style={{flexGrow: 1}} onChange={onSelectExample}>
+    <span style={{color: 'gray'}}>
+      Selected example:
+    </span>
+    <select defaultValue={sel.join('-')} style={{flexGrow: 1}} onChange={onSelectExample}>
       {options}
     </select>
   </div>, parent);

@@ -55,7 +55,7 @@ export class MapRender extends React.Component<Props, State> {
     let num = Math.ceil(size / cellSize);
     if (offs > 0)
       num++;
-    
+
     num = Math.min(idx + num, cells) - idx;
     return {idx, offs: -offs, num};
   }
@@ -75,7 +75,7 @@ export class MapRender extends React.Component<Props, State> {
       let style = {
         height: this.props.cellHeight
       };
-      
+
       let cell = this.renderCell(column, rowIdx);
 
       let cn = className(

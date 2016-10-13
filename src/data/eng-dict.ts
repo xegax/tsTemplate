@@ -1,5 +1,5 @@
 
-let dict1 = [
+export let dict1 = [
   ['you',           'ты'],
   ['name',          'имя'],
   ['who',           'кто'],
@@ -34,7 +34,7 @@ let dict1 = [
   ['orange',        'оранжевый'],
   ['near',          'около, возле'],
   ['table',  'стол'],
-  ['chess','шахматы'],
+  ['chess', 'шахматы'],
   ['get up', 'вставать'],
   ['little', 'немного'],
   ['face', 'лицо'],
@@ -42,12 +42,12 @@ let dict1 = [
   ['fire', 'огонь']
 ];
 
-let dict2 = [
+export let dict2 = [
   ['tiger', 'тигр'],
   ['lion', 'лев'],
   ['zebra', 'зебра'],
   ['snake', 'змея'],
-  ['crocodile','крокодил'],
+  ['crocodile', 'крокодил'],
   ['monkey', 'обезьяна']
 ];
 

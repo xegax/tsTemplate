@@ -26,14 +26,14 @@ export interface Props {
   width?: number;
   height?: number;
 
-  renderCell?(column: number, row: number): Cell
+  renderCell?(column: number, row: number): Cell;
 }
 
 export class GridRender extends React.Component<Props, {}> {
   static defaultProps: Props = {
     width: 0,
     height: 0,
-    renderCell: (c, r) => ({element: [c, r].join(':')}),
+    renderCell: (c, r) => ({element: [c, r].join(':')})
   };
 
   constructor(props: Props) {
@@ -76,7 +76,7 @@ export class GridRender extends React.Component<Props, {}> {
       let style = {
         height: cellHeight
       };
-      
+
       let cell = this.props.renderCell(column, rowIdx);
       let cn = className(
         classes.cell,
@@ -146,7 +146,7 @@ export class GridRender extends React.Component<Props, {}> {
   }
 
   onKeyDown = (event: React.KeyboardEvent) => {
-    let xoffs = 0, row = this.props.model.getSelectRow();
+    let row = this.props.model.getSelectRow();
     if (event.keyCode == KeyCode.ArrowUp) {
       row--;
     }

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
@@ -27,7 +26,7 @@ interface Props {
 
   renderHeader?(column: number): Cell;
   renderCell?(column: number, row: number): Cell;
-  
+
   style?: React.CSSProperties;
 }
 
@@ -42,7 +41,7 @@ const classes = {
   header: 'grid_control--header',
   body: 'grid_control--body',
   resizeHandle: 'grid_control--header--resize_handle'
-}; 
+};
 
 export class GridControl extends React.Component<Props, State> {
   private map: GridRender;
@@ -65,7 +64,7 @@ export class GridControl extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {};
-    
+
     if (!props.header) {
       let header = this.state.header = new GridModel();
       header.setColumns(props.model.getColumns());
@@ -95,7 +94,7 @@ export class GridControl extends React.Component<Props, State> {
 
   private onScrolling = (event) => {
     let {scrollLeft, scrollTop} = event;
-    
+
     let body = this.props.model;
     let header = this.state.header;
 
@@ -163,7 +162,7 @@ export class GridControl extends React.Component<Props, State> {
     const {
       renderCell
     } = this.props;
-    
+
     const {
       clientWidth, clientHeight
     } = this.state;
@@ -189,14 +188,9 @@ export class GridControl extends React.Component<Props, State> {
 
     const {
       width, height,
-      renderHeader,
       vScroll,
       hScroll
     } = this.props;
-    
-    const {
-      clientWidth, clientHeight
-    } = this.state;
 
     const aligned = this.props.model.isRowsAligned();
     const contentWidth = this.props.model.getSummOfSizes();

@@ -90,7 +90,7 @@ class TrainerModel extends Publisher {
     this.order = [];
     while (this.order.length < this.dict.length)
       this.order.push(this.order.length);
-    
+
     let n = 0;
     while (++n < 2)
       this.order.sort(() => Math.round(Math.random() * 10) >= 5 ? -1 : 1);
@@ -138,19 +138,19 @@ class TrainerModel extends Publisher {
 
     const count = this.getItemCount();
     let tries = 100;
-    while(--tries >= 0) {
+    while (--tries >= 0) {
       let idx = Math.round(Math.random() * (count - 1));
       let option = this.getItemByIndex(idx % count);
       if (item.options.indexOf(this.getItemTranslate(option)) != -1)
         continue;
-      
+
       item.options.push(this.getItemTranslate(option));
       if (item.options.length >= this.optionsPerItem)
         break;
     }
 
     tries = 5;
-    while(--tries >= 0)
+    while (--tries >= 0)
       item.options.sort(() => Math.round(Math.random() * 10) >= 5 ? -1 : 1);
 
     this.item = item;
@@ -165,7 +165,6 @@ interface Props {
 interface State {
   choice: number;
 }
-
 
 const classes = {
   TEST_CARD: 'test-card',
@@ -193,7 +192,7 @@ function play(text: string) {
   ttsMsg.volume = 1;
   ttsMsg.text = text;
   ttsMsg.voice = window.speechSynthesis.getVoices()[2];
-  
+
   window.speechSynthesis.speak(ttsMsg);
 }
 
@@ -244,7 +243,7 @@ class WorkBook extends React.Component<Props, State> {
     let choice = this.state.choice;
     let choiceIsValid = choice != -1;
     let isRight = i == model.getRightOptionIndex();
-    
+
     const classValue = className(
       classes.OPTION,
       choiceIsValid && isRight && classes.RIGHT,
@@ -284,12 +283,14 @@ class WorkBook extends React.Component<Props, State> {
       <div>
         <div>
           <label onClick={e => this.props.model.setOriginToTranslate(false)}>
-            <input checked={!this.props.model.getOriginToTranslate()} type='radio'/>Англейский <i className={'fa fa-arrow-right'}/> Русский
+            <input checked={!this.props.model.getOriginToTranslate()} type='radio'/>
+            Англейский <i className={'fa fa-arrow-right'}/> Русский
           </label>
         </div>
         <div>
           <label onClick={e => this.props.model.setOriginToTranslate(true)}>
-            <input checked={this.props.model.getOriginToTranslate()} type='radio'/>Русский <i className={'fa fa-arrow-right'}/> Английский
+            <input checked={this.props.model.getOriginToTranslate()} type='radio'/>
+            Русский <i className={'fa fa-arrow-right'}/> Английский
           </label>
         </div>
       </div>
@@ -305,7 +306,8 @@ class WorkBook extends React.Component<Props, State> {
     return (
       <div>
         {this.renderModes()}
-        <h3>Тест {model.getIndex() + 1} из {model.getTotal()} (верно: {stat.total - stat.wrong} - {perc}%, не верно: {stat.wrong})</h3>
+        <h3>Тест {model.getIndex() + 1} из {model.getTotal()}
+         (верно: {stat.total - stat.wrong} - {perc}%, не верно: {stat.wrong})</h3>
         <div className={classes.TEST_CARD}>
           {this.renderTitle(item)}
           {this.renderOptions(item)}
@@ -316,7 +318,5 @@ class WorkBook extends React.Component<Props, State> {
   }
 }
 
-
 import {dict} from '../data/eng-dict';
-
 ReactDOM.render(<WorkBook model={new TrainerModel(dict.map(word => ({value: word})))}/>, createContainer());

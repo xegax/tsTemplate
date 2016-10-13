@@ -8,9 +8,9 @@ import {MapRender} from 'controls/map/map-render';
 interface State {
   clientWidth?: number;
   clientHeight?: number;
-  
+
   contentWidth?: number;
-  contentHeight?: number
+  contentHeight?: number;
 
   scrollTop?: number;
   scrollLeft?: number;
@@ -34,7 +34,7 @@ class Test extends React.Component<{width?: number, height?: number}, State> {
 
       clientWidth: props.width,
       clientHeight: props.height,
-      
+
       scrollTop: 0,
       scrollLeft: 0
     };

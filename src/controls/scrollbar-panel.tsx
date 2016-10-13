@@ -33,7 +33,7 @@ interface Props {
 
   vScrollStep?: number;
   hScrollStep?: number;
-  
+
   vScroll?: boolean;
   hScroll?: boolean;
 
@@ -68,7 +68,7 @@ export class ScrollbarPanel extends React.Component<Props, State> {
 
   private getUpdatedState(newProps: Props, props: Props, defferEvent: boolean): State {
     let state: State = {};
-    
+
     let size = this.getClientSize(newProps, newProps.width, newProps.height);
 
     let scrolled = 0;
@@ -115,13 +115,13 @@ export class ScrollbarPanel extends React.Component<Props, State> {
 
     if (state.scrollLeft != null || state.scrollTop != null) {
       let {scrollLeft, scrollTop} = state;
-      
+
       if (scrollLeft == null)
         scrollLeft = this.state.scrollLeft;
-      
+
       if (scrollTop == null)
         scrollTop = this.state.scrollTop;
-      
+
       scrollEvent.scrollLeft = scrollLeft;
       scrollEvent.scrollTop = scrollTop;
       scrolled++;
@@ -130,20 +130,21 @@ export class ScrollbarPanel extends React.Component<Props, State> {
     let events = [];
     if (scrolled && this.props.onScrolling)
       events.push(() => this.props.onScrolling(scrollEvent));
-    
+
     if (resized && this.props.onClientSize)
       events.push(() => this.props.onClientSize(sizeEvent));
 
     let runEvents = () => events.forEach(e => e());
-    if (defferEvent)
+    if (defferEvent) {
       setTimeout(runEvents, 1);
-    else
+    } else {
       runEvents();
-      
+    }
+
     return state;
   }
 
-  private componentWillReceiveProps(newProps: Props) {
+  componentWillReceiveProps(newProps: Props) {
     let state = this.getUpdatedState(newProps, this.props, false);
     this.setState(state);
   }

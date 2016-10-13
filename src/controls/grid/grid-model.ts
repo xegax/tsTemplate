@@ -172,7 +172,7 @@ export class GridModel extends Publisher {
     let num = Math.ceil(size / cellSize);
     if (offs > 0)
       num++;
-    
+
     num = Math.min(idx + num, cells) - idx;
     return {idx, offs: -offs, num};
   }
@@ -313,7 +313,7 @@ export class GridModel extends Publisher {
 
     if (props != 1)
       scale = 1 / props;
-    
+
     this.columns = this.columnsProps.slice();
     for (let n = 0; n < this.columns.length; n++) {
       if (this.columnsProps[n] > 1) {
@@ -322,7 +322,7 @@ export class GridModel extends Publisher {
         this.columns[n] = this.columnsProps[n] * (this.width - fixedSize) * scale;
       }
     }
-    
+
     let s = 0;
     for (let n = 0; n < this.columns.length; n++)
       s += this.columns[n];
@@ -334,7 +334,7 @@ export class GridModel extends Publisher {
     let startColumn = 0;
     let startColumnOffs = 0;
     let pos = 0;
-    for(let col = 0; col < this.columns.length; col++) {
+    for (let col = 0; col < this.columns.length; col++) {
       if (pos > this.scrollLeft) {
         startColumn = Math.max(col - 1, 0);
         startColumnOffs = this.scrollLeft - (pos - this.columns[startColumn]);

@@ -7,7 +7,6 @@ export function isLeftDown(event: MouseEvent) {
   return evt.buttons === 1;
 }
 
-
 interface Params {
   x: number;
   y: number;
@@ -35,7 +34,7 @@ export function startDragging(args: Params, handler: DragHandler) {
     let dragValues = { x, y };
     let started = false;
     let clickPoint = { x: event.pageX, y: event.pageY };
-    
+
     let onMouseMove = (event: MouseEvent) => {
       let xOffs = event.pageX - clickPoint.x;
       let yOffs = event.pageY - clickPoint.y;

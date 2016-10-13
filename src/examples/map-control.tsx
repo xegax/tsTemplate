@@ -24,7 +24,6 @@ class Test extends React.Component<Props, State> {
   }
 
   render() {
-    let {width, height} = this.props;
     let style = {
       display: 'flex',
       flexDirection: 'column',
@@ -76,6 +75,5 @@ cont.style.top = '50px';
 cont.style.bottom = '5px';
 cont.style.left = '5px';
 cont.style.right = '5px';
-
 
 ReactDOM.render(<Test/>, cont);

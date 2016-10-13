@@ -10,11 +10,11 @@ interface Props {
   height?: number;
   noButtons?: boolean;
   nativeBehaviour?: boolean;  // as native scrollbar
-  
+
   step?: number;
   value?: number;
   maxValue?: number;
-  
+
   onChanging?: (value: number) => void;
   onChanged?: (value: number) => void;
 };
@@ -36,14 +36,15 @@ class Scrollbar extends React.Component<Props, State> {
   componentWillReceiveProps(newProps) {
     if (this.vertical) {
       var minThumbSize = newProps.width;
-      var {scale, thumbSize} = this.getScaleAndThumbSize(newProps.height, newProps.width, newProps);
+      var res = this.getScaleAndThumbSize(newProps.height, newProps.width, newProps);
     } else {
       var minThumbSize = newProps.height;
-      var {scale, thumbSize} = this.getScaleAndThumbSize(newProps.width, newProps.height, newProps);
+      var res = this.getScaleAndThumbSize(newProps.width, newProps.height, newProps);
     }
+    var {scale, thumbSize} = res;
     let prevValue = this.scale(this.state.pos);
     this.scale = scale;
-    
+
     let value = newProps.value;
     if (value == null) {
       value = prevValue;
@@ -56,7 +57,7 @@ class Scrollbar extends React.Component<Props, State> {
   protected onMouseDownButton = (button, e) => {
     let stepVector = (button == 0) ? -1 : 1;
     this.setState({stepVector});
-    startDragging({x: 0, y:0}, {
+    startDragging({x: 0, y: 0}, {
       onDragEnd: () => {
         this.timer.stop();
       }
@@ -95,7 +96,6 @@ class Scrollbar extends React.Component<Props, State> {
     const rangeBounds = this.getRangeBounds(this.state.size, this.props);
     startDragging(args, {
       onDragging: args => {
-        let newState;
         if (this.vertical) {
           pos = args.y;
         } else {
@@ -190,7 +190,7 @@ export class HorizontalScrollbar extends Scrollbar {
     maxValue: 1,
     height: 16,
     noButtons: false,
-    nativeBehaviour: true,
+    nativeBehaviour: true
   };
 
   constructor(props: Props) {

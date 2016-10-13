@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {MapControl} from 'controls/map/map-control';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
@@ -51,7 +50,7 @@ function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Arr
         for (let r = 0; r < rowArr.length; r++) {
           try {
             rowArr[r] = '' + data[r + rows[0]][colNames[c + columns[0]]];
-          } catch(e) {
+          } catch (e) {
             console.log(e);
           }
         }
@@ -80,7 +79,6 @@ class Table extends React.Component<Props, State> {
     };
 
     this.model.addSubscriber(this.onModelChanged);
-    
     this.model.setColumns(this.makeColumnSizes(props));
     this.model.setRows(props.model.getRowsNum());
     this.model.setCellSelectable(true);
@@ -126,7 +124,7 @@ class Table extends React.Component<Props, State> {
 
     return {
       element: '?'
-    }
+    };
   }
 
   renderHeader = (column) => {
@@ -177,7 +175,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
     return (
       <select ref={'select'} onChange={e => this.setDataSelect()} value={'' + this.state.listItem}>
         {this.props.list.map((item, i) => {
-          return <option key={i} value={'' + i}>{item}</option>
+          return <option key={i} value={'' + i}>{item}</option>;
         })}
       </select>
     );

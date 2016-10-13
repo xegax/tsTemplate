@@ -33,7 +33,7 @@ cont.style.left = '5px';
 cont.style.right = '5px';
 
 let columns = Array<number>(5000);
-for(let n = 0; n < columns.length; n++) {
+for (let n = 0; n < columns.length; n++) {
   columns[n] = 100 + (n % 5) * 10;
 }
 

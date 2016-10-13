@@ -11,4 +11,6 @@
 		"src/**/*.js.map": true,
 		"src/examples-main/examples-list.ts": true
 	}
+,
+"typescript.check.workspaceVersion": false
 }

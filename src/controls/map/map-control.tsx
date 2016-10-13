@@ -32,7 +32,7 @@ interface Props extends React.Props<any> {
   resizable?: boolean;
   renderCell?(column: number, row: number): Cell;
   renderHeader?(column: number): Cell;
-  
+
   style?: React.CSSProperties;
 
   onChanged?(event: ChangeEvent);
@@ -56,8 +56,6 @@ const classes = {
 };
 
 export class MapControl extends React.Component<Props, State> {
-  private map: MapRender;
-
   static defaultProps: Props = {
     vScroll: true,
     hScroll: true,
@@ -99,9 +97,7 @@ export class MapControl extends React.Component<Props, State> {
 
   private onScrolling = (event) => {
     let {scrollLeft, scrollTop} = event;
-    let {cellHeight, alignedRows} = this.props;
-    let {cellWidth} = this.state;
-    
+
     this.setState({scrollLeft, scrollTop}, () => this.onChanged());
   };
 
@@ -165,12 +161,12 @@ export class MapControl extends React.Component<Props, State> {
   private onKeyDown = this.getTimeLimitHandler((event) => {
     let {keyCode} = event;
     let selectRow = this.state.selectRow;
-    if(keyCode == KeyCode.ArrowDown)
+    if (keyCode == KeyCode.ArrowDown)
       selectRow++;
 
     if (keyCode == KeyCode.ArrowUp)
       selectRow--;
-    
+
     this.selectRow(selectRow);
   });
 
@@ -184,7 +180,7 @@ export class MapControl extends React.Component<Props, State> {
       columns, rows,
       renderCell
     } = this.props;
-    
+
     const {
       cellWidth,
       clientWidth, clientHeight,
@@ -231,7 +227,6 @@ export class MapControl extends React.Component<Props, State> {
     if (this.props.resizable == false)
       return;
 
-    let {cellWidth} = this.state;
     let {cellWidthMinMax} = this.props;
 
     let header = ReactDOM.findDOMNode(this.refs['header']);
@@ -239,7 +234,8 @@ export class MapControl extends React.Component<Props, State> {
 
     startDragging({x: 0, y: 0}, {
       onDragging: (event) => {
-        let cellWidth = Math.max(cellWidthMinMax[0], Math.round((event.x + point.x + this.state.scrollLeft) / (column + 1)));
+        let cellWidth = Math.round((event.x + point.x + this.state.scrollLeft) / (column + 1));
+        cellWidth = Math.max(cellWidthMinMax[0], cellWidth);
         cellWidth = Math.min(cellWidth, cellWidthMinMax[1]);
 
         this.setState({cellWidth});
@@ -281,14 +277,13 @@ export class MapControl extends React.Component<Props, State> {
       width, height,
       cellHeight,
       columns, rows,
-      renderCell,
       alignedRows,
       vScroll,
       hScroll
     } = this.props;
-    
+
     const {
-      clientWidth, clientHeight,
+      clientWidth,
       scrollLeft, scrollTop,
       cellWidth
     } = this.state;
@@ -306,12 +301,12 @@ export class MapControl extends React.Component<Props, State> {
 
           cellWidth = {cellWidth}
           cellHeight = {cellHeight}
-          
+
           columns = {columns}
           rows = {1}
-          
+
           renderCell = {this.renderHeaderCell}
-          
+
           scrollLeft={scrollLeft}
           scrollTop={0}
         />

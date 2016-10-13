@@ -53,13 +53,12 @@ class Test extends React.Component<{width?: number}, {imgWidth?: number, imgHeig
     );
   }
 
-
   render() {
     return (
         <div style={{display: 'flex', flexDirection: 'column', height: this.height}}>
           <div style={{display: 'flex', flexDirection: 'row'}}>
             <div
-              onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }} 
+              onScroll = {e => { this.scrollX = (e.target as HTMLDivElement).scrollLeft; this.forceUpdate(); }}
               id = 'scroll'
               ref = {e => this.scroll = e}
               style={{overflowX: 'auto', overflowY: 'auto', flexGrow: 1, position: 'relative'}}>
