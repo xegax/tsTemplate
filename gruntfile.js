@@ -105,7 +105,6 @@ module.exports = function(grunt) {
   require('load-grunt-tasks')(grunt);
   
   grunt.registerTask('default', ['clean', 'make-examples-list', 'ts', 'sass']);
-  grunt.registerTask('tslint', ['tslint:all']);
   grunt.registerTask('dev', ['default']);
   grunt.registerTask('debug', ['default', 'watch']);
 }
