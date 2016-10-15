@@ -5,18 +5,14 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
+import {Cell, TableModel, JSONTableModel, TableModelEvent} from 'model/table-model';
 
 interface Props {
-  model: Model;
+  model: TableModel;
 }
 
 interface State {
   columnSizes?: Array<number>;
-}
-
-interface Cell {
-  element: JSX.Element | string;
-  className?: string;
 }
 
 interface Model {
@@ -66,7 +62,7 @@ function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Arr
 }
 
 class Table extends React.Component<Props, State> {
-  private cells = Array<Array<string>>();
+  private cells = Array<Array<Cell>>();
   private header = Array<string>();
   private columns = Array<number>();
   private rows = Array<number>();
@@ -75,48 +71,61 @@ class Table extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      columnSizes: this.makeColumnSizes(props)
+      columnSizes: []
     };
 
-    this.model.addSubscriber(this.onModelChanged);
-    this.model.setColumns(this.makeColumnSizes(props));
-    this.model.setRows(props.model.getRowsNum());
+    this.props.model.addSubscriber(this.onTableChanged);
+    this.model.addSubscriber(this.onCellsRenderRangeChanged);
+
     this.model.setCellSelectable(true);
-    this.onChanged(props);
   }
 
-  private onModelChanged = (eventMask) => {
-    if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
-      this.onChanged(this.props);
+  private onTableChanged = (eventMask) => {
+    let {model} = this.props;
+    if (eventMask & TableModelEvent.DIMENSION) {
+      let dim = model.getDimension();
+      this.model.setRows(dim.rows);
+
+      let columns = Array<number>(dim.columns);
+      for (let n = 0; n < columns.length; n++)
+        columns[n] = 1;
+      this.model.setColumns(columns);
     }
-  }
 
-  private makeColumnSizes(props: Props) {
-    return props.model.getColumnSizes().slice();
-  }
+    if (eventMask & (TableModelEvent.ROWS_SELECTED | TableModelEvent.COLUMNS_SELECTED)) {
+      this.rows = model.getRowsRange();
+      this.columns = model.getColumnsRange();
+      this.cells = model.getCells();
+      this.header = model.getColumns().map(col => col.label);
+      this.forceUpdate(() => this.model.notifySubscribers());
+    }
+  };
+
+  private onCellsRenderRangeChanged = (eventMask) => {
+    if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
+      this.selectCells(this.props);
+    }
+  };
 
   componentWillReceiveProps(newProps: Props) {
-    this.model.setColumns(this.makeColumnSizes(newProps));
+    /*this.model.setColumns(this.makeColumnSizes(newProps));
     this.model.setRows(newProps.model.getRowsNum());
     this.onChanged(newProps);
-    this.forceUpdate(() => this.model.notifySubscribers());
+    this.forceUpdate(() => this.model.notifySubscribers());*/
   }
 
-  private updateCells(props: Props, colsRange: Array<number>, rowsRange: Array<number>) {
-    this.rows = rowsRange.slice();
-    this.columns = colsRange.slice();
-
-    this.cells = props.model.getCellsRange(colsRange, rowsRange);
-    this.header = props.model.getColumnsRange(colsRange);
-  }
-
-  private onChanged = (props: Props) => {
-    this.updateCells(props, this.model.getColumnsRange(), this.model.getRowsRange());
+  private selectCells(props: Props) {
+    let cols = this.model.getColumnsRange();
+    let rows = this.model.getRowsRange();
+    if (rows[1] - rows[0] <= 0)
+      return;
+    props.model.selectColumns(cols[0], cols[1]);
+    props.model.selectRows(rows[0], rows[1]);
   }
 
   renderCell = (column, row) => {
     if (inRange(column, this.columns) && inRange(row, this.rows)) {
-      let cell = this.cells[column - this.columns[0]][row - this.rows[0]];
+      let cell = this.cells[column - this.columns[0]][row - this.rows[0]].value + '';
       return {
         element: <div style={{padding: 3}}>{cell}</div> as any
       };
@@ -183,7 +192,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
   renderTable() {
     if (this.state.data)
-      return <Table model={makeJSONArrayModel(this.state.data)} />;
+      return <Table model={new JSONTableModel(this.state.data)} />;
     return null;
   }
 
