@@ -7,14 +7,6 @@ import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {Cell, TableModel, JSONTableModel, TableModelEvent} from 'model/table-model';
 
-interface Props {
-  model: TableModel;
-}
-
-interface State {
-  columnSizes?: Array<number>;
-}
-
 interface Model {
   getColumnsRange(columns: Array<number>): Array<string>;
   getCellsRange(columns: Array<number>, rows: Array<number>): Array<Array<string>>;
@@ -61,18 +53,19 @@ function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Arr
   return model;
 }
 
+interface Props {
+  model: TableModel;
+}
+
+interface State {
+}
+
 class Table extends React.Component<Props, State> {
-  private cells = Array<Array<Cell>>();
-  private header = Array<string>();
-  private columns = Array<number>();
-  private rows = Array<number>();
   private model = new GridModel();
 
   constructor(props: Props) {
     super(props);
-    this.state = {
-      columnSizes: []
-    };
+    this.state = {};
 
     this.props.model.addSubscriber(this.onTableChanged);
     this.model.addSubscriber(this.onCellsRenderRangeChanged);
@@ -80,7 +73,7 @@ class Table extends React.Component<Props, State> {
     this.model.setCellSelectable(true);
   }
 
-  private onTableChanged = (eventMask) => {
+  private onTableChanged = (eventMask: number) => {
     let {model} = this.props;
     if (eventMask & TableModelEvent.DIMENSION) {
       let dim = model.getDimension();
@@ -93,51 +86,33 @@ class Table extends React.Component<Props, State> {
     }
 
     if (eventMask & (TableModelEvent.ROWS_SELECTED | TableModelEvent.COLUMNS_SELECTED)) {
-      this.rows = model.getRowsRange();
-      this.columns = model.getColumnsRange();
-      this.cells = model.getCells();
-      this.header = model.getColumns().map(col => col.label);
       this.forceUpdate(() => this.model.notifySubscribers());
     }
   };
 
-  private onCellsRenderRangeChanged = (eventMask) => {
+  private onCellsRenderRangeChanged = (eventMask: number) => {
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
-      this.selectCells(this.props);
+      this.props.model.selectCells(this.model.getColumnsRange(), this.model.getRowsRange());
     }
   };
 
   componentWillReceiveProps(newProps: Props) {
-    /*this.model.setColumns(this.makeColumnSizes(newProps));
-    this.model.setRows(newProps.model.getRowsNum());
-    this.onChanged(newProps);
-    this.forceUpdate(() => this.model.notifySubscribers());*/
-  }
-
-  private selectCells(props: Props) {
-    let cols = this.model.getColumnsRange();
-    let rows = this.model.getRowsRange();
-    if (rows[1] - rows[0] <= 0)
-      return;
-    props.model.selectColumns(cols[0], cols[1]);
-    props.model.selectRows(rows[0], rows[1]);
-  }
-
-  renderCell = (column, row) => {
-    if (inRange(column, this.columns) && inRange(row, this.rows)) {
-      let cell = this.cells[column - this.columns[0]][row - this.rows[0]].value + '';
-      return {
-        element: <div style={{padding: 3}}>{cell}</div> as any
-      };
+    if (this.props.model != newProps.model) {
+      this.props.model.removeSubscriber(this.onTableChanged);
+      newProps.model.addSubscriber(this.onTableChanged);
     }
+  }
 
+  renderCell = (column: number, row: number) => {
+    let cell = this.props.model.getCell(column, row).value;
     return {
-      element: '?'
+       element: <div style={{padding: 3}}>{cell}</div> as any
     };
   }
 
-  renderHeader = (column) => {
-    return {element: this.header[column - this.columns[0]]};
+  renderHeader = (column: number) => {
+    let value = this.props.model.getColumn(column);
+    return {element: value ? value.label : '?'};
   }
 
   renderGridControl() {

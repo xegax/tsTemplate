@@ -24,8 +24,14 @@ interface Dimension {
 }
 
 export abstract class TableModel extends Publisher {
-  private rangeColumns = Array<number>(2);
-  private rangeRows = Array<number>(2);
+  private columnsInBuffer = Array<number>(2);
+  private rowsInBuffer = Array<number>(2);
+
+  private selectColumns = Array<number>(2);
+  private selectRows = Array<number>(2);
+
+  private colsPerPage: number = 0;
+  private rowsPerPage: number = 0;
 
   private currColumns = Array<Column>();
   private currCells: Cells;
@@ -35,26 +41,48 @@ export abstract class TableModel extends Publisher {
     columns: 0
   };
 
-  selectColumns(from: number, to: number) {
-    const cols = this.rangeColumns;
-    if (cols.length == 2 && cols[0] == from && cols[1] == to)
+  selectCells(colsRange?: Array<number>, rowsRange?: Array<number>) {
+    colsRange = colsRange || this.selectColumns.slice();
+    rowsRange = rowsRange || this.selectRows.slice();
+    if (colsRange[1] - colsRange[0] <= 0 || rowsRange[1] - rowsRange[0] <= 0)
       return;
 
-    cols[0] = from;
-    cols[1] = to;
-    if (this.rangeRows[1] - this.rangeRows[0] > 0)
-      this.updateCells(cols, this.rangeRows);
-    this.updateColumns(cols);
+    if (this.selectColumns[0] != colsRange[0] || this.selectColumns[1] != colsRange[1]) {
+      this.selectColumns[0] = colsRange[0];
+      this.selectColumns[1] = colsRange[1];
+      
+      this.updateColumns(this.selectColumns);
+    }
+
+    let rowsPerPage = this.rowsPerPage;
+    if (this.selectRows[0] != rowsRange[0] || this.selectRows[1] != rowsRange[1]) {
+      this.selectRows[0] = rowsRange[0];
+      this.selectRows[1] = rowsRange[1];
+    }
+
+    this.colsPerPage = Math.max(this.colsPerPage, colsRange[1] - colsRange[0] + 1);
+    this.rowsPerPage = Math.max(this.rowsPerPage, rowsRange[1] - rowsRange[0] + 1);
+
+    let bufferCols = this.calcBufferRange(this.selectColumns, this.colsPerPage, this.dimension.columns);
+    let bufferRows = this.calcBufferRange(this.selectRows, this.rowsPerPage, this.dimension.rows);
+
+    let colsBufferEqual = bufferCols[0] == this.columnsInBuffer[0] && bufferCols[1] == this.columnsInBuffer[1];
+    let rowsBufferEqual = bufferRows[0] == this.rowsInBuffer[0] && bufferRows[1] == this.rowsInBuffer[1];
+
+    if (colsBufferEqual && rowsBufferEqual)
+      return;
+
+    this.rowsInBuffer = bufferRows;
+    this.columnsInBuffer = bufferCols;
+    this.updateCells(bufferCols, bufferRows);
   }
 
-  selectRows(from: number, to: number) {
-    const rows = this.rangeRows;
-    if (rows.length == 2 && rows[0] == from && rows[1] == to)
-      return;
-
-    rows[0] = from;
-    rows[1] = to;
-    this.updateCells(this.rangeColumns, rows);
+  private calcBufferRange(range: Array<number>, itemPerBuffer: number, itemCount: number): Array<number> {
+    range = range.slice();
+    range[0] = Math.floor(range[0] / itemPerBuffer) * itemPerBuffer;
+    range[1] = Math.ceil(range[1] / itemPerBuffer) * itemPerBuffer;
+    range[1] = Math.min(range[1], itemCount - 1);
+    return range;
   }
 
   getDimension(): Dimension {
@@ -70,11 +98,28 @@ export abstract class TableModel extends Publisher {
   }
 
   getColumnsRange(): Array<number> {
-    return this.rangeColumns.slice();
+    return this.selectColumns.slice();
   }
 
   getRowsRange(): Array<number> {
-    return this.rangeRows.slice();
+    return this.selectRows.slice();
+  }
+
+  getColumn(col: number): Column {
+    return this.currColumns[col - this.columnsInBuffer[0]];
+  }
+
+  getCell(col: number, row: number): Cell {
+    if (!this.currCells)
+      return {
+        value: '?'
+      };
+
+    row -= this.rowsInBuffer[0];
+    col -= this.columnsInBuffer[0];
+    return {
+      value: this.currCells[col][row].value
+    };
   }
 
   protected abstract updateCells(cols: Array<number>, rows: Array<number>);
