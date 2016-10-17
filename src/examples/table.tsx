@@ -5,7 +5,7 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {Cell, TableModel, JSONTableModel, TableModelEvent} from 'model/table-model';
+import {Cell, TableModel, JSONTableModel, JSONPartialTableModel, TableModelEvent} from 'model/table-model';
 
 interface Model {
   getColumnsRange(columns: Array<number>): Array<string>;
@@ -168,6 +168,8 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     if (this.state.data)
       return <Table model={new JSONTableModel(this.state.data)} />;
+    /*if (this.state.data)
+      return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;*/
     return null;
   }
 

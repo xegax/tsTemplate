@@ -30,8 +30,8 @@ export abstract class TableModel extends Publisher {
   private selectColumns = Array<number>(2);
   private selectRows = Array<number>(2);
 
-  private colsPerPage: number = 0;
-  private rowsPerPage: number = 0;
+  protected colsPerBuffer: number = 0;
+  protected rowsPerBuffer: number = 0;
 
   private currColumns = Array<Column>();
   private currCells: Cells;
@@ -54,17 +54,16 @@ export abstract class TableModel extends Publisher {
       this.updateColumns(this.selectColumns);
     }
 
-    let rowsPerPage = this.rowsPerPage;
     if (this.selectRows[0] != rowsRange[0] || this.selectRows[1] != rowsRange[1]) {
       this.selectRows[0] = rowsRange[0];
       this.selectRows[1] = rowsRange[1];
     }
 
-    this.colsPerPage = Math.max(this.colsPerPage, colsRange[1] - colsRange[0] + 1);
-    this.rowsPerPage = Math.max(this.rowsPerPage, rowsRange[1] - rowsRange[0] + 1);
+    this.colsPerBuffer = Math.max(this.colsPerBuffer, colsRange[1] - colsRange[0] + 1);
+    this.rowsPerBuffer = Math.max(this.rowsPerBuffer, rowsRange[1] - rowsRange[0] + 1);
 
-    let bufferCols = this.calcBufferRange(this.selectColumns, this.colsPerPage, this.dimension.columns);
-    let bufferRows = this.calcBufferRange(this.selectRows, this.rowsPerPage, this.dimension.rows);
+    let bufferCols = this.calcBufferRange(this.selectColumns, this.colsPerBuffer, this.dimension.columns);
+    let bufferRows = this.calcBufferRange(this.selectRows, this.rowsPerBuffer, this.dimension.rows);
 
     let colsBufferEqual = bufferCols[0] == this.columnsInBuffer[0] && bufferCols[1] == this.columnsInBuffer[1];
     let rowsBufferEqual = bufferRows[0] == this.rowsInBuffer[0] && bufferRows[1] == this.rowsInBuffer[1];
@@ -80,7 +79,7 @@ export abstract class TableModel extends Publisher {
   private calcBufferRange(range: Array<number>, itemPerBuffer: number, itemCount: number): Array<number> {
     range = range.slice();
     range[0] = Math.floor(range[0] / itemPerBuffer) * itemPerBuffer;
-    range[1] = Math.ceil(range[1] / itemPerBuffer) * itemPerBuffer;
+    range[1] = Math.floor(range[1] / itemPerBuffer) * itemPerBuffer + itemPerBuffer - 1;
     range[1] = Math.min(range[1], itemCount - 1);
     return range;
   }
@@ -110,13 +109,14 @@ export abstract class TableModel extends Publisher {
   }
 
   getCell(col: number, row: number): Cell {
-    if (!this.currCells)
+    row -= this.rowsInBuffer[0];
+    col -= this.columnsInBuffer[0];
+
+    if (!this.currCells || col >= this.currCells.length || row >= this.currCells[col].length)
       return {
         value: '?'
       };
 
-    row -= this.rowsInBuffer[0];
-    col -= this.columnsInBuffer[0];
     return {
       value: this.currCells[col][row].value
     };
@@ -180,5 +180,95 @@ export class JSONTableModel extends TableModel {
       }
     }
     this.setCells(cells);
+  }
+}
+
+interface HeaderFileJSON {
+  rows: number;
+  columns: Array<string>;
+  rowsPerPart: number;
+  fileName: string;
+}
+
+export class JSONPartialTableModel extends TableModel {
+  private columnNames = Array<string>();
+  private columns = Array<Column>();
+  private header: HeaderFileJSON;
+  private headerPath = '';
+
+  constructor(headerFile: string) {
+    super();
+
+    let splitPos = headerFile.lastIndexOf('/');
+    if (splitPos != -1)
+      this.headerPath = headerFile.substr(0, splitPos + 1);
+    
+    d3.json(headerFile, (err, data) => {
+      let header = this.header = data as HeaderFileJSON;
+      this.rowsPerBuffer = header.rowsPerPart;
+      this.columns = header.columns.map((label, id) => ({ id, label}));
+      this.setDimension(header.columns.length, header.rows);
+      console.log(this.getFilePartUrl(0));
+    });
+  }
+
+  protected updateColumns(range: Array<number>) {
+    this.setColumns(this.columns.slice(range[0], range[1] + 1));
+  }
+
+  getFilePartUrl(n: number) {
+    return this.headerPath + this.header.fileName.replace('%d', '' + n);
+  }
+
+  getPartsFromRows(rows: Array<number>): Array<number> {
+    let rowsPerBuffer = this.rowsPerBuffer;
+    let rowNum = rows[1] - rows[0] + 1;
+    let partsRange = [
+      Math.floor(rows[0] / rowsPerBuffer),
+      Math.floor((rows[0] + rowNum / 2) / rowsPerBuffer)
+    ];
+    return partsRange;
+  }
+
+  private buffs = Array<{partIdx: number, cells: Cells}>();
+  protected updateCells(columns: Array<number>, rows: Array<number>) {
+    let parts = this.getPartsFromRows(rows);
+    console.log(parts, rows);
+    if (parts[1] - parts[0] == 0) {
+      d3.json(this.getFilePartUrl(parts[0]), (err, data) => {
+        const names = this.columnNames;
+        let cells = Array<Array<Cell>>(columns[1] - columns[0] + 1);
+        for (let c = 0; c < cells.length; c++) {
+          let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
+          for (let r = 0; r < rowArr.length; r++) {
+            try {
+              rowArr[r] = {
+                value: '' + data[r + rows[0]][c + columns[0]]
+              };
+            } catch (e) {
+              console.log(e);
+            }
+          }
+        }
+        this.setCells(cells);
+      });
+    }
+    /*const data = this.json;
+    const names = this.columnNames;
+
+    let cells = Array<Array<Cell>>(columns[1] - columns[0] + 1);
+    for (let c = 0; c < cells.length; c++) {
+      let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
+      for (let r = 0; r < rowArr.length; r++) {
+        try {
+          rowArr[r] = {
+            value: '' + data[r + rows[0]][names[c + columns[0]]]
+          };
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }
+    this.setCells(cells);*/
   }
 }
