@@ -5,53 +5,7 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {Cell, TableModel, JSONTableModel, JSONPartialTableModel, TableModelEvent} from 'model/table-model';
-
-interface Model {
-  getColumnsRange(columns: Array<number>): Array<string>;
-  getCellsRange(columns: Array<number>, rows: Array<number>): Array<Array<string>>;
-  getColumnsNum(): number;
-  getColumnSizes(): Array<number>;
-  getRowsNum(): number;
-}
-
-function inRange(value, range: Array<number>) {
-  return value >= range[0] && value <= range[1];
-}
-
-function makeJSONArrayModel(data: Array<{[key: string]: string}>, colNames?: Array<string>): Model {
-  if (!colNames)
-    colNames = Object.keys(data[0]);
-
-  let columnSizes = colNames.map(name => {
-    if (['type', 'images'].indexOf(name) != -1)
-      return 50;
-    return 0.5;
-  });
-
-  let model: Model = {
-    getColumnsRange: (range: Array<number>) => colNames.slice(range[0], range[1] + 1),
-    getCellsRange: (columns: Array<number>, rows: Array<number>) => {
-      let cells = Array<Array<string>>(columns[1] - columns[0] + 1);
-      for (let c = 0; c < cells.length; c++) {
-        let rowArr = cells[c] = Array<string>(rows[1] - rows[0] + 1);
-        for (let r = 0; r < rowArr.length; r++) {
-          try {
-            rowArr[r] = '' + data[r + rows[0]][colNames[c + columns[0]]];
-          } catch (e) {
-            console.log(e);
-          }
-        }
-      }
-      return cells;
-    },
-    getColumnsNum: () => colNames.length,
-    getRowsNum: () => data.length,
-    getColumnSizes: () => columnSizes
-  };
-
-  return model;
-}
+import {TableModel, JSONPartialTableModel, TableModelEvent} from 'model/table-model';
 
 interface Props {
   model: TableModel;

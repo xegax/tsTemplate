@@ -50,7 +50,6 @@ export abstract class TableModel extends Publisher {
     if (this.selectColumns[0] != colsRange[0] || this.selectColumns[1] != colsRange[1]) {
       this.selectColumns[0] = colsRange[0];
       this.selectColumns[1] = colsRange[1];
-      
       this.updateColumns(this.selectColumns);
     }
 
@@ -191,7 +190,6 @@ interface HeaderFileJSON {
 }
 
 export class JSONPartialTableModel extends TableModel {
-  private columnNames = Array<string>();
   private columns = Array<Column>();
   private header: HeaderFileJSON;
   private headerPath = '';
@@ -203,7 +201,7 @@ export class JSONPartialTableModel extends TableModel {
     let splitPos = headerFile.lastIndexOf('/');
     if (splitPos != -1)
       this.headerPath = headerFile.substr(0, splitPos + 1);
-    
+
     d3.json(headerFile, (err, data) => {
       let header = this.header = data as HeaderFileJSON;
       this.rowsPerBuffer = header.rowsPerPart;
@@ -250,7 +248,7 @@ export class JSONPartialTableModel extends TableModel {
   getCell(col: number, row: number): Cell {
     col -= this.columnsInBuffer[0];
     const buff = Math.floor(row / this.rowsPerBuffer);
-    
+
     if (!this.hasBuffer(buff))
       return {
         value: '?'
@@ -265,7 +263,7 @@ export class JSONPartialTableModel extends TableModel {
     buffIndexes.forEach(idx => {
       if (this.hasBuffer(idx))
         return this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
-      
+
       // loading is started
       if (this.buffs[idx] && this.buffs[idx].cells == null)
         return;
