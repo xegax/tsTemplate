@@ -1,7 +1,7 @@
 {
   "rows": 3159,
   "rowsPerPart": 300,
-  "fileName": "part-%d.json",
+  "fileName": "parts/part-%d.json",
   "columns": [
     "title",
     "file",

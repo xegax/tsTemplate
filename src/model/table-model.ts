@@ -24,8 +24,8 @@ interface Dimension {
 }
 
 export abstract class TableModel extends Publisher {
-  private columnsInBuffer = Array<number>(2);
-  private rowsInBuffer = Array<number>(2);
+  protected columnsInBuffer = Array<number>(2);
+  protected rowsInBuffer = Array<number>(2);
 
   private selectColumns = Array<number>(2);
   private selectRows = Array<number>(2);
@@ -36,7 +36,7 @@ export abstract class TableModel extends Publisher {
   private currColumns = Array<Column>();
   private currCells: Cells;
 
-  private dimension: Dimension = {
+  protected dimension: Dimension = {
     rows: 0,
     columns: 0
   };
@@ -195,6 +195,7 @@ export class JSONPartialTableModel extends TableModel {
   private columns = Array<Column>();
   private header: HeaderFileJSON;
   private headerPath = '';
+  private buffs = Array<{cells: Cells}>();
 
   constructor(headerFile: string) {
     super();
@@ -208,7 +209,6 @@ export class JSONPartialTableModel extends TableModel {
       this.rowsPerBuffer = header.rowsPerPart;
       this.columns = header.columns.map((label, id) => ({ id, label}));
       this.setDimension(header.columns.length, header.rows);
-      console.log(this.getFilePartUrl(0));
     });
   }
 
@@ -220,55 +220,82 @@ export class JSONPartialTableModel extends TableModel {
     return this.headerPath + this.header.fileName.replace('%d', '' + n);
   }
 
-  getPartsFromRows(rows: Array<number>): Array<number> {
-    let rowsPerBuffer = this.rowsPerBuffer;
-    let rowNum = rows[1] - rows[0] + 1;
-    let partsRange = [
-      Math.floor(rows[0] / rowsPerBuffer),
-      Math.floor((rows[0] + rowNum / 2) / rowsPerBuffer)
+  getBuffersFromRows(rows: Array<number>): Array<number> {
+    return [
+      Math.floor(rows[0] / this.rowsPerBuffer),
+      Math.floor(rows[1] / this.rowsPerBuffer)
     ];
-    return partsRange;
   }
 
-  private buffs = Array<{partIdx: number, cells: Cells}>();
-  protected updateCells(columns: Array<number>, rows: Array<number>) {
-    let parts = this.getPartsFromRows(rows);
-    console.log(parts, rows);
-    if (parts[1] - parts[0] == 0) {
-      d3.json(this.getFilePartUrl(parts[0]), (err, data) => {
-        const names = this.columnNames;
-        let cells = Array<Array<Cell>>(columns[1] - columns[0] + 1);
+  // buffer ready to work
+  hasBuffer(idx: number) {
+    return this.buffs[idx] != null && this.buffs[idx].cells != null;
+  }
+
+  protected getBuffer(idx: number): Cells {
+    return this.buffs[idx].cells;
+  }
+
+  protected setBuffer(idx: number, cells: Cells) {
+    this.buffs[idx] = {cells};
+  }
+
+  protected getBufferRowsRange(idx: number): Array<number> {
+    return [
+      idx * this.rowsPerBuffer,
+      Math.min(idx * this.rowsPerBuffer + this.rowsPerBuffer - 1, this.dimension.rows - 1)
+    ];
+  }
+
+  getCell(col: number, row: number): Cell {
+    col -= this.columnsInBuffer[0];
+    const buff = Math.floor(row / this.rowsPerBuffer);
+    
+    if (!this.hasBuffer(buff))
+      return {
+        value: '?'
+      };
+
+    return {
+      value: this.getBuffer(buff)[col][row - buff * this.rowsPerBuffer].value
+    };
+  }
+
+  protected loadBuffers(buffIndexes: Array<number>) {
+    buffIndexes.forEach(idx => {
+      if (this.hasBuffer(idx))
+        return this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
+      
+      // loading is started
+      if (this.buffs[idx] && this.buffs[idx].cells == null)
+        return;
+
+      this.setBuffer(idx, null);
+      d3.json(this.getFilePartUrl(idx), (err, data: Array<Array<any>>) => {
+        const columns = data[0].length;
+        const rows = this.getBufferRowsRange(idx);
+        let cells = Array<Array<Cell>>(columns);
         for (let c = 0; c < cells.length; c++) {
           let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
           for (let r = 0; r < rowArr.length; r++) {
             try {
               rowArr[r] = {
-                value: '' + data[r + rows[0]][c + columns[0]]
+                value: '' + data[r][c]
               };
             } catch (e) {
               console.log(e);
             }
           }
         }
-        this.setCells(cells);
+        this.setBuffer(idx, cells);
+        this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
       });
-    }
-    /*const data = this.json;
-    const names = this.columnNames;
+    });
+  }
 
-    let cells = Array<Array<Cell>>(columns[1] - columns[0] + 1);
-    for (let c = 0; c < cells.length; c++) {
-      let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
-      for (let r = 0; r < rowArr.length; r++) {
-        try {
-          rowArr[r] = {
-            value: '' + data[r + rows[0]][names[c + columns[0]]]
-          };
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    }
-    this.setCells(cells);*/
+  protected updateCells(columns: Array<number>, rows: Array<number>) {
+    let buffs = this.getBuffersFromRows(rows);
+    this.loadBuffers(buffs);
+    console.log(buffs, rows);
   }
 }

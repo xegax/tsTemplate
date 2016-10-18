@@ -166,10 +166,10 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   }
 
   renderTable() {
-    if (this.state.data)
-      return <Table model={new JSONTableModel(this.state.data)} />;
     /*if (this.state.data)
-      return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;*/
+      return <Table model={new JSONTableModel(this.state.data)} />;*/
+    if (this.state.data)
+      return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;
     return null;
   }
 
