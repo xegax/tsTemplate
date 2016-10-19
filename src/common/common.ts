@@ -5,3 +5,18 @@ export function className(...args: Array<string | boolean>): string {
 export function clamp(value: number, minMax: Array<number>) {
   return Math.min(Math.max(value, minMax[0]), minMax[1]);
 }
+
+export function parsePath(path: string): {path: string, name: string} {
+  let splitPos = path.lastIndexOf('/');
+  if (splitPos != -1) {
+    return {
+      path: path.substr(0, splitPos + 1),
+      name: path.substr(splitPos + 1)
+    };
+  }
+  
+  return {
+    path: '',
+    name: path
+  };
+}

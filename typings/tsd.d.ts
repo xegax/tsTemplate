@@ -5,3 +5,4 @@
 /// <reference path="d3/d3.d.ts" />
 /// <reference path="lodash/lodash.d.ts" />
 /// <reference path="requirejs/require.d.ts" />
+/// <reference path="promise/promise.d.ts" />

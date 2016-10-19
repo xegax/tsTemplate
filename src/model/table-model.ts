@@ -1,5 +1,7 @@
 import {Publisher} from 'common/publisher';
+import {parsePath} from 'common/common';
 import {assign} from 'lodash';
+import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 
 export interface Column {
   id: number;
@@ -194,15 +196,16 @@ export class JSONPartialTableModel extends TableModel {
   private header: HeaderFileJSON;
   private headerPath = '';
   private buffs = Array<{cells: Cells}>();
+  private requestor: Requestor;
 
-  constructor(headerFile: string) {
+  constructor(headerFile: string, requestor?: Requestor) {
     super();
+    this.requestor = requestor || getGlobalRequestor();
 
-    let splitPos = headerFile.lastIndexOf('/');
-    if (splitPos != -1)
-      this.headerPath = headerFile.substr(0, splitPos + 1);
+    let {path} = parsePath(headerFile);
+    this.headerPath = path;
 
-    d3.json(headerFile, (err, data) => {
+    this.requestor.getJSON(headerFile).then((data) => {
       let header = this.header = data as HeaderFileJSON;
       this.rowsPerBuffer = header.rowsPerPart;
       this.columns = header.columns.map((label, id) => ({ id, label}));
@@ -214,11 +217,11 @@ export class JSONPartialTableModel extends TableModel {
     this.setColumns(this.columns.slice(range[0], range[1] + 1));
   }
 
-  getFilePartUrl(n: number) {
+  private getFilePartUrl(n: number): string {
     return this.headerPath + this.header.fileName.replace('%d', '' + n);
   }
 
-  getBuffersFromRows(rows: Array<number>): Array<number> {
+  private getBuffersFromRows(rows: Array<number>): Array<number> {
     return [
       Math.floor(rows[0] / this.rowsPerBuffer),
       Math.floor(rows[1] / this.rowsPerBuffer)
@@ -226,7 +229,7 @@ export class JSONPartialTableModel extends TableModel {
   }
 
   // buffer ready to work
-  hasBuffer(idx: number) {
+  private hasBuffer(idx: number) {
     return this.buffs[idx] != null && this.buffs[idx].cells != null;
   }
 
@@ -269,7 +272,7 @@ export class JSONPartialTableModel extends TableModel {
         return;
 
       this.setBuffer(idx, null);
-      d3.json(this.getFilePartUrl(idx), (err, data: Array<Array<any>>) => {
+      this.requestor.getJSON(this.getFilePartUrl(idx)).then((data: Array<Array<any>>) => {
         const columns = data[0].length;
         const rows = this.getBufferRowsRange(idx);
         let cells = Array<Array<Cell>>(columns);
