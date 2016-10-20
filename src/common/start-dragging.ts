@@ -1,11 +1,4 @@
-export function isLeftDown(event: MouseEvent) {
-  var evt: any = event;
-
-  if (evt.button !== undefined)
-    return evt.button === 0;
-
-  return evt.buttons === 1;
-}
+import {isLeftDown} from 'common/event-helpers';
 
 interface Params {
   x: number;
