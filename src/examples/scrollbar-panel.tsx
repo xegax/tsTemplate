@@ -1,6 +1,6 @@
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
-import {ScrollbarPanel} from 'controls/scrollbar-panel';
+import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 import {MapRender} from 'controls/map/map-render';

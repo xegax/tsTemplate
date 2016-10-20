@@ -201,9 +201,7 @@ export class JSONPartialTableModel extends TableModel {
   constructor(headerFile: string, requestor?: Requestor) {
     super();
     this.requestor = requestor || getGlobalRequestor();
-
-    let {path} = parsePath(headerFile);
-    this.headerPath = path;
+    this.headerPath = parsePath(headerFile).path;
 
     this.requestor.getJSON(headerFile).then((data) => {
       let header = this.header = data as HeaderFileJSON;

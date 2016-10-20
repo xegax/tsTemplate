@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {GridRender, Cell} from 'controls/grid/grid-render';
-import {ScrollbarPanel} from 'controls/scrollbar-panel';
+import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {assign} from 'lodash';

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {MapRender, Props as MapRenderProps, Cell} from 'controls/map/map-render';
-import {ScrollbarPanel} from 'controls/scrollbar-panel';
+import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {KeyCode} from 'common/keycode';
 import {startDragging} from 'common/start-dragging';
 import {assign} from 'lodash';

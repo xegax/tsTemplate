@@ -1,6 +1,6 @@
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
-import {VerticalScrollbar, HorizontalScrollbar} from 'controls/scrollbar';
+import {VerticalScrollbar, HorizontalScrollbar} from 'controls/scrollbar/scrollbar';
 import {createContainer} from 'examples-main/helpers';
 import {FitToParent} from 'common/fittoparent';
 
