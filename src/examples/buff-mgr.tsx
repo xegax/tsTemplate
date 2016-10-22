@@ -1,4 +1,5 @@
-import {assign} from 'lodash'; 
+import {assign} from 'lodash';
+import {getContainer} from 'examples-main/helpers';
  
 interface BufferSource {
   load(): Promise.IThenable<BufferSource>;
@@ -14,7 +15,6 @@ class VideoSource {
   }
 
   load() {
-    this.el.setAttribute('src', this.url);
     return new Promise((resolve, reject) => {
       this.el.addEventListener('canplay', () => {
         resolve(this);
@@ -22,11 +22,16 @@ class VideoSource {
       this.el.addEventListener('error', (event) => {
         reject(event);
       });
+      this.el.setAttribute('src', this.url);
     });
   }
 
   getElement(): HTMLVideoElement {
     return this.el;
+  }
+
+  getUrl() {
+    return this.url;
   }
 }
 
@@ -62,40 +67,56 @@ class Mgr {
     this.loadCallback = callback;
   }
 
-  private findBuffer(buff: BufferSource): number {
-    for (let n = 0; n < this.buff.length; n++) {
-      if (this.buff[n].buff == buff)
+  private findBuffer(buff: BufferSource, arr: Array<BuffHolder>): number {
+    for (let n = 0; n < arr.length; n++) {
+      if (arr[n].buff == buff)
         return n;
     }
     return -1;
   }
 
-  private removeBuffer(buff: BufferSource) {
-    let i = this.findBuffer(buff);
-    if (i == -1) {
-      console.log('something wrong', buff);
-    } else {
-      this.loaded.push(this.buff.splice(i, 1)[0]);
-      this.loaded.sort((a, b) => a.idx - b.idx);
-      if (this.loaded[this.loadIdx].idx == this.loadIdx) {
-        console.log('playing', this.loadIdx);
-        this.loadIdx++;
+  removeBuffer(buff: BufferSource) {
+    [this.buff, this.loaded].forEach(arr => {
+      let i = this.findBuffer(buff, arr);
+      if (i == -1) {
+        console.log('something wrong', buff);
+      } else {
+        arr.splice(i, 1);
       }
-    }
+    });
+    this.nextLoaded();
     this.load();
+  }
+
+  private nextLoaded() {
+    if (this.loaded.length == 0)
+      return;
+
+    let idx = this.loaded[0].idx;
+    let buff = this.loaded[0].buff;
+    if (this.loadIdx != idx)
+      return;
+    
+    console.log('loading', this.buff.length, 'loaded', this.loaded.length);
+    this.loadCallback(buff);
+    this.loadIdx++;
+  }
+
+  private onLoadedImpl(idx: number, buff: BufferSource) {
+    this.loaded.push({idx, buff});
+    this.loaded.sort((a, b) => a.idx - b.idx);
+    this.nextLoaded();
   }
 
   private addToLoad(idx: number, buff: BufferSource) {
     this.buff.push({idx, buff});
     buff.load().then(() => {
-      this.removeBuffer(buff);
-      //console.log('loaded', idx);
+      this.onLoadedImpl(idx, buff);
     }).catch(() => {
-      console.log('fail', idx);
-      let i = this.findBuffer(buff);
+      let i = this.findBuffer(buff, this.buff);
       if (i != -1) {
         this.buff.splice(i, 1);
-        this.load();
+        this.pause = true;
       }
     });
   }
@@ -119,10 +140,6 @@ class Mgr {
     this.pause = false;
     this.load();
   }
-
-  getLoaded() {
-    return this.loaded;
-  }
 }
 
 function numToStr(n: number, digs = 3) {
@@ -132,11 +149,28 @@ function numToStr(n: number, digs = 3) {
   return v;
 }
 
-let mgr = new Mgr();  // 5 параллельных потоков 
+// обеспечивает упорядоченную паралелльную загрузку
+// onNextSource = [file1, file2, file3, ...]
+// onLoaded = [file1, file2, file3, ...]
+let mgr = new Mgr({buffNum: 5});  // 5 параллельных потоков 
 mgr.onNextSource((n: number) => {
-  if (n < 42)
-    return new VideoSource('../data/file' + numToStr(n) + '.mp4');
-  // console.log(mgr.getLoaded());
-  return null;
+  return new VideoSource('../data/video/out' + numToStr(n) + '.mp4');
 });
+
+let cont = getContainer();
+
+mgr.onLoaded((buff: VideoSource) => {
+  let vid = buff.getElement();
+  vid.addEventListener('ended', () => {
+    mgr.removeBuffer(buff);
+  });
+  vid.play();
+  vid.addEventListener('play', () => {
+    if (cont.firstChild)
+      cont.removeChild(cont.firstChild);
+    cont.appendChild(vid);
+    console.log('play');
+  });
+});
+
 mgr.start();
