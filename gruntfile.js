@@ -3,6 +3,18 @@ module.exports = function(grunt) {
     config.ts = {
       default: {
         tsconfig: true
+      },
+      tests: {
+        options: {
+          target: 'es3',
+          module: 'amd',
+          sourceMap: true,
+          removeComments: false,
+          jsx: 'react',
+          moduleResolution: 'classic',
+          experimentalDecorators: true
+        },
+        src: ['typings/tsd.d.ts', 'src/tests/**/*-spec.ts', 'src/tests/**/*-spec.tsx']
       }
     };
   }
@@ -113,7 +125,8 @@ module.exports = function(grunt) {
   grunt.initConfig(config); 
   require('load-grunt-tasks')(grunt);
   
-  grunt.registerTask('default', ['clean', 'make-examples-list', 'ts', 'sass']);
+  grunt.registerTask('default', ['clean', 'make-examples-list', 'ts:default', 'sass']);
   grunt.registerTask('dev', ['default']);
+  grunt.registerTask('tests', ['clean', 'ts:tests', 'sass', 'karma']);
   grunt.registerTask('debug', ['default', 'watch']);
 }
