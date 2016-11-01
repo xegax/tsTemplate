@@ -90,6 +90,14 @@ module.exports = function(grunt) {
     };
   }
   
+  function karmaConfig(config) {
+    config.karma = {
+      unit: {
+        configFile: 'karma.conf.js'
+      }
+    };
+  }
+  
   var config = {
     pkg: grunt.file.readJSON('package.json')
   };
@@ -100,6 +108,7 @@ module.exports = function(grunt) {
   sassConfig(config);
   cleanConfig(config);
   tslintConfig(config);
+  karmaConfig(config);
   
   grunt.initConfig(config); 
   require('load-grunt-tasks')(grunt);
