@@ -20,3 +20,9 @@ export function parsePath(path: string): {path: string, name: string} {
     name: path
   };
 }
+
+export const enum Align {
+  Left,
+  Middle,
+  Right
+}

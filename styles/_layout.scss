@@ -1,0 +1,34 @@
+.row-group {
+  white-space: nowrap;
+
+  &__left {
+    text-align: left;
+  }
+
+  &__right {
+    text-align: right;
+  }
+
+  &__middle {
+    text-align: center;
+  }
+
+  &__item-wrapper {
+    display: inline-block;
+  }
+
+  &__grow {
+    flex-grow: 1;
+  }
+}
+
+.column-group {
+  display: flex;
+  flex-direction: column;
+  &__item-wrapper {
+  }
+
+  &__grow {
+    flex-grow: 1;
+  }
+}

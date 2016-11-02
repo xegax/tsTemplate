@@ -129,7 +129,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
   render() {
     return (
-      <div className={'fit-to-parent'} style={{display: 'flex', flexDirection: 'column'}}>
+      <div style={{display: 'flex', flexGrow: 1, flexDirection: 'column'}}>
         <div style={{padding: 4}}>
           {this.renderDataList()}
         </div>
