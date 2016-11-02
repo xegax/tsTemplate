@@ -8,25 +8,16 @@ interface Folder {
 }
 
 let cont = document.createElement('div');
-cont.style.display = 'flex';
-cont.style.flexDirection = 'column';
-cont.style.position = 'absolute';
-cont.style.top = '0px';
-cont.style.left = '0px';
-cont.style.bottom = '0px';
-cont.style.right = '0px';
+cont.className = 'examples';
 
 let header = document.createElement('div');
-header.style.flexGrow = '0';
-header.style.padding = '8px';
-header.style.fontSize = '18px';
-header.style.backgroundColor = '#f0f0f0';
+header.className = 'examples__header';
 
 cont.appendChild(header);
 document.body.appendChild(cont);
 
 let container = document.createElement('div');
-container.style.flexGrow = '1';
+container.className = 'examples__container';
 container.id = 'container';
 cont.appendChild(container);
 
@@ -78,11 +69,11 @@ function renderFolders(parent: HTMLElement, folders: Folder[], sel: number[]) {
     });
   });
 
-  ReactDOM.render(<div style={{display: 'flex', flexDirection: 'row'}}>
-    <span style={{color: 'gray'}}>
+  ReactDOM.render(<div className={'examples__selector'}>
+    <span className={'examples__selector-title'}>
       Selected example:
     </span>
-    <select defaultValue={sel.join('-')} style={{flexGrow: 1}} onChange={onSelectExample}>
+    <select defaultValue={sel.join('-')} onChange={onSelectExample}>
       {options}
     </select>
   </div>, parent);
