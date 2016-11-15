@@ -11,7 +11,7 @@ export interface Column {
 export const enum TableModelEvent {
   COLUMNS_SELECTED = 1 << 0,
   ROWS_SELECTED = 1 << 1,
-  DIMENSION = 1 << 2
+  TOTAL = 1 << 2
 }
 
 export interface Cell {
@@ -20,73 +20,117 @@ export interface Cell {
 
 type Cells = Array<Array<Cell>>;
 
-interface Dimension {
+interface Total {
   rows: number;
   columns: number;
 }
 
-export abstract class TableModel extends Publisher {
-  protected columnsInBuffer = Array<number>(2);
-  protected rowsInBuffer = Array<number>(2);
+interface DataRange {
+  cols?: Array<number>;
+  rows?: Array<number>;
+}
 
-  private selectColumns = Array<number>(2);
-  private selectRows = Array<number>(2);
+export interface TableModel {
+  // load data
+  loadData(range: DataRange);
 
-  protected colsPerBuffer: number = 0;
-  protected rowsPerBuffer: number = 0;
+  // return total rows number and total columns number
+  getTotal(): Total;
+
+  // get loaded columns
+  getColumns(): Array<Column>;
+
+  // get range of requested columns
+  getColumnsRange(): Array<number>;
+  
+  // get range of requested rows
+  getRowsRange(): Array<number>;
+
+  getCell(col: number, row: number): Cell;
+  getColumn(col: number): Column;
+
+  addSubscriber(callback: (mask: number) => void);
+  removeSubscriber(callback: (mask: number) => void);
+}
+
+interface Dimension {
+  // item indexes, but aligned to itemsPerBuffer
+  buffer: Array<number>;
+
+  itemsPerBuffer: number;
+
+  // requested range
+  range: Array<number>;
+
+  // total possible items
+  total: number;
+}
+
+abstract class TableModelImpl extends Publisher {
+  protected columns: Dimension = {
+    itemsPerBuffer: 0,
+    buffer: Array<number>(2),
+    range: Array<number>(2),
+    total: 0
+  };
+
+  protected rows: Dimension = {
+    itemsPerBuffer: 0,
+    buffer: Array<number>(2),
+    range: Array<number>(2),
+    total: 0
+  };
+
+  private buffer = Array<Array<Cells>>();  // [column][row]
 
   private currColumns = Array<Column>();
   private currCells: Cells;
 
-  protected dimension: Dimension = {
-    rows: 0,
-    columns: 0
-  };
-
-  selectCells(colsRange?: Array<number>, rowsRange?: Array<number>) {
-    colsRange = colsRange || this.selectColumns.slice();
-    rowsRange = rowsRange || this.selectRows.slice();
-    if (colsRange[1] - colsRange[0] <= 0 || rowsRange[1] - rowsRange[0] <= 0)
+  loadData(_range: DataRange) {
+    const range: DataRange = {
+      cols: _range.cols || this.columns.range.slice(),
+      rows: _range.rows || this.rows.range.slice()
+    };
+    
+    if (range.cols[1] - range.cols[0] <= 0 || range.rows[1] - range.rows[0] <= 0)
       return;
 
-    if (this.selectColumns[0] != colsRange[0] || this.selectColumns[1] != colsRange[1]) {
-      this.selectColumns[0] = colsRange[0];
-      this.selectColumns[1] = colsRange[1];
-      this.updateColumns(this.selectColumns);
-    }
-
-    if (this.selectRows[0] != rowsRange[0] || this.selectRows[1] != rowsRange[1]) {
-      this.selectRows[0] = rowsRange[0];
-      this.selectRows[1] = rowsRange[1];
-    }
-
-    this.colsPerBuffer = Math.max(this.colsPerBuffer, colsRange[1] - colsRange[0] + 1);
-    this.rowsPerBuffer = Math.max(this.rowsPerBuffer, rowsRange[1] - rowsRange[0] + 1);
-
-    let bufferCols = this.calcBufferRange(this.selectColumns, this.colsPerBuffer, this.dimension.columns);
-    let bufferRows = this.calcBufferRange(this.selectRows, this.rowsPerBuffer, this.dimension.rows);
-
-    let colsBufferEqual = bufferCols[0] == this.columnsInBuffer[0] && bufferCols[1] == this.columnsInBuffer[1];
-    let rowsBufferEqual = bufferRows[0] == this.rowsInBuffer[0] && bufferRows[1] == this.rowsInBuffer[1];
-
-    if (colsBufferEqual && rowsBufferEqual)
-      return;
-
-    this.rowsInBuffer = bufferRows;
-    this.columnsInBuffer = bufferCols;
-    this.updateCells(bufferCols, bufferRows);
+    const colsChanged = this.updateDimension(this.columns, range.cols);
+    const rowsChanged = this.updateDimension(this.rows, range.rows);
+    
+    if (colsChanged || rowsChanged)
+      this.updateCells(this.columns.buffer, this.rows.buffer);
   }
 
-  private calcBufferRange(range: Array<number>, itemPerBuffer: number, itemCount: number): Array<number> {
-    range = range.slice();
-    range[0] = Math.floor(range[0] / itemPerBuffer) * itemPerBuffer;
-    range[1] = Math.floor(range[1] / itemPerBuffer) * itemPerBuffer + itemPerBuffer - 1;
-    range[1] = Math.min(range[1], itemCount - 1);
-    return range;
+  protected updateDimension(dim: Dimension, range: Array<number>): boolean {
+    if (dim.range[0] != range[0] || dim.range[1] != range[1]) {
+      dim.range[0] = range[0];
+      dim.range[1] = range[1];
+    }
+
+    let itemsPerBuffer = Math.max(dim.itemsPerBuffer, range[1] - range[0] + 1);
+    if (itemsPerBuffer != dim.itemsPerBuffer) {
+      dim.itemsPerBuffer = itemsPerBuffer;
+      this.buffer.splice(0, this.buffer.length);
+    }
+
+    let buffer = dim.range.slice();
+    buffer[0] = Math.floor(buffer[0] / dim.itemsPerBuffer) * dim.itemsPerBuffer;
+    buffer[1] = Math.floor(buffer[1] / dim.itemsPerBuffer) * dim.itemsPerBuffer + dim.itemsPerBuffer - 1;
+    buffer[1] = Math.min(buffer[1], dim.total - 1);
+
+    if (buffer[0] == dim.buffer[0] && buffer[1] == dim.buffer[1])
+      return false;
+
+    dim.buffer = buffer;
+    return true;
   }
 
-  getDimension(): Dimension {
-    return assign({}, this.dimension);
+  getTotal(): Total {
+    return {
+      columns: this.columns.total,
+      rows: this.rows.total
+    };
   }
 
   getCells(): Cells {
@@ -98,20 +142,20 @@ export abstract class TableModel extends Publisher {
   }
 
   getColumnsRange(): Array<number> {
-    return this.selectColumns.slice();
+    return this.columns.range.slice();
   }
 
   getRowsRange(): Array<number> {
-    return this.selectRows.slice();
+    return this.rows.range.slice();
   }
 
   getColumn(col: number): Column {
-    return this.currColumns[col - this.columnsInBuffer[0]];
+    return this.currColumns[col - this.columns.buffer[0]];
   }
 
   getCell(col: number, row: number): Cell {
-    row -= this.rowsInBuffer[0];
-    col -= this.columnsInBuffer[0];
+    row -= this.rows.buffer[0];
+    col -= this.columns.buffer[0];
 
     if (!this.currCells || col >= this.currCells.length || row >= this.currCells[col].length)
       return {
@@ -124,7 +168,6 @@ export abstract class TableModel extends Publisher {
   }
 
   protected abstract updateCells(cols: Array<number>, rows: Array<number>);
-  protected abstract updateColumns(range: Array<number>);
 
   protected setCells(cells: Cells) {
     this.currCells = cells;
@@ -136,31 +179,23 @@ export abstract class TableModel extends Publisher {
     this.updateVersion(TableModelEvent.COLUMNS_SELECTED, 1);
   }
 
-  protected setDimension(columns: number, rows: number) {
-    if (this.dimension.columns == columns && this.dimension.rows == rows)
-      return;
-    this.dimension.columns = columns;
-    this.dimension.rows = rows;
-    this.updateVersion(TableModelEvent.DIMENSION, 1);
+  protected setTotal(columns: number, rows: number) {
+    this.columns.total = columns;
+    this.rows.total = rows;
+    this.updateVersion(TableModelEvent.TOTAL, 1);
   }
 }
 
-export class JSONTableModel extends TableModel {
+export class JSONTableModel extends TableModelImpl {
   private json: Array<Object>;
   private columnNames = Array<string>();
-  private columns = Array<Column>();
 
   constructor(json: Array<Object>) {
     super();
     this.json = json;
 
     let columns = this.columnNames = Object.keys(json[0]);
-    this.columns = columns.map((label, id) => ({ id, label}));
-    this.setDimension(columns.length, json.length);
-  }
-
-  protected updateColumns(range: Array<number>) {
-    this.setColumns(this.columns.slice(range[0], range[1] + 1));
+    this.setTotal(columns.length, json.length);
   }
 
   protected updateCells(columns: Array<number>, rows: Array<number>) {
@@ -191,8 +226,7 @@ interface HeaderFileJSON {
   fileName: string;
 }
 
-export class JSONPartialTableModel extends TableModel {
-  private columns = Array<Column>();
+export class JSONPartialTableModel extends TableModelImpl {
   private header: HeaderFileJSON;
   private headerPath = '';
   private buffs = Array<{cells: Cells}>();
@@ -205,14 +239,9 @@ export class JSONPartialTableModel extends TableModel {
 
     this.requestor.getJSON(headerFile).then((data) => {
       let header = this.header = data as HeaderFileJSON;
-      this.rowsPerBuffer = header.rowsPerPart;
-      this.columns = header.columns.map((label, id) => ({ id, label}));
-      this.setDimension(header.columns.length, header.rows);
+      this.rows.itemsPerBuffer = header.rowsPerPart;
+      this.setTotal(header.columns.length, header.rows);
     });
-  }
-
-  protected updateColumns(range: Array<number>) {
-    this.setColumns(this.columns.slice(range[0], range[1] + 1));
   }
 
   private getFilePartUrl(n: number): string {
@@ -221,8 +250,8 @@ export class JSONPartialTableModel extends TableModel {
 
   private getBuffersFromRows(rows: Array<number>): Array<number> {
     return [
-      Math.floor(rows[0] / this.rowsPerBuffer),
-      Math.floor(rows[1] / this.rowsPerBuffer)
+      Math.floor(rows[0] / this.rows.itemsPerBuffer),
+      Math.floor(rows[1] / this.rows.itemsPerBuffer)
     ];
   }
 
@@ -241,14 +270,14 @@ export class JSONPartialTableModel extends TableModel {
 
   protected getBufferRowsRange(idx: number): Array<number> {
     return [
-      idx * this.rowsPerBuffer,
-      Math.min(idx * this.rowsPerBuffer + this.rowsPerBuffer - 1, this.dimension.rows - 1)
+      idx * this.rows.itemsPerBuffer,
+      Math.min(idx * this.rows.itemsPerBuffer + this.rows.itemsPerBuffer - 1, this.rows.total - 1)
     ];
   }
 
   getCell(col: number, row: number): Cell {
-    col -= this.columnsInBuffer[0];
-    const buff = Math.floor(row / this.rowsPerBuffer);
+    col -= this.columns.buffer[0];
+    const buff = Math.floor(row / this.rows.itemsPerBuffer);
 
     if (!this.hasBuffer(buff))
       return {
@@ -256,7 +285,7 @@ export class JSONPartialTableModel extends TableModel {
       };
 
     return {
-      value: this.getBuffer(buff)[col][row - buff * this.rowsPerBuffer].value
+      value: this.getBuffer(buff)[col][row - buff * this.rows.itemsPerBuffer].value
     };
   }
 

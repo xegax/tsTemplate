@@ -29,13 +29,14 @@ class Table extends React.Component<Props, State> {
 
   private onTableChanged = (eventMask: number) => {
     let {model} = this.props;
-    if (eventMask & TableModelEvent.DIMENSION) {
-      let dim = model.getDimension();
-      this.model.setRows(dim.rows);
+    if (eventMask & TableModelEvent.TOTAL) {
+      let total = model.getTotal();
+      this.model.setRows(total.rows);
 
-      let columns = Array<number>(dim.columns);
-      for (let n = 0; n < columns.length; n++)
+      let columns = Array(total.columns);
+      for (let n = 0; n < columns.length; n++) {
         columns[n] = 1;
+      }
       this.model.setColumns(columns);
     }
 
@@ -46,7 +47,7 @@ class Table extends React.Component<Props, State> {
 
   private onCellsRenderRangeChanged = (eventMask: number) => {
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
-      this.props.model.selectCells(this.model.getColumnsRange(), this.model.getRowsRange());
+      this.props.model.loadData({cols: this.model.getColumnsRange(), rows: this.model.getRowsRange()});
     }
   };
 
