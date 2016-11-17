@@ -53,8 +53,8 @@ export interface TableModel {
   removeSubscriber(callback: (mask: number) => void);
 }
 
-interface Dimension {
-  // item indexes, but aligned to itemsPerBuffer
+export interface Dimension {
+  // buffer indexes range
   buffer: Array<number>;
 
   itemsPerBuffer: number;
@@ -66,7 +66,12 @@ interface Dimension {
   total: number;
 }
 
-abstract class TableModelImpl extends Publisher {
+export enum DimensionEnum {
+  Column = 0,
+  Row = 1
+};
+
+export class TableModelImpl extends Publisher {
   protected columns: Dimension = {
     itemsPerBuffer: 0,
     buffer: Array<number>(2),
@@ -81,7 +86,7 @@ abstract class TableModelImpl extends Publisher {
     total: 0
   };
 
-  private buffer = Array<Array<Cells>>();  // [column][row]
+  protected buffer = Array<Array<Cells>>();  // [column][row]
 
   private currColumns = Array<Column>();
   private currCells: Cells;
@@ -98,8 +103,17 @@ abstract class TableModelImpl extends Publisher {
     const colsChanged = this.updateDimension(this.columns, range.cols);
     const rowsChanged = this.updateDimension(this.rows, range.rows);
     
-    if (colsChanged || rowsChanged)
-      this.updateCells(this.columns.buffer, this.rows.buffer);
+    if (colsChanged || rowsChanged) {
+      this.updateBuffs(this.columns.buffer, this.rows.buffer);
+    }
+  }
+
+  getCellsRange(dimId: DimensionEnum, buffRange: Array<number>): Array<number> {
+    let dim = (dimId == DimensionEnum.Column) ? this.columns : this.rows;
+    const first = Math.min(buffRange[0] * dim.itemsPerBuffer, dim.total - 1);
+    let last = (buffRange.length == 1 ? buffRange[0] : buffRange[1]) * dim.itemsPerBuffer + dim.itemsPerBuffer;
+    last = Math.min(last, dim.total) - 1;
+    return [first, last];
   }
 
   protected updateDimension(dim: Dimension, range: Array<number>): boolean {
@@ -115,9 +129,8 @@ abstract class TableModelImpl extends Publisher {
     }
 
     let buffer = dim.range.slice();
-    buffer[0] = Math.floor(buffer[0] / dim.itemsPerBuffer) * dim.itemsPerBuffer;
-    buffer[1] = Math.floor(buffer[1] / dim.itemsPerBuffer) * dim.itemsPerBuffer + dim.itemsPerBuffer - 1;
-    buffer[1] = Math.min(buffer[1], dim.total - 1);
+    buffer[0] = Math.floor(buffer[0] / dim.itemsPerBuffer);
+    buffer[1] = Math.floor(buffer[1] / dim.itemsPerBuffer);
 
     if (buffer[0] == dim.buffer[0] && buffer[1] == dim.buffer[1])
       return false;
@@ -167,7 +180,8 @@ abstract class TableModelImpl extends Publisher {
     };
   }
 
-  protected abstract updateCells(cols: Array<number>, rows: Array<number>);
+  protected updateBuffs(cols: Array<number>, rows: Array<number>) {
+  }
 
   protected setCells(cells: Cells) {
     this.currCells = cells;
