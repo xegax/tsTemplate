@@ -324,6 +324,7 @@ export class JSONPartialTableModel extends TableModelImpl {
     this.requestor.getJSON(headerFile).then((data) => {
       let header = this.header = data as HeaderFileJSON;
       this.rows.itemsPerBuffer = header.rowsPerPart;
+      this.columns.itemsPerBuffer = header.columns.length;
       this.setTotal(header.columns.length, header.rows);
     });
   }
@@ -332,81 +333,39 @@ export class JSONPartialTableModel extends TableModelImpl {
     return this.headerPath + this.header.fileName.replace('%d', '' + n);
   }
 
-  private getBuffersFromRows(rows: Array<number>): Array<number> {
-    return [
-      Math.floor(rows[0] / this.rows.itemsPerBuffer),
-      Math.floor(rows[1] / this.rows.itemsPerBuffer)
-    ];
-  }
+  protected fillCells(col: number, row: number, cells: Cells, data: Array<any>) {
+    let rows = this.getCellsRange(DimensionEnum.Row, [row, row]);
+    let cols = this.getCellsRange(DimensionEnum.Column, [col, col]);
 
-  // buffer ready to work
-  private hasBuffer(idx: number) {
-    return this.buffs[idx] != null && this.buffs[idx].cells != null;
-  }
-
-  protected getBuffer(idx: number): Cells {
-    return this.buffs[idx].cells;
-  }
-
-  protected setBuffer(idx: number, cells: Cells) {
-    this.buffs[idx] = {cells};
-  }
-
-  protected getBufferRowsRange(idx: number): Array<number> {
-    return [
-      idx * this.rows.itemsPerBuffer,
-      Math.min(idx * this.rows.itemsPerBuffer + this.rows.itemsPerBuffer - 1, this.rows.total - 1)
-    ];
-  }
-
-  getCell(col: number, row: number): Cell {
-    col -= this.columns.buffer[0];
-    const buff = Math.floor(row / this.rows.itemsPerBuffer);
-
-    if (!this.hasBuffer(buff))
-      return {
-        value: '?'
-      };
-
-    return {
-      value: this.getBuffer(buff)[col][row - buff * this.rows.itemsPerBuffer].value
-    };
-  }
-
-  protected loadBuffers(buffIndexes: Array<number>) {
-    buffIndexes.forEach(idx => {
-      if (this.hasBuffer(idx))
-        return this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
-
-      // loading is started
-      if (this.buffs[idx] && this.buffs[idx].cells == null)
-        return;
-
-      this.setBuffer(idx, null);
-      this.requestor.getJSON(this.getFilePartUrl(idx)).then((data: Array<Array<any>>) => {
-        const columns = data[0].length;
-        const rows = this.getBufferRowsRange(idx);
-        let cells = Array<Array<Cell>>(columns);
-        for (let c = 0; c < cells.length; c++) {
-          let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
-          for (let r = 0; r < rowArr.length; r++) {
-            try {
-              rowArr[r] = {
-                value: '' + data[r][c]
-              };
-            } catch (e) {
-              console.log(e);
-            }
-          }
+    let columns = this.header.columns;
+    for (let c = 0; c < columns.length; c++) {
+      let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
+      for (let r = 0; r < rowArr.length; r++) {
+        try {
+          rowArr[r] = {
+            value: data[r][c]
+          };
+        } catch (e) {
+          console.log(e);
         }
-        this.setBuffer(idx, cells);
-        this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
+      }
+    }
+  }
+
+  protected updateBuffs(colsBuff: Array<number>, rowsBuff: Array<number>) {
+    colsBuff.forEach(row => {
+      let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
+      rowsBuff.forEach(col => {
+        let cols = rows[col] || (rows[col] = {cells: null});
+        if (cols.cells != null)
+          return;
+
+        cols.cells = Array<Array<Cell>>();
+        this.requestor.getJSON(this.getFilePartUrl(row), {}).then(data => {
+          this.fillCells(col, row, cols.cells, data);
+        });
       });
     });
-  }
-
-  protected updateCells(columns: Array<number>, rows: Array<number>) {
-    let buffs = this.getBuffersFromRows(rows);
-    this.loadBuffers(buffs);
+    this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
   }
 }
