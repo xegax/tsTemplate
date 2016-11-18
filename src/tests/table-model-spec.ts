@@ -77,12 +77,16 @@ describe('table-model-spec.ts', () => {
     expect(model.getCellsRange(DimensionEnum.Row, [0, 0])).toEqual([0, rowsPerBuffer - 1]);
     expect(model.getCellsRange(DimensionEnum.Row, [0, 1])).toEqual([0, rowsPerBuffer * 2 - 1]);
     expect(model.getCellsRange(DimensionEnum.Row, [0, 2])).toEqual([0, rowsPerBuffer * 3 - 1]);
+    expect(model.getCellsRange(DimensionEnum.Row, [697, 697])).toEqual([697 * rowsPerBuffer, rowsTotal - 1]);
     expect(model.getCellsRange(DimensionEnum.Row, [697, 698])).toEqual([697 * rowsPerBuffer, rowsTotal - 1]);
     expect(model.getCellsRange(DimensionEnum.Row, [698, 698])).toEqual([rowsTotal - 1, rowsTotal - 1]);
 
     expect(model.getCellsRange(DimensionEnum.Column, [0, 0])).toEqual([0, colsPerBuffer - 1]);
     expect(model.getCellsRange(DimensionEnum.Column, [0, 1])).toEqual([0, colsPerBuffer * 2 - 1]);
     expect(model.getCellsRange(DimensionEnum.Column, [0, 2])).toEqual([0, colsPerBuffer * 3 - 1]);
+    
+    expect(model.getCellsRange(DimensionEnum.Column, [99, 99])).toEqual([99 * colsPerBuffer, colsTotal - 1]);
+
     expect(model.getCellsRange(DimensionEnum.Column, [99, 100])).toEqual([99 * colsPerBuffer, colsTotal - 1]);
     expect(model.getCellsRange(DimensionEnum.Column, [100, 100])).toEqual([colsTotal - 1, colsTotal - 1]);
   });

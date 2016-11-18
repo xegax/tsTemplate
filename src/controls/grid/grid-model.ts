@@ -80,8 +80,8 @@ export class GridModel extends Publisher {
     this.columnsProps = columns.slice();
     this.resizeColumns();
 
-    this.updateColumnsRange();
     this.updateStartColumn();
+    this.updateColumnsRange(); 
     this.updateVersion(GridModelEvent.COLUMNS, 1);
   }
 
@@ -144,8 +144,8 @@ export class GridModel extends Publisher {
       return;
 
     this.scrollLeft = scrollLeft;
-    this.updateColumnsRange();
     this.updateStartColumn();
+    this.updateColumnsRange();
 
     this.updateVersion(GridModelEvent.SCROLL_LEFT, 1);
   }
@@ -357,6 +357,7 @@ export class GridModel extends Publisher {
       return;
     this.columnsRenderRange[0] = arr[0];
     this.columnsRenderRange[1] = arr[1];
+    console.log('columns range', this.columnsRenderRange);
     this.updateVersion(GridModelEvent.COLUMNS_RENDER_RANGE, 1);
   }
 

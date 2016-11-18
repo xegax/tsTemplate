@@ -5,7 +5,7 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {TableModel, JSONPartialTableModel, TableModelEvent} from 'model/table-model';
+import {TableModel, JSONPartialTableModel, TableModelEvent, TestTableModel} from 'model/table-model';
 
 interface Props {
   model: TableModel;
@@ -35,7 +35,7 @@ class Table extends React.Component<Props, State> {
 
       let columns = Array(total.columns);
       for (let n = 0; n < columns.length; n++) {
-        columns[n] = 1;
+        columns[n] = 150;
       }
       this.model.setColumns(columns);
     }
@@ -123,8 +123,10 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     /*if (this.state.data)
       return <Table model={new JSONTableModel(this.state.data)} />;*/
+    /*if (this.state.data)
+      return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;*/
     if (this.state.data)
-      return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;
+      return <Table model={new TestTableModel(90000, 999998, 1500)} />;
     return null;
   }
 

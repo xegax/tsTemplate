@@ -2,6 +2,7 @@ import {Publisher} from 'common/publisher';
 import {parsePath} from 'common/common';
 import {assign} from 'lodash';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
+import {Timer} from 'common/timer';
 
 export interface Column {
   id: number;
@@ -71,6 +72,10 @@ export enum DimensionEnum {
   Row = 1
 };
 
+interface BufferItem {
+  cells: Cells;
+}
+
 export class TableModelImpl extends Publisher {
   protected columns: Dimension = {
     itemsPerBuffer: 0,
@@ -86,7 +91,7 @@ export class TableModelImpl extends Publisher {
     total: 0
   };
 
-  protected buffer = Array<Array<Cells>>();  // [column][row]
+  protected buffer = Array< Array<BufferItem> >();  // [row][column]
 
   private currColumns = Array<Column>();
   private currCells: Cells;
@@ -122,17 +127,19 @@ export class TableModelImpl extends Publisher {
       dim.range[1] = range[1];
     }
 
+    let changed = 0;
     let itemsPerBuffer = Math.max(dim.itemsPerBuffer, range[1] - range[0] + 1);
     if (itemsPerBuffer != dim.itemsPerBuffer) {
       dim.itemsPerBuffer = itemsPerBuffer;
       this.buffer.splice(0, this.buffer.length);
+      changed++;
     }
 
     let buffer = dim.range.slice();
     buffer[0] = Math.floor(buffer[0] / dim.itemsPerBuffer);
     buffer[1] = Math.floor(buffer[1] / dim.itemsPerBuffer);
 
-    if (buffer[0] == dim.buffer[0] && buffer[1] == dim.buffer[1])
+    if (changed == 0 && buffer[0] == dim.buffer[0] && buffer[1] == dim.buffer[1])
       return false;
 
     dim.buffer = buffer;
@@ -167,16 +174,32 @@ export class TableModelImpl extends Publisher {
   }
 
   getCell(col: number, row: number): Cell {
-    row -= this.rows.buffer[0];
-    col -= this.columns.buffer[0];
-
-    if (!this.currCells || col >= this.currCells.length || row >= this.currCells[col].length)
+    if (this.columns.itemsPerBuffer == 0 || this.rows.itemsPerBuffer == 0) {
       return {
         value: '?'
       };
+    }
+
+    try {
+      let colBuff = Math.floor(col / this.columns.itemsPerBuffer);
+      let rowBuff = Math.floor(row / this.rows.itemsPerBuffer);
+
+      let item = this.buffer[rowBuff][colBuff].cells;
+
+      col -= colBuff * this.columns.itemsPerBuffer;
+      row -= rowBuff * this.rows.itemsPerBuffer;
+
+      if (col >= 0 && col < item.length && row >= 0 && row < item[col].length) {
+        return item[col][row];
+      }
+    } catch(e) {
+      return {
+        value: '?'
+      };
+    }
 
     return {
-      value: this.currCells[col][row].value
+      value: '?'
     };
   }
 
@@ -197,6 +220,53 @@ export class TableModelImpl extends Publisher {
     this.columns.total = columns;
     this.rows.total = rows;
     this.updateVersion(TableModelEvent.TOTAL, 1);
+  }
+}
+
+export class TestTableModel extends TableModelImpl {
+  protected delay: number;
+
+  constructor(cols: number, rows: number, delay: number = 0) {
+    super();
+    this.delay = delay;
+    this.setTotal(cols, rows);
+  }
+
+  protected fillCells(col: number, row: number, cells: Cells) {
+    let rows = this.getCellsRange(DimensionEnum.Row, [row, row]);
+    let cols = this.getCellsRange(DimensionEnum.Column, [col, col]);
+
+    for (let c = 0; c < cols[1] - cols[0] + 1; c++) {
+      let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
+      for (let r = 0; r < rowArr.length; r++) {
+        try {
+          rowArr[r] = {
+            value: '' + (rows[0] + r) + 'x' + (cols[0] + c)
+          };
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }
+  }
+
+  protected updateBuffs(cols: Array<number>, rows: Array<number>) {
+    let callback = () => {
+      rows.forEach(row => {
+        let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
+        cols.forEach(col => {
+          let cols = rows[col] || (rows[col] = {cells: Array<Array<Cell>>()});
+          this.fillCells(col, row, cols.cells);
+        });
+      });
+      this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
+    };
+
+    if (this.delay != 0) {
+      new Timer(callback).run(this.delay);
+    } else {
+      callback();
+    }
   }
 }
 
@@ -338,6 +408,5 @@ export class JSONPartialTableModel extends TableModelImpl {
   protected updateCells(columns: Array<number>, rows: Array<number>) {
     let buffs = this.getBuffersFromRows(rows);
     this.loadBuffers(buffs);
-    console.log(buffs, rows);
   }
 }
