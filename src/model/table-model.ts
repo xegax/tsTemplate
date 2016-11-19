@@ -3,6 +3,7 @@ import {parsePath} from 'common/common';
 import {assign} from 'lodash';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {Timer} from 'common/timer';
+import {IThenable} from 'promise';
 
 export interface Column {
   id: number;
@@ -39,7 +40,7 @@ export interface TableModel {
   getTotal(): Total;
 
   // get loaded columns
-  getColumns(): Array<Column>;
+  //getColumns(): Array<Column>;
 
   // get range of requested columns
   getColumnsRange(): Array<number>;
@@ -48,7 +49,7 @@ export interface TableModel {
   getRowsRange(): Array<number>;
 
   getCell(col: number, row: number): Cell;
-  getColumn(col: number): Column;
+  //getColumn(col: number): Column;
 
   addSubscriber(callback: (mask: number) => void);
   removeSubscriber(callback: (mask: number) => void);
@@ -92,9 +93,9 @@ export class TableModelImpl extends Publisher {
   };
 
   protected buffer = Array< Array<BufferItem> >();  // [row][column]
-
-  private currColumns = Array<Column>();
-  private currCells: Cells;
+  protected empty = {
+    value: '?'
+  };
 
   loadData(_range: DataRange) {
     const range: DataRange = {
@@ -108,8 +109,16 @@ export class TableModelImpl extends Publisher {
     const colsChanged = this.updateDimension(this.columns, range.cols);
     const rowsChanged = this.updateDimension(this.rows, range.rows);
     
-    if (colsChanged || rowsChanged) {
-      this.updateBuffs(this.columns.buffer, this.rows.buffer);
+    if (!colsChanged && !rowsChanged)
+      return;
+    
+    const notify = () => this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
+
+    const promise = this.updateBuffs(this.columns.buffer, this.rows.buffer);
+    if (promise) {
+      promise.then(notify);
+    } else {
+      notify();
     }
   }
 
@@ -153,14 +162,6 @@ export class TableModelImpl extends Publisher {
     };
   }
 
-  getCells(): Cells {
-    return this.currCells;
-  }
-
-  getColumns(): Array<Column> {
-    return this.currColumns;
-  }
-
   getColumnsRange(): Array<number> {
     return this.columns.range.slice();
   }
@@ -169,22 +170,16 @@ export class TableModelImpl extends Publisher {
     return this.rows.range.slice();
   }
 
-  getColumn(col: number): Column {
-    return this.currColumns[col - this.columns.buffer[0]];
-  }
-
   getCell(col: number, row: number): Cell {
     if (this.columns.itemsPerBuffer == 0 || this.rows.itemsPerBuffer == 0) {
-      return {
-        value: '?'
-      };
+      return this.empty;
     }
 
     try {
-      let colBuff = Math.floor(col / this.columns.itemsPerBuffer);
-      let rowBuff = Math.floor(row / this.rows.itemsPerBuffer);
+      const colBuff = Math.floor(col / this.columns.itemsPerBuffer);
+      const rowBuff = Math.floor(row / this.rows.itemsPerBuffer);
 
-      let item = this.buffer[rowBuff][colBuff].cells;
+      const item = this.buffer[rowBuff][colBuff].cells;
 
       col -= colBuff * this.columns.itemsPerBuffer;
       row -= rowBuff * this.rows.itemsPerBuffer;
@@ -193,27 +188,13 @@ export class TableModelImpl extends Publisher {
         return item[col][row];
       }
     } catch(e) {
-      return {
-        value: '?'
-      };
+      return this.empty;
     }
-
-    return {
-      value: '?'
-    };
+    return this.empty;
   }
 
-  protected updateBuffs(cols: Array<number>, rows: Array<number>) {
-  }
-
-  protected setCells(cells: Cells) {
-    this.currCells = cells;
-    this.updateVersion(TableModelEvent.ROWS_SELECTED, 1);
-  }
-
-  protected setColumns(columns: Array<Column>) {
-    this.currColumns = columns;
-    this.updateVersion(TableModelEvent.COLUMNS_SELECTED, 1);
+  protected updateBuffs(cols: Array<number>, rows: Array<number>): IThenable<any> {
+    return null;
   }
 
   protected setTotal(columns: number, rows: number) {
@@ -250,23 +231,28 @@ export class TestTableModel extends TableModelImpl {
     }
   }
 
-  protected updateBuffs(cols: Array<number>, rows: Array<number>) {
-    let callback = () => {
-      rows.forEach(row => {
-        let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
-        cols.forEach(col => {
-          let cols = rows[col] || (rows[col] = {cells: Array<Array<Cell>>()});
-          this.fillCells(col, row, cols.cells);
-        });
+  protected updateBuffsImpl(cols: Array<number>, rows: Array<number>) {
+    rows.forEach(row => {
+      let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
+      cols.forEach(col => {
+        let cols = rows[col] || (rows[col] = {cells: Array<Array<Cell>>()});
+        this.fillCells(col, row, cols.cells);
       });
-      this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
-    };
+    });
+  }
 
+  protected updateBuffs(cols: Array<number>, rows: Array<number>) {
     if (this.delay != 0) {
-      new Timer(callback).run(this.delay);
-    } else {
-      callback();
+      return new Promise(resolve => {
+        new Timer(() => {
+          this.updateBuffsImpl(cols, rows);
+          resolve(null);
+        }).run(this.delay);
+      });
     }
+
+    this.updateBuffsImpl(cols, rows);
+    return null;
   }
 }
 
@@ -282,24 +268,38 @@ export class JSONTableModel extends TableModelImpl {
     this.setTotal(columns.length, json.length);
   }
 
-  protected updateCells(columns: Array<number>, rows: Array<number>) {
-    const data = this.json;
-    const names = this.columnNames;
+  protected fillCells(col: number, row: number, cells: Cells, data: Array<any>) {
+    let rows = this.getCellsRange(DimensionEnum.Row, [row, row]);
+    let cols = this.getCellsRange(DimensionEnum.Column, [col, col]);
 
-    let cells = Array<Array<Cell>>(columns[1] - columns[0] + 1);
-    for (let c = 0; c < cells.length; c++) {
+    let columns = this.columnNames;
+    for (let c = 0; c < columns.length; c++) {
       let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
       for (let r = 0; r < rowArr.length; r++) {
         try {
           rowArr[r] = {
-            value: '' + data[r + rows[0]][names[c + columns[0]]]
+            value: data[r][columns[c]]
           };
         } catch (e) {
           console.log(e);
         }
       }
     }
-    this.setCells(cells);
+  }
+
+  protected updateBuffs(colsBuff: Array<number>, rowsBuff: Array<number>) {
+    rowsBuff.forEach(row => {
+      let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
+      colsBuff.forEach(col => {
+        let cols = rows[col] || (rows[col] = {cells: null});
+        if (cols.cells != null)
+          return;
+
+        cols.cells = Array<Array<Cell>>();
+        this.fillCells(col, row, cols.cells, this.json);
+      });
+    });
+    return null;
   }
 }
 
@@ -352,20 +352,29 @@ export class JSONPartialTableModel extends TableModelImpl {
     }
   }
 
-  protected updateBuffs(colsBuff: Array<number>, rowsBuff: Array<number>) {
-    colsBuff.forEach(row => {
+  protected updateBuffsImpl(colsBuff: Array<number>, rowsBuff: Array<number>, callback: () => void) {
+    rowsBuff.forEach(row => {
       let rows = this.buffer[row] || (this.buffer[row] = Array<BufferItem>());
-      rowsBuff.forEach(col => {
+      colsBuff.forEach(col => {
         let cols = rows[col] || (rows[col] = {cells: null});
-        if (cols.cells != null)
-          return;
+        if (cols.cells != null) {
+          return callback && callback();
+        }
 
         cols.cells = Array<Array<Cell>>();
         this.requestor.getJSON(this.getFilePartUrl(row), {}).then(data => {
           this.fillCells(col, row, cols.cells, data);
+          callback && callback();
+        }).catch(err => {
+          console.log('error', err);
         });
       });
     });
-    this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
+  }
+
+  protected updateBuffs(colsBuff: Array<number>, rowsBuff: Array<number>) {
+    return new Promise(resolve => {
+      this.updateBuffsImpl(colsBuff, rowsBuff, () => resolve(null));
+    });
   }
 }

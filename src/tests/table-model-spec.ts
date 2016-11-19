@@ -12,8 +12,11 @@ describe('table-model-spec.ts', () => {
     }
 
     updateBuffs(cols: Array<number>, rows: Array<number>) {
-      this.buffCols = cols;
-      this.buffRows = rows;
+      return new Promise(resolve => {
+        this.buffCols = cols;
+        this.buffRows = rows;
+        resolve(null);
+      });
     }
 
     getColDim() {
