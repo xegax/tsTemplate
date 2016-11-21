@@ -10,60 +10,60 @@ import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
 
 interface Props {
-  model: TableSourceModel;
+  sourceModel: TableSourceModel;
 }
 
 interface State {
 }
 
 class Table extends React.Component<Props, State> {
-  private model = new GridModel();
+  private viewModel = new GridModel();
 
   constructor(props: Props) {
     super(props);
     this.state = {};
 
-    this.props.model.addSubscriber(this.onTableChanged);
-    this.model.addSubscriber(this.onCellsRenderRangeChanged);
+    this.props.sourceModel.addSubscriber(this.onSourceChanged);
+    this.viewModel.addSubscriber(this.onViewChanged);
 
-    this.model.setCellSelectable(true);
+    this.viewModel.setCellSelectable(true);
   }
 
-  private onTableChanged = (eventMask: number) => {
-    let {model} = this.props;
+  private onSourceChanged = (eventMask: number) => {
+    let {sourceModel} = this.props;
     if (eventMask & TableModelEvent.TOTAL) {
-      let total = model.getTotal();
-      this.model.setRows(total.rows);
+      let total = sourceModel.getTotal();
+      this.viewModel.setRows(total.rows);
 
       let columns = Array(total.columns);
       for (let n = 0; n < columns.length; n++) {
         columns[n] = 150;
       }
-      this.model.setColumns(columns);
+      this.viewModel.setColumns(columns);
     }
 
     if (eventMask & (TableModelEvent.ROWS_SELECTED | TableModelEvent.COLUMNS_SELECTED)) {
       this.forceUpdate(() => {
-        this.model.notifySubscribers();
+        this.viewModel.notifySubscribers();
       });
     }
   };
 
-  private onCellsRenderRangeChanged = (eventMask: number) => {
+  private onViewChanged = (eventMask: number) => {
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
-      this.props.model.loadData({cols: this.model.getColumnsRange(), rows: this.model.getRowsRange()});
+      this.props.sourceModel.loadData({cols: this.viewModel.getColumnsRange(), rows: this.viewModel.getRowsRange()});
     }
   };
 
   componentWillReceiveProps(newProps: Props) {
-    if (this.props.model != newProps.model) {
-      this.props.model.removeSubscriber(this.onTableChanged);
-      newProps.model.addSubscriber(this.onTableChanged);
+    if (this.props.sourceModel != newProps.sourceModel) {
+      this.props.sourceModel.removeSubscriber(this.onSourceChanged);
+      newProps.sourceModel.addSubscriber(this.onSourceChanged);
     }
   }
 
   renderCell = (column: number, row: number) => {
-    let cell = this.props.model.getCell(column, row).value;
+    let cell = this.props.sourceModel.getCell(column, row).value;
     return {
        element: <div style={{padding: 3}}>{cell}</div> as any
     };
@@ -83,7 +83,7 @@ class Table extends React.Component<Props, State> {
           resizable
           renderCell={this.renderCell}
           renderHeader={this.renderHeader}
-          model={this.model}
+          model={this.viewModel}
         />
       </FitToParent>
     );
@@ -128,7 +128,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     /*if (this.state.data)
       return <Table model={new JSONTableModel(this.state.data)} />;*/
-    return <Table model={this.state.model} />;
+    return <Table sourceModel={this.state.model} />;
     // return <Table model={new TestTableModel(90000, 999998, 1500)} />;
   }
 
