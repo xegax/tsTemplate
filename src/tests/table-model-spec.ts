@@ -1,8 +1,8 @@
-import {TableModelImpl, TableModelEvent, DimensionEnum} from 'model/table-model';
+import {TableSourceModelImpl, TableModelEvent, DimensionEnum, CacheVisitor} from 'model/table-source-model';
 
 describe('table-model-spec.ts', () => {
 
-  class TestModel extends TableModelImpl {
+  class TestModel extends TableSourceModelImpl {
     buffCols: Array<number>;
     buffRows: Array<number>;
 
@@ -11,7 +11,7 @@ describe('table-model-spec.ts', () => {
       this.setTotal(cols, rows);
     }
 
-    updateBuffs(cols: Array<number>, rows: Array<number>) {
+    updateCache(visit: CacheVisitor) {
       return new Promise(resolve => {
         this.buffCols = cols;
         this.buffRows = rows;

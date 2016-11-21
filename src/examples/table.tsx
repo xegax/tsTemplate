@@ -5,10 +5,12 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {TableModel, JSONTableModel, JSONPartialTableModel, TableModelEvent, TestTableModel} from 'model/table-model';
+import {TableSourceModel, TableModelEvent, TestTableModel} from 'model/table-source-model';
+import {JSONPartialSourceModel} from 'model/json-partial-source-model';
+import {JSONSourceModel} from 'model/json-source-model';
 
 interface Props {
-  model: TableModel;
+  model: TableSourceModel;
 }
 
 interface State {
@@ -123,7 +125,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     /*if (this.state.data)
       return <Table model={new JSONTableModel(this.state.data)} />;*/
-    return <Table model={new JSONPartialTableModel('../data/part-header.json')} />;
+    return <Table model={new JSONPartialSourceModel('../data/part-header.json')} />;
     // return <Table model={new TestTableModel(90000, 999998, 1500)} />;
   }
 
