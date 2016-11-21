@@ -36,6 +36,8 @@ export interface TableSourceModel {
   // load data
   loadData(range: DataRange);
 
+  reload();
+
   // return total rows number and total columns number
   getTotal(): Total;
 
@@ -79,7 +81,7 @@ export interface CacheItem {
 
 export type CacheVisitor = (visit: (colCache: number, rowCache: number) => void) => void;
 
-export class TableSourceModelImpl extends Publisher {
+export class TableSourceModelImpl extends Publisher implements TableSourceModel {
   protected columns: Dimension = {
     itemsPerBuffer: 0,
     buffer: Array<number>(2),
@@ -124,6 +126,13 @@ export class TableSourceModelImpl extends Publisher {
     } else {
       notify();
     }
+  }
+
+  reload() {
+    this.cache = [];
+    this.rows.buffer = [];
+    this.columns.buffer = [];
+    this.loadData({cols: this.columns.range, rows: this.rows.range});
   }
 
   getCellsRange(dimId: DimensionEnum, cacheRange: Array<number>): Array<number> {

@@ -55,7 +55,7 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
     visit((col, row) => {
       let item = this.createOrGetCacheItem(col, row);
       if (item.cells != null) {
-        return callback && callback();
+        return;
       }
 
       item.cells = [];

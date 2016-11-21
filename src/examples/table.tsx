@@ -43,7 +43,9 @@ class Table extends React.Component<Props, State> {
     }
 
     if (eventMask & (TableModelEvent.ROWS_SELECTED | TableModelEvent.COLUMNS_SELECTED)) {
-      this.forceUpdate(() => this.model.notifySubscribers());
+      this.forceUpdate(() => {
+        this.model.notifySubscribers();
+      });
     }
   };
 
@@ -92,11 +94,12 @@ class Table extends React.Component<Props, State> {
   }
 }
 
-class DataSelector extends React.Component<{list: Array<string>}, {listItem?: number, data?: any}> {
+class DataSelector extends React.Component<{list: Array<string>}, {listItem?: number, data?: any, model?: TableSourceModel}> {
   constructor(props) {
     super(props);
     this.state = {
-      listItem: 0
+      listItem: 0,
+      model: new JSONPartialSourceModel('../data/part-header.json') 
     };
     this.onDataSelected();
   }
@@ -125,7 +128,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     /*if (this.state.data)
       return <Table model={new JSONTableModel(this.state.data)} />;*/
-    return <Table model={new JSONPartialSourceModel('../data/part-header.json')} />;
+    return <Table model={this.state.model} />;
     // return <Table model={new TestTableModel(90000, 999998, 1500)} />;
   }
 
@@ -134,6 +137,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
       <div style={{display: 'flex', flexGrow: 1, flexDirection: 'column'}}>
         <div style={{padding: 4}}>
           {this.renderDataList()}
+          <button onClick={() => this.state.model.reload()}>reload</button>
         </div>
         <div style={{flexGrow: 1}}>
           {this.renderTable()}
