@@ -5,9 +5,10 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {TableSourceModel, TableModelEvent, TestTableModel} from 'model/table-source-model';
+import {DataRange, TableSourceModel, TableModelEvent, TestTableModel} from 'model/table-source-model';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
+import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 
 interface Props {
   sourceModel: TableSourceModel;
@@ -18,21 +19,22 @@ interface State {
 
 class Table extends React.Component<Props, State> {
   private viewModel = new GridModel();
+  private sourceModel: OrderedColumnsSourceModel;
 
   constructor(props: Props) {
     super(props);
     this.state = {};
 
-    this.props.sourceModel.addSubscriber(this.onSourceChanged);
+    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel, [0, 1, 2, 3]);
+    this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
 
     this.viewModel.setCellSelectable(true);
   }
 
   private onSourceChanged = (eventMask: number) => {
-    let {sourceModel} = this.props;
     if (eventMask & TableModelEvent.TOTAL) {
-      let total = sourceModel.getTotal();
+      let total = this.sourceModel.getTotal();
       this.viewModel.setRows(total.rows);
 
       let columns = Array(total.columns);
@@ -51,27 +53,36 @@ class Table extends React.Component<Props, State> {
 
   private onViewChanged = (eventMask: number) => {
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
-      this.props.sourceModel.loadData({cols: this.viewModel.getColumnsRange(), rows: this.viewModel.getRowsRange()});
+      this.sourceModel.loadData({cols: this.viewModel.getColumnsRange(), rows: this.viewModel.getRowsRange()});
     }
   };
 
   componentWillReceiveProps(newProps: Props) {
     if (this.props.sourceModel != newProps.sourceModel) {
-      this.props.sourceModel.removeSubscriber(this.onSourceChanged);
-      newProps.sourceModel.addSubscriber(this.onSourceChanged);
+      this.sourceModel.removeSubscriber(this.onSourceChanged);
+      
+      this.sourceModel = new OrderedColumnsSourceModel(newProps.sourceModel);
+      this.sourceModel.addSubscriber(this.onSourceChanged);
     }
   }
 
   renderCell = (column: number, row: number) => {
-    let cell = this.props.sourceModel.getCell(column, row).value;
+    let cell = this.sourceModel.getCell(column, row).value;
     return {
        element: <div style={{padding: 3}}>{cell}</div> as any
     };
   }
 
+  onClickByHeader(column: number) {
+    this.sourceModel.removeColumn(column);
+    this.onSourceChanged(TableModelEvent.TOTAL);
+  }
+
   renderHeader = (column: number) => {
     let value;// = this.props.model.getColumn(column);
-    return {element: value ? value.label : '?'};
+    return {
+      element: <div onClick={e => this.onClickByHeader(column)}>{'column ' + column}</div>
+    };
   }
 
   renderGridControl() {

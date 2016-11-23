@@ -27,7 +27,7 @@ interface Total {
   columns: number;
 }
 
-interface DataRange {
+export interface DataRange {
   cols?: Array<number>;
   rows?: Array<number>;
 }
@@ -107,7 +107,10 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
       rows: _range.rows || this.rows.range.slice()
     };
     
-    if (range.cols[1] - range.cols[0] <= 0 || range.rows[1] - range.rows[0] <= 0)
+    if (this.columns.total == 0 || this.rows.total == 0)
+      return;
+      
+    if (range.cols[1] - range.cols[0] < 0 || range.rows[1] - range.rows[0] < 0)
       return;
 
     const colsChanged = this.updateDimension(this.columns, range.cols);
