@@ -10,7 +10,7 @@
     box-sizing: border-box;
     border-left: 1px solid black;
     border-top: 1px solid black;
-    overflow: hidden;
+    text-overflow: ellipsis;
 
     &_rightmost {
       border-right: 1px solid black;

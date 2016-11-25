@@ -1,12 +1,17 @@
-import {TableSourceModel, DataRange} from 'model/table-source-model';
+import {TableSourceModel, DataRange, Cell} from 'model/table-source-model';
+
+type ColumnsMapper = {[column: number]: (row: number, data: Cell) => Cell}; 
 
 export class OrderedColumnsSourceModel implements TableSourceModel {
   private sourceModel: TableSourceModel;
   private columnsOrder: Array<number>;
+  private columnsMapper: ColumnsMapper; // index = [0; columnsOrder.length)
 
-  constructor(sourceModel: TableSourceModel, colums?: Array<number>) {
+  constructor(sourceModel: TableSourceModel, newOrder?: Array<number>, mapper?: ColumnsMapper) {
     this.sourceModel = sourceModel;
-    this.columnsOrder = colums;
+    
+    this.columnsOrder = newOrder;
+    this.columnsMapper = mapper;
   }
 
   removeColumn(column: number) {
@@ -18,7 +23,9 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   loadData(range: DataRange) {
     if (this.columnsOrder && this.columnsOrder.length) {
-      let cols = this.columnsOrder.slice(range.cols[0], range.cols[1] + 1).sort((a, b) => a - b);
+      let cols = this.columnsOrder.slice(range.cols[0], range.cols[1] + 1)
+        .filter(a => a >= 0)
+        .sort((a, b) => a - b);
       range.cols[0] = cols[0];
       range.cols[1] = cols[cols.length - 1];
     }
@@ -46,8 +53,8 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   }
 
   getCell(col: number, row: number) {
-    col = this.translateColumn(col);
-    return this.sourceModel.getCell(col, row);
+    let origCol = this.translateColumn(col);
+    return this.mapCell(col, row, origCol >= 0 ? this.sourceModel.getCell(origCol, row) : {value: '?'});
   }
 
   addSubscriber(callback: (mask: number) => void) {
@@ -56,6 +63,17 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   removeSubscriber(callback: (mask: number) => void) {
     return this.removeSubscriber(callback);
+  }
+
+  protected mapCell(col: number, row: number, data: Cell): Cell {
+    if (!this.columnsMapper)
+      return data;
+
+    const getData = this.columnsMapper[col];
+    if (!getData)
+        return data;
+
+    return getData(row, data);
   }
 
   protected translateColumn(colIdx: number): number {

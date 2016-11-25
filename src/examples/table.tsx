@@ -25,7 +25,11 @@ class Table extends React.Component<Props, State> {
     super(props);
     this.state = {};
 
-    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel, [0, 1, 2, 3]);
+    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel,
+    [-1, 0, 3], {
+      0: (row) => ({value: '' + row}),
+      2: (row, data) => ({value: '(' + data.value + ')'})
+    });
     this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
 
@@ -69,7 +73,7 @@ class Table extends React.Component<Props, State> {
   renderCell = (column: number, row: number) => {
     let cell = this.sourceModel.getCell(column, row).value;
     return {
-       element: <div style={{padding: 3}}>{cell}</div> as any
+       element: <div style={{padding: 3, whiteSpace: 'nowrap', textOverflow: 'inherit', overflow: 'hidden'}}>{cell}</div> as any
     };
   }
 
