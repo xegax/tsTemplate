@@ -1,6 +1,15 @@
-import {Cell, Cells, CacheItem, TableSourceModelImpl, DimensionEnum, CacheVisitor} from 'model/table-source-model';
+import {
+  Cell,
+  Cells,
+  CacheItem,
+  TableSourceModel,
+  TableSourceModelImpl,
+  DimensionEnum,
+  CacheVisitor
+} from 'model/table-source-model';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {parsePath} from 'common/common';
+import {Publisher} from 'common/publisher';
 
 interface HeaderFileJSON {
   rows: number;
@@ -15,8 +24,8 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
   private buffs = Array<{cells: Cells}>();
   private requestor: Requestor;
 
-  constructor(headerFile: string, requestor?: Requestor) {
-    super();
+  constructor(headerFile: string, prevModel?: TableSourceModel, requestor?: Requestor) {
+    super(prevModel);
     this.requestor = requestor || getGlobalRequestor();
     this.headerPath = parsePath(headerFile).path;
 

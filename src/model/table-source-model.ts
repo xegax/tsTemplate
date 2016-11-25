@@ -101,6 +101,10 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     value: '?'
   };
 
+  constructor(prevModel?: TableSourceModel) {
+    super(prevModel as any);
+  }
+
   loadData(_range: DataRange) {
     const range: DataRange = {
       cols: _range.cols || this.columns.range.slice(),

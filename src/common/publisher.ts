@@ -8,13 +8,19 @@ export class Publisher {
   private eventsMask: number = 0;
   private timer: Timer;
 
-  constructor(timer?: Timer) {
+  constructor(prev?: Publisher, timer?: Timer) {
     if (timer) {
       this.timer = timer;
     } else {
       this.timer = new Timer();
     }
     this.timer.addUniqueCallback(() => this.notifySubscribers());
+    
+    // subscribers moved from prev
+    if (prev) {
+      prev.subscribers.forEach(s => this.addSubscriber(s));
+      prev.removeAllSubscribers();
+    }
   }
 
   addSubscriber(callback: Callback) {

@@ -63,12 +63,9 @@ class Table extends React.Component<Props, State> {
 
   componentWillReceiveProps(newProps: Props) {
     if (this.props.sourceModel != newProps.sourceModel) {
-      this.sourceModel.removeSubscriber(this.onSourceChanged);
-      
+      this.viewModel.setRows(0);
+      this.viewModel.setColumns([]);
       this.sourceModel = new OrderedColumnsSourceModel(newProps.sourceModel);
-      this.sourceModel.addSubscriber(this.onSourceChanged);
-      this.onSourceChanged(TableModelEvent.TOTAL);
-      this.onViewChanged(GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE);
     }
   }
 
@@ -123,10 +120,10 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   onDataSelected = () => {
     let source = this.props.list[this.state.listItem];
     if (source.indexOf('-header.json') != -1) {
-      this.setState({model: new JSONPartialSourceModel('../data/' + source)});
+      this.setState({model: new JSONPartialSourceModel('../data/' + source, this.state.model)});
     } else {
       d3.json('../data/' + source, (err, data: Array<{[key: string]: string}>) => {
-        this.setState({model: new JSONSourceModel(data)});
+        this.setState({model: new JSONSourceModel(data, this.state.model)});
       });
     }
   }
