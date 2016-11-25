@@ -62,7 +62,7 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   }
 
   removeSubscriber(callback: (mask: number) => void) {
-    return this.removeSubscriber(callback);
+    return this.sourceModel.removeSubscriber(callback);
   }
 
   protected mapCell(col: number, row: number, data: Cell): Cell {

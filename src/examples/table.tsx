@@ -25,11 +25,11 @@ class Table extends React.Component<Props, State> {
     super(props);
     this.state = {};
 
-    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel,
+    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel/*,
     [-1, 0, 3], {
-      0: (row) => ({value: '' + row}),
+      0: (row) => ({value: '' + (1 + row)}),
       2: (row, data) => ({value: '(' + data.value + ')'})
-    });
+    });*/);
     this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
 
@@ -67,6 +67,8 @@ class Table extends React.Component<Props, State> {
       
       this.sourceModel = new OrderedColumnsSourceModel(newProps.sourceModel);
       this.sourceModel.addSubscriber(this.onSourceChanged);
+      this.onSourceChanged(TableModelEvent.TOTAL);
+      this.onViewChanged(GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE);
     }
   }
 
@@ -113,16 +115,20 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   constructor(props) {
     super(props);
     this.state = {
-      listItem: 0,
-      model: new JSONPartialSourceModel('../data/part-header.json') 
+      listItem: 0
     };
     this.onDataSelected();
   }
 
   onDataSelected = () => {
-    d3.json('../data/' + this.props.list[this.state.listItem], (err, data: Array<{[key: string]: string}>) => {
-      this.setState({data});
-    });
+    let source = this.props.list[this.state.listItem];
+    if (source.indexOf('-header.json') != -1) {
+      this.setState({model: new JSONPartialSourceModel('../data/' + source)});
+    } else {
+      d3.json('../data/' + source, (err, data: Array<{[key: string]: string}>) => {
+        this.setState({model: new JSONSourceModel(data)});
+      });
+    }
   }
 
   setDataSelect() {
@@ -141,10 +147,9 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   }
 
   renderTable() {
-    /*if (this.state.data)
-      return <Table model={new JSONTableModel(this.state.data)} />;*/
+    if (!this.state.model)
+      return (<div>No data to display</div>);
     return <Table sourceModel={this.state.model} />;
-    // return <Table model={new TestTableModel(90000, 999998, 1500)} />;
   }
 
   render() {
@@ -164,4 +169,4 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
 document.body.style.overflow = 'hidden';
 getContainer().style.position = 'relative';
-ReactDOM.render(<DataSelector list={['full.json', 'gens.json', 'full.json']}/>, getContainer());
+ReactDOM.render(<DataSelector list={['full.json', 'gens.json', 'part-header.json']}/>, getContainer());

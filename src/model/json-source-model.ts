@@ -29,7 +29,7 @@ export class JSONSourceModel extends TableSourceModelImpl {
       for (let r = 0; r < rowArr.length; r++) {
         try {
           rowArr[r] = {
-            value: data[r][columns[c]]
+            value: data[rows[0] + r][columns[c]]
           };
         } catch (e) {
           console.log(e);
