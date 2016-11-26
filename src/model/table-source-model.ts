@@ -243,6 +243,27 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     this.rows.total = rows;
     this.updateVersion(TableModelEvent.TOTAL, 1);
   }
+
+  protected fillCache(cacheCol: number, 
+                      cacheRow: number,
+                      cache: Cells,
+                      getCacheData: (relCol: number, relRow: number, absCol: number, absRow: number) => any) {
+    let cacheRows = this.getCellsRange(DimensionEnum.Row, [cacheRow, cacheRow]);
+    let cacheCols = this.getCellsRange(DimensionEnum.Column, [cacheCol, cacheCol]);
+
+    for (let c = 0; c < cacheCols[1] - cacheCols[0] + 1; c++) {
+      let rowArr = cache[c] = Array<Cell>(cacheRows[1] - cacheRows[0] + 1);
+      for (let r = 0; r < rowArr.length; r++) {
+        try {
+          rowArr[r] = {
+            value: getCacheData(c, r, cacheCols[0] + c, cacheRows[0] + r)
+          };
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }
+  }
 }
 
 export class TestTableModel extends TableSourceModelImpl {

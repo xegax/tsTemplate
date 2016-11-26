@@ -40,6 +40,10 @@ export class GridModel extends Publisher {
   private selectRow: number = 0;
   private selectColumn: number = 0;
 
+  constructor(prevModel?: GridModel) {
+    super(prevModel);
+  }
+
   setRows(rows: number): GridModel {
     if (rows == this.rows)
       return;

@@ -25,11 +25,7 @@ class Table extends React.Component<Props, State> {
     super(props);
     this.state = {};
 
-    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel/*,
-    [-1, 0, 3], {
-      0: (row) => ({value: '' + (1 + row)}),
-      2: (row, data) => ({value: '(' + data.value + ')'})
-    });*/);
+    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel);
     this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
 
@@ -63,8 +59,8 @@ class Table extends React.Component<Props, State> {
 
   componentWillReceiveProps(newProps: Props) {
     if (this.props.sourceModel != newProps.sourceModel) {
-      this.viewModel.setRows(0);
-      this.viewModel.setColumns([]);
+      this.viewModel = new GridModel(this.viewModel);
+      this.viewModel.setCellSelectable(true);
       this.sourceModel = new OrderedColumnsSourceModel(newProps.sourceModel);
     }
   }
