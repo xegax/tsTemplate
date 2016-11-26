@@ -79,7 +79,7 @@ export interface CacheItem {
   cells: Cells;
 }
 
-export type CacheVisitor = (visit: (colCache: number, rowCache: number) => void) => void;
+export type CacheVisitor = (visit: (colCache: number, rowCache: number, cache: CacheItem) => void) => void;
 
 export class TableSourceModelImpl extends Publisher implements TableSourceModel {
   protected columns: Dimension = {
@@ -224,13 +224,13 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     return null;
   }
 
-  protected _updateCacheImpl(cols: Array<number>, rows: Array<number>): IThenable<any> {
-    return this.updateCache((visit: (col, row) => void) => {
-      rows.forEach(row => {
-        cols.forEach(col => {
-          visit(col, row);
-        });
-      });
+  protected _updateCacheImpl(colsCache: Array<number>, rowsCache: Array<number>): IThenable<any> {
+    return this.updateCache((visit: (col, row, cache) => void) => {
+      for(let r = 0; r < rowsCache.length; r++) {
+        for(let c = 0; c < colsCache.length; c++) {
+          visit(colsCache[c], rowsCache[r], this.createOrGetCacheItem(colsCache[c], rowsCache[r]));
+        }
+      }
     });
   }
 
@@ -265,53 +265,3 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     }
   }
 }
-
-export class TestTableModel extends TableSourceModelImpl {
-  protected delay: number;
-
-  constructor(cols: number, rows: number, delay: number = 0) {
-    super();
-    this.delay = delay;
-    this.setTotal(cols, rows);
-  }
-
-  protected fillCells(col: number, row: number, cells: Cells) {
-    let rows = this.getCellsRange(DimensionEnum.Row, [row, row]);
-    let cols = this.getCellsRange(DimensionEnum.Column, [col, col]);
-
-    for (let c = 0; c < cols[1] - cols[0] + 1; c++) {
-      let rowArr = cells[c] = Array<Cell>(rows[1] - rows[0] + 1);
-      for (let r = 0; r < rowArr.length; r++) {
-        try {
-          rowArr[r] = {
-            value: '' + (rows[0] + r) + 'x' + (cols[0] + c)
-          };
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    }
-  }
-
-  protected updateCacheImpl(visit: CacheVisitor) {
-    visit((col, row) => {
-      let item = this.createOrGetCacheItem(col, row);
-      this.fillCells(col, row, item.cells = []);
-    });
-  }
-
-  protected updateCache(visit: CacheVisitor) {
-    if (this.delay != 0) {
-      return new Promise(resolve => {
-        new Timer(() => {
-          this.updateCacheImpl(visit);
-          resolve(null);
-        }).run(this.delay);
-      });
-    }
-
-    this.updateCacheImpl(visit);
-    return null;
-  }
-}
-

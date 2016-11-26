@@ -22,11 +22,10 @@ export class JSONSourceModel extends TableSourceModelImpl {
   }
 
   protected updateCache(visit: CacheVisitor) {
-    visit((col, row) => {
-      let item = this.createOrGetCacheItem(col, row);
-      if (item.cells != null)
+    visit((cacheCol, cacheRow, cache) => {
+      if (cache.cells != null)
         return;
-      this.fillCache(col, row, item.cells = [], (c, r, absCol, absRow) => {
+      this.fillCache(cacheCol, cacheRow, cache.cells = [], (c, r, absCol, absRow) => {
         return this.json[absRow][this.columnNames[c]]
       });
     });

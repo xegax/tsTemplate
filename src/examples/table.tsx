@@ -5,10 +5,11 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {DataRange, TableSourceModel, TableModelEvent, TestTableModel} from 'model/table-source-model';
+import {DataRange, TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
+import {TestTableSourceModel} from 'model/test-table-source-model';
 
 interface Props {
   sourceModel: TableSourceModel;
@@ -115,7 +116,11 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
   onDataSelected = () => {
     let source = this.props.list[this.state.listItem];
-    if (source.indexOf('-header.json') != -1) {
+    if (source.indexOf('test-') == 0) {
+      const delay = 0;
+      let dim = source.split('-')[1].split('x').map(n => +n);
+      this.setState({model: new TestTableSourceModel(dim[1], dim[0], delay, this.state.model)});
+    } else if (source.indexOf('-header.json') != -1) {
       this.setState({model: new JSONPartialSourceModel('../data/' + source, this.state.model)});
     } else {
       d3.json('../data/' + source, (err, data: Array<{[key: string]: string}>) => {
@@ -162,4 +167,4 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
 document.body.style.overflow = 'hidden';
 getContainer().style.position = 'relative';
-ReactDOM.render(<DataSelector list={['full.json', 'gens.json', 'part-header.json']}/>, getContainer());
+ReactDOM.render(<DataSelector list={['full.json', 'gens.json', 'part-header.json', 'test-900000x1000']}/>, getContainer());

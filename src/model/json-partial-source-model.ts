@@ -41,15 +41,13 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
   }
 
   protected updateCacheImpl(visit: CacheVisitor, callback: () => void) {
-    visit((col, row) => {
-      let item = this.createOrGetCacheItem(col, row);
-      if (item.cells != null) {
+    visit((cacheCol: number, cacheRow: number, cache) => {
+      if (cache.cells != null)
         return;
-      }
 
-      item.cells = [];
-      this.requestor.getJSON(this.getFilePartUrl(row), {}).then(data => {
-        this.fillCache(col, row, item.cells, (c, r) => data[r][c]);
+      cache.cells = [];
+      this.requestor.getJSON(this.getFilePartUrl(cacheRow), {}).then(data => {
+        this.fillCache(cacheCol, cacheRow, cache.cells, (c, r) => data[r][c]);
         callback && callback();
       }).catch(err => {
           console.log('error', err);
