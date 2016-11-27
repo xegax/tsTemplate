@@ -47,6 +47,9 @@ const classes = {
 };
 
 export class ScrollbarPanel extends React.Component<Props, State> {
+  hasMount: boolean = false;
+  defferedEvents: Array<() => void>;
+
   static defaultProps = {
     vScroll: true,
     hScroll: true
@@ -136,12 +139,18 @@ export class ScrollbarPanel extends React.Component<Props, State> {
 
     let runEvents = () => events.forEach(e => e());
     if (defferEvent) {
-      setTimeout(runEvents, 1);
+      this.defferedEvents = events;
     } else {
       runEvents();
     }
 
     return state;
+  }
+
+  componentDidMount() {
+    if (this.defferedEvents)
+      this.defferedEvents.forEach(e => e());
+    this.defferedEvents = null;
   }
 
   componentWillReceiveProps(newProps: Props) {

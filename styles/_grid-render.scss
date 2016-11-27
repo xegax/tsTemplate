@@ -1,27 +1,37 @@
+$hover-color: #C8D5B9;
+$select-color: #8FC0A9;
+$bg-color: white;
+$border-color: black;
+
 .grid_render {
   position: relative;
-  background-color: white;
+  background-color: $bg-color;
 
   &--column {
     position: absolute;
   }
 
+  &--hover_row {
+    background-color: $hover-color;
+  }
+
   &--cell {
     box-sizing: border-box;
-    border-left: 1px solid black;
-    border-top: 1px solid black;
+    border-left: 1px solid $border-color;
+    border-top: 1px solid $border-color;
     text-overflow: ellipsis;
+    cursor: default;
 
     &_rightmost {
-      border-right: 1px solid black;
+      border-right: 1px solid $border-color;
     }
 
     &_lowermost {
-      border-bottom: 1px solid black;
+      border-bottom: 1px solid $border-color;
     }
 
     &_select {
-      background-color: lightcoral;
+      background-color: $select-color;
     }
   }
 }

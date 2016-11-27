@@ -1,0 +1,31 @@
+.combobox {
+  box-sizing: border-box;
+  border: 1px solid gray;
+  display: flex;
+
+  &__textbox {
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    padding: 4px;
+  }
+
+  &.combobox__focus {
+    border: 1px solid silver;
+  }
+}
+
+.combo-list.grid_control .grid_render {
+  &--cell {
+    border-left: none;
+    border-top: none;
+
+    &_rightmost {
+      border-right: none;
+    }
+
+    &_lowermost {
+      border-bottom: none;
+    }
+  }
+}

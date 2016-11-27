@@ -4,6 +4,7 @@ import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {assign} from 'lodash';
+import {className} from 'common/common';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -19,8 +20,8 @@ interface Props {
   vScroll?: boolean;
   hScroll?: boolean;
 
+  header?: boolean;
   model: GridModel;
-  header?: GridModel;
 
   resizable?: boolean;
 
@@ -28,6 +29,7 @@ interface Props {
   renderCell?(column: number, row: number): Cell;
 
   style?: React.CSSProperties;
+  className?: string;
 }
 
 interface State {
@@ -53,8 +55,7 @@ export class GridControl extends React.Component<Props, State> {
     width: 0,
     height: 0,
     model: new GridModel(),
-    header: null,
-
+    header: true,
     resizable: false,
 
     renderHeader: (column: number) => ({ element: '' + column }),
@@ -65,7 +66,7 @@ export class GridControl extends React.Component<Props, State> {
     super(props);
     this.state = {};
 
-    if (!props.header) {
+    if (props.header) {
       let header = this.state.header = new GridModel();
       header.setColumns(props.model.getColumns());
       header.setRows(1);
@@ -74,7 +75,7 @@ export class GridControl extends React.Component<Props, State> {
   }
 
   onModelChanged = (eventMask) => {
-    if (eventMask & GridModelEvent.COLUMNS) {
+    if (this.props.header && eventMask & GridModelEvent.COLUMNS) {
       this.state.header.setColumns(this.props.model.getColumns());
       this.state.header.notifySubscribers();
     }
@@ -102,14 +103,14 @@ export class GridControl extends React.Component<Props, State> {
     body.setScrollTop(scrollTop);
     body.notifySubscribers();
 
-    header.setScrollLeft(scrollLeft);
-    header.notifySubscribers();
+    header && header.setScrollLeft(scrollLeft);
+    header && header.notifySubscribers();
   };
 
   private onClientSize = (event) => {
     let {width, height} = event;
     this.setState({clientWidth: width, clientHeight: height});
-    this.state.header.setWidth(width);
+    this.state.header && this.state.header.setWidth(width);
     this.props.model.setWidth(width);
     this.props.model.setHeight(height);
   };
@@ -189,7 +190,8 @@ export class GridControl extends React.Component<Props, State> {
     const {
       width, height,
       vScroll,
-      hScroll
+      hScroll,
+      header
     } = this.props;
 
     const aligned = this.props.model.isRowsAligned();
@@ -197,11 +199,11 @@ export class GridControl extends React.Component<Props, State> {
     const contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
 
     return (
-      <div className={classes.control} style={this.props.style}>
-        {this.renderHeader()}
+      <div className={className(classes.control, this.props.className)} style={this.props.style}>
+        {header ? this.renderHeader(): null}
         <ScrollbarPanel
           width={width}
-          height={height - cellHeight}
+          height={header ? height - cellHeight : height}
 
           contentWidth={contentWidth}
           contentHeight={contentHeight}

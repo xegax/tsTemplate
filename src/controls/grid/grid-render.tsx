@@ -11,7 +11,8 @@ const classes = {
   lowermost: 'grid_render--cell_lowermost',
   topmost: 'grid_render--cell_topmost',
   leftmost: 'grid_render--cell_leftmost',
-  selectCell: 'grid_render--cell_select'
+  selectCell: 'grid_render--cell_select',
+  hoverRow: 'grid_render--hover_row'
 };
 
 export interface Cell {
@@ -29,7 +30,11 @@ export interface Props {
   renderCell?(column: number, row: number): Cell;
 }
 
-export class GridRender extends React.Component<Props, {}> {
+interface State {
+  hoverRow: number;
+}
+
+export class GridRender extends React.Component<Props, State> {
   static defaultProps: Props = {
     width: 0,
     height: 0,
@@ -38,6 +43,9 @@ export class GridRender extends React.Component<Props, {}> {
 
   constructor(props: Props) {
     super(props);
+    this.state = {
+      hoverRow: -1
+    };
     props.model.addSubscriber(this.onModelChanged);
   }
 
@@ -65,6 +73,12 @@ export class GridRender extends React.Component<Props, {}> {
     return this.props.model.getRows();
   }
 
+  private onMouseEnter(hoverRow: number) {
+    return e => {
+      this.setState({hoverRow});
+    };
+  }
+
   renderColumn(column: number, c: number, rows: Array<number>) {
     let columnsNum = this.props.model.getColumnsNum();
     let rowsNum = this.getRows();
@@ -85,7 +99,8 @@ export class GridRender extends React.Component<Props, {}> {
         column == columnsNum - 1 && classes.rightmost,
         rowIdx == rowsNum - 1 && classes.lowermost,
         this.props.model.isRowSelect(rowIdx) && classes.selectCell,
-        cell && cell.className
+        cell && cell.className,
+        this.state.hoverRow == rowIdx && classes.hoverRow
       );
 
       cellsArr.push(
@@ -94,6 +109,8 @@ export class GridRender extends React.Component<Props, {}> {
           style={style}
           className={cn}
           onClick={e => this.props.model.setSelectRow(rowIdx)}
+          onMouseEnter={e => this.setState({hoverRow: rowIdx})}
+          onMouseMove={e => this.setState({hoverRow: rowIdx})}
         >
           {cell.element}
         </div>
@@ -170,6 +187,7 @@ export class GridRender extends React.Component<Props, {}> {
         className={className(classes.control, this.props.className)}
         style={style}
         onKeyDown={this.onKeyDown}
+        onMouseLeave={e => this.setState({hoverRow: -1})}
       >
         {this.renderColumns()}
       </div>

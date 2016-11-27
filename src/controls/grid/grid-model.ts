@@ -115,7 +115,7 @@ export class GridModel extends Publisher {
   }
 
   setWidth(width: number) {
-    if (width == this.width)
+    if (width != null && width == this.width)
       return;
 
     this.width = width;
@@ -130,7 +130,7 @@ export class GridModel extends Publisher {
   }
 
   setHeight(height: number) {
-    if (height == this.height)
+    if (height != null && height == this.height)
       return;
 
     this.height = height;
