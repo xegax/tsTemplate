@@ -42,6 +42,7 @@ export class Table extends React.Component<Props, State> {
     this.onSourceChanged(TableModelEvent.TOTAL);
     if (this.props.selectedRow >= 0) {
       this.viewModel.setSelectRow(this.props.selectedRow);
+      this.viewModel.setScrollTopRow(this.props.selectedRow);
     }
   }
 

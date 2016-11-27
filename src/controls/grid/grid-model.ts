@@ -262,6 +262,12 @@ export class GridModel extends Publisher {
     return this.startColumnOffs;
   }
 
+  setScrollTopRow(row: number) {
+    row = Math.max(0, row);
+    row = Math.min(this.rows - 1, row);
+    this.setScrollTop(row * this.cellHeight);
+  }
+
   scrollToRow(row: number) {
     row = Math.max(0, row);
     row = Math.min(this.rows - 1, row);

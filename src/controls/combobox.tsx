@@ -60,6 +60,7 @@ export class ComboBox extends React.Component<Props, State> {
         style={{
           display: 'flex',
           position: 'absolute',
+          left: 0,
           marginLeft: -1,
           marginTop: this.node.offsetHeight - 2,
           width: this.node.offsetWidth,
@@ -72,7 +73,7 @@ export class ComboBox extends React.Component<Props, State> {
           e.stopPropagation();
         }}
       >
-        <FitToParent>
+        <FitToParent width={this.node.offsetWidth} height={30 * 10 + 2}>
           <Table
             selectedRow={this.state.index}
             onSelect={this.onSelect}
@@ -88,7 +89,8 @@ export class ComboBox extends React.Component<Props, State> {
   render() {
     const style = {
       width: this.props.width,
-      height: this.props.height
+      height: this.props.height,
+      position: 'relative'
     };
     return (
       <div ref={ref => this.node = ref} style={style} className={className(classes.combobox, this.state.focus && classes.focus)}>
