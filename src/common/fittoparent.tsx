@@ -7,6 +7,8 @@ interface Props extends React.Props<{}> {
   fitY?: boolean; // растягивание по оси y
 
   timer?: Timer;
+  width?: number;
+  height?: number;
 }
 
 interface State {
@@ -29,7 +31,10 @@ export class FitToParent extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {};
+    this.state = {
+      width: props.width,
+      height: props.height
+    };
 
     this.doUpdateSizeCallback = () => this.doUpdateSize();
     this.timer = props.timer;
@@ -70,6 +75,7 @@ export class FitToParent extends React.Component<Props, State> {
     this.timer.addUniqueCallback(this.doUpdateSizeCallback);
     if (!this.timer.isRunning())
       this.timer.runRepeat(100);
+    this.forceUpdate();
   }
 
   componentWillUnmount() {
