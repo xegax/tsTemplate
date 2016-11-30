@@ -11,10 +11,11 @@ interface Props {
   header?: boolean;
   className?: string;
   style?: React.CSSProperties;
-  onSelect?: (row: number) => void;
+  onSelect?: (row: number, byMouse: boolean) => void;
   selectedRow?: number;
   width?: number;
   height?: number;
+  focus?: boolean;
 }
 
 interface State {
@@ -41,7 +42,7 @@ export class Table extends React.Component<Props, State> {
   componentDidMount() {
     this.onSourceChanged(TableModelEvent.TOTAL);
     if (this.props.selectedRow >= 0) {
-      this.viewModel.setSelectRow(this.props.selectedRow);
+      this.viewModel.setSelectRow(this.props.selectedRow, false);
       this.viewModel.setScrollTopRow(this.props.selectedRow);
     }
   }
@@ -76,7 +77,7 @@ export class Table extends React.Component<Props, State> {
 
   private onViewChanged = (eventMask: number) => {
     if (eventMask & GridModelEvent.ROW_SELECT) {
-      this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow());
+      this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow(), (eventMask & GridModelEvent.BY_MOUSE) != 0);
     }
 
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
@@ -124,6 +125,7 @@ export class Table extends React.Component<Props, State> {
         style={this.props.style}
         header={this.props.header}
         resizable
+        focus={this.props.focus}
         renderCell={this.renderCell}
         renderHeader={this.renderHeader}
         model={this.viewModel}

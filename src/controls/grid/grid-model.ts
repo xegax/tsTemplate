@@ -13,7 +13,8 @@ export enum GridModelEvent {
   ROWS_RENDER_RANGE    = 1 << 9,
   ROWS_ALIGNED  = 1 << 10,
   CELL_SELECTION = 1 << 11,
-  ROW_SELECT = 1 << 12
+  ROW_SELECT = 1 << 12,
+  BY_MOUSE = 1 << 13
 }
 
 export class GridModel extends Publisher {
@@ -37,7 +38,7 @@ export class GridModel extends Publisher {
   private rowsAligned: boolean = true;
   private cellSelectable: boolean = false;
 
-  private selectRow: number = 0;
+  private selectRow: number = -1;
   private selectColumn: number = 0;
 
   constructor(prevModel?: GridModel) {
@@ -281,20 +282,24 @@ export class GridModel extends Publisher {
       this.setScrollTop((row - rows.num) * this.cellHeight);
   }
 
-  setSelectRow(row: number) {
+  setSelectRow(row: number, byMouse: boolean) {
     if (!this.cellSelectable)
       return;
 
     row = Math.max(0, row);
     row = Math.min(this.rows - 1, row);
 
-    if (this.selectRow == row)
+    if (this.selectRow == row && byMouse == false)
       return;
 
     this.selectRow = row;
     this.scrollToRow(row);
 
-    this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+    let mask = GridModelEvent.ROW_SELECT;
+    if (byMouse)
+      mask |= GridModelEvent.BY_MOUSE;
+
+    this.updateVersion(mask, 1);
   }
 
   getSelectRow(): number {

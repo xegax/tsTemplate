@@ -108,7 +108,7 @@ export class GridRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
-          onClick={e => this.props.model.setSelectRow(rowIdx)}
+          onClick={e => this.props.model.setSelectRow(rowIdx, true)}
           onMouseEnter={e => this.setState({hoverRow: rowIdx})}
           onMouseMove={e => this.setState({hoverRow: rowIdx})}
         >
@@ -164,6 +164,10 @@ export class GridRender extends React.Component<Props, State> {
 
   onKeyDown = (event: React.KeyboardEvent) => {
     let row = this.props.model.getSelectRow();
+    if (event.keyCode == KeyCode.Enter) {
+      return this.props.model.setSelectRow(row, true);
+    }
+
     if (event.keyCode == KeyCode.ArrowUp) {
       row--;
     }
@@ -171,7 +175,7 @@ export class GridRender extends React.Component<Props, State> {
     if (event.keyCode == KeyCode.ArrowDown) {
       row++;
     }
-    this.props.model.setSelectRow(row);
+    this.props.model.setSelectRow(row, false);
   }
 
   render() {

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
@@ -24,6 +25,7 @@ interface Props {
   model: GridModel;
 
   resizable?: boolean;
+  focus?: boolean;
 
   renderHeader?(column: number): Cell;
   renderCell?(column: number, row: number): Cell;
@@ -80,6 +82,13 @@ export class GridControl extends React.Component<Props, State> {
       this.state.header.notifySubscribers();
     }
     this.forceUpdate();
+  }
+
+  componentDidMount() {
+    if (this.props.focus) {
+      let node = ReactDOM.findDOMNode<HTMLElement>(this.map);
+      node.focus();
+    }
   }
 
   componentWillUnmount() {
@@ -187,7 +196,7 @@ export class GridControl extends React.Component<Props, State> {
     let cellHeight = this.props.model.getCellHeight();
     let rows = this.props.model.getRows();
 
-    const {
+    let {
       width, height,
       vScroll,
       hScroll,
@@ -197,6 +206,9 @@ export class GridControl extends React.Component<Props, State> {
     const aligned = this.props.model.isRowsAligned();
     const contentWidth = this.props.model.getSummOfSizes();
     const contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
+
+    if (cellHeight * rows < height)
+      vScroll = false;
 
     return (
       <div className={className(classes.control, this.props.className)} style={this.props.style}>
