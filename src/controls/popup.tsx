@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {Point} from 'common/point';
 import {IThenable} from 'promise';
+import {findParentNode} from 'common/dom';
 
 const classes = {
   popup: 'popup'
@@ -38,16 +39,6 @@ export class Popup extends React.Component<Props, State> {
       <div className={classes.popup} style={{left, top}}>{this.props.children}</div>
     );
   }
-}
-
-function findParentNode(node: HTMLElement, tgt: HTMLElement): boolean {
-  while(node) {
-    node = node.parentElement;
-    if (node == tgt)
-      return true;
-  }
-
-  return false;
 }
 
 export class PopupContext {
