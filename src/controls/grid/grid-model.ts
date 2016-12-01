@@ -14,7 +14,7 @@ export enum GridModelEvent {
   ROWS_ALIGNED  = 1 << 10,
   CELL_SELECTION = 1 << 11,
   ROW_SELECT = 1 << 12,
-  BY_MOUSE = 1 << 13
+  ROW_HIGHLIGHT = 1 << 13
 }
 
 export class GridModel extends Publisher {
@@ -37,7 +37,9 @@ export class GridModel extends Publisher {
 
   private rowsAligned: boolean = true;
   private cellSelectable: boolean = false;
+  private cellHighlightable: boolean = true;
 
+  private highlightRow: number = -1;
   private selectRow: number = -1;
   private selectColumn: number = 0;
 
@@ -282,24 +284,42 @@ export class GridModel extends Publisher {
       this.setScrollTop((row - rows.num) * this.cellHeight);
   }
 
-  setSelectRow(row: number, byMouse: boolean) {
+  setSelectRow(row: number, force: boolean = false) {
     if (!this.cellSelectable)
       return;
 
     row = Math.max(0, row);
     row = Math.min(this.rows - 1, row);
 
-    if (this.selectRow == row && byMouse == false)
+    if (force == false && this.selectRow == row)
       return;
 
     this.selectRow = row;
     this.scrollToRow(row);
 
-    let mask = GridModelEvent.ROW_SELECT;
-    if (byMouse)
-      mask |= GridModelEvent.BY_MOUSE;
+    this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+  }
 
-    this.updateVersion(mask, 1);
+  setHighlightRow(row: number, scrollToRow: boolean = false) {
+    if (!this.cellHighlightable)
+      return;
+
+    row = Math.max(-1, row);
+    row = Math.min(this.rows - 1, row);
+
+    if (this.highlightRow == row)
+      return;
+
+    this.highlightRow = row;
+    
+    if (scrollToRow && row >= 0)
+      this.scrollToRow(row);
+
+    this.updateVersion(GridModelEvent.ROW_HIGHLIGHT, 1);
+  }
+
+  getHighlightRow() {
+    return this.highlightRow;
   }
 
   getSelectRow(): number {

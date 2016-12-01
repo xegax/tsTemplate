@@ -31,7 +31,6 @@ export interface Props {
 }
 
 interface State {
-  hoverRow: number;
 }
 
 export class GridRender extends React.Component<Props, State> {
@@ -44,7 +43,6 @@ export class GridRender extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      hoverRow: -1
     };
     props.model.addSubscriber(this.onModelChanged);
   }
@@ -73,12 +71,6 @@ export class GridRender extends React.Component<Props, State> {
     return this.props.model.getRows();
   }
 
-  private onMouseEnter(hoverRow: number) {
-    return e => {
-      this.setState({hoverRow});
-    };
-  }
-
   renderColumn(column: number, c: number, rows: Array<number>) {
     let columnsNum = this.props.model.getColumnsNum();
     let rowsNum = this.getRows();
@@ -100,7 +92,7 @@ export class GridRender extends React.Component<Props, State> {
         rowIdx == rowsNum - 1 && classes.lowermost,
         this.props.model.isRowSelect(rowIdx) && classes.selectCell,
         cell && cell.className,
-        this.state.hoverRow == rowIdx && classes.hoverRow
+        this.props.model.getHighlightRow() == rowIdx && classes.hoverRow
       );
 
       cellsArr.push(
@@ -108,9 +100,9 @@ export class GridRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
-          onClick={e => this.props.model.setSelectRow(rowIdx, true)}
-          onMouseEnter={e => this.setState({hoverRow: rowIdx})}
-          onMouseMove={e => this.setState({hoverRow: rowIdx})}
+          onClick={e => this.props.model.setSelectRow(rowIdx)}
+          onMouseEnter={e => this.props.model.setHighlightRow(rowIdx)}
+          onMouseMove={e => this.props.model.setHighlightRow(rowIdx)}
         >
           {cell.element}
         </div>
@@ -164,9 +156,6 @@ export class GridRender extends React.Component<Props, State> {
 
   onKeyDown = (event: React.KeyboardEvent) => {
     let row = this.props.model.getSelectRow();
-    if (event.keyCode == KeyCode.Enter) {
-      return this.props.model.setSelectRow(row, true);
-    }
 
     if (event.keyCode == KeyCode.ArrowUp) {
       row--;
@@ -175,7 +164,7 @@ export class GridRender extends React.Component<Props, State> {
     if (event.keyCode == KeyCode.ArrowDown) {
       row++;
     }
-    this.props.model.setSelectRow(row, false);
+    this.props.model.setSelectRow(row);
   }
 
   render() {
@@ -191,7 +180,7 @@ export class GridRender extends React.Component<Props, State> {
         className={className(classes.control, this.props.className)}
         style={style}
         onKeyDown={this.onKeyDown}
-        onMouseLeave={e => this.setState({hoverRow: -1})}
+        onMouseLeave={e => this.props.model.setHighlightRow(-1)}
       >
         {this.renderColumns()}
       </div>

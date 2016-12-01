@@ -34,7 +34,7 @@ export interface DataRange {
 
 export interface TableSourceModel {
   // load data
-  loadData(range: DataRange);
+  loadData(range: DataRange): IThenable<any>;
 
   reload();
 
@@ -105,7 +105,7 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     super(prevModel as any);
   }
 
-  loadData(_range: DataRange) {
+  loadData(_range: DataRange): IThenable<any> {
     const range: DataRange = {
       cols: _range.cols || this.columns.range.slice(),
       rows: _range.rows || this.rows.range.slice()
@@ -129,9 +129,11 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
 
     const promise = this._updateCacheImpl(this.columns.buffer, this.rows.buffer);
     if (promise) {
-      promise.then(notify);
+      return promise.then(notify);
     } else {
-      notify();
+      return new Promise(resolve => {
+        notify();
+      });
     }
   }
 

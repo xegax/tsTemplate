@@ -29,7 +29,7 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
       range.cols[0] = cols[0];
       range.cols[1] = cols[cols.length - 1];
     }
-    this.sourceModel.loadData(range);
+    return this.sourceModel.loadData(range);
   }
 
   reload() {

@@ -8,10 +8,12 @@ import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 
 interface Props {
   sourceModel: TableSourceModel;
+  viewModel?: GridModel;
+
   header?: boolean;
   className?: string;
   style?: React.CSSProperties;
-  onSelect?: (row: number, byMouse: boolean) => void;
+  onSelect?: (row: number) => void;
   selectedRow?: number;
   width?: number;
   height?: number;
@@ -22,13 +24,14 @@ interface State {
 }
 
 export class Table extends React.Component<Props, State> {
-  private viewModel = new GridModel();
   private sourceModel: OrderedColumnsSourceModel;
+  private viewModel: GridModel;
 
   constructor(props: Props) {
     super(props);
     this.state = {};
 
+    this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
     this.viewModel.setHeight(props.height);
 
@@ -42,7 +45,8 @@ export class Table extends React.Component<Props, State> {
   componentDidMount() {
     this.onSourceChanged(TableModelEvent.TOTAL);
     if (this.props.selectedRow >= 0) {
-      this.viewModel.setSelectRow(this.props.selectedRow, false);
+      this.viewModel.setSelectRow(this.props.selectedRow);
+      this.viewModel.setHighlightRow(this.props.selectedRow);
       this.viewModel.setScrollTopRow(this.props.selectedRow);
     }
   }
@@ -77,7 +81,7 @@ export class Table extends React.Component<Props, State> {
 
   private onViewChanged = (eventMask: number) => {
     if (eventMask & GridModelEvent.ROW_SELECT) {
-      this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow(), (eventMask & GridModelEvent.BY_MOUSE) != 0);
+      this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow());
     }
 
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {

@@ -6,6 +6,8 @@ import {Table} from 'controls/table';
 import {FitToParent} from 'common/fittoparent';
 import {findParentNode} from 'common/dom';
 import {assign} from 'lodash';
+import {GridModel} from 'controls/grid/grid-model';
+import {KeyCode} from 'common/keycode';
 
 const classes = {
   combobox: 'combobox',
@@ -19,6 +21,11 @@ interface Props {
   height?: number;
   style?: React.CSSProperties;
   maxItems?: number;
+  
+  sourceRow?: number;
+  textValue?: string;
+
+  onSelect?: (value: string, row: number) => void;
 }
 
 interface State {
@@ -36,12 +43,13 @@ export class ComboBox extends React.Component<Props, State> {
 
   input: HTMLInputElement;
   node: HTMLElement;
+  gridViewModel = new GridModel();
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     this.state = {
       text: '',
-      index: -1,
+      index: props.sourceRow != null ? props.sourceRow : -1,
       popup: false,
       focus: false,
       items: 0
@@ -50,26 +58,43 @@ export class ComboBox extends React.Component<Props, State> {
     this.props.sourceModel.addSubscriber(this.watchTotal);
   }
 
-  watchTotal = (mask: number) => {
+  protected watchTotal = (mask: number) => {
     let total = this.props.sourceModel.getTotal();
     if (mask & TableModelEvent.TOTAL && this.state.items != total.rows) {
       this.setState({items: total.rows});
     }
+
+    if (this.props.sourceRow == null)
+       return;
+
+    if (mask & TableModelEvent.TOTAL) {
+      this.props.sourceModel.loadData({
+        rows: [this.props.sourceRow, this.props.sourceRow + this.props.maxItems],
+        cols: [0, 1]
+      }).then(() => {
+        this.setState({text: this.props.sourceModel.getCell(0, this.props.sourceRow).value});
+      });
+    }
   }
 
-  showPopup(show: boolean) {
+  componentDidMount() {
+    this.gridViewModel.setWidth(this.node.offsetWidth);
+  }
+
+  protected showPopup(show: boolean) {
     this.setState({popup: show});
   }
 
-  onSelect = (row: number, byMouse: boolean) => {
-    if (!byMouse)
+  protected onSelect = (row: number) => {
+    if (this.props.sourceRow == row)
       return;
-
+    
     this.showPopup(false);
     this.setState({index: row, text: this.props.sourceModel.getCell(0, row).value});
+    this.props.onSelect && this.props.onSelect(this.props.sourceModel.getCell(0, row).value, row);
   }
 
-  renderPopup() {
+  protected renderPopup() {
     if (!this.state.popup || this.state.items == 0)
       return null;
 
@@ -92,10 +117,10 @@ export class ComboBox extends React.Component<Props, State> {
           e.stopPropagation();
         }}
       >
-        <FitToParent width={this.node.offsetWidth} height={30 * 10 + 2}>
+        <FitToParent width={this.node.offsetWidth} height={height}>
           <Table
+            viewModel={this.gridViewModel}
             selectedRow={this.state.index}
-            focus
             onSelect={this.onSelect}
             className='combo-list'
             header={false}
@@ -112,6 +137,28 @@ export class ComboBox extends React.Component<Props, State> {
     this.showPopup(false);
   };
 
+  protected onKeyDown = (e: React.KeyboardEvent) => {
+    let keyCode = e.keyCode;
+
+    let rowOffs = 0;
+    if (keyCode == KeyCode.ArrowUp) {
+      rowOffs = -1;
+    } else if (keyCode == KeyCode.ArrowDown) {
+      rowOffs = 1;
+    } else if (keyCode == KeyCode.Enter) {
+      if (this.state.popup == false) {
+        this.showPopup(true);
+      } else {
+        this.gridViewModel.setSelectRow(this.gridViewModel.getHighlightRow(), true);
+      }
+    } else if (keyCode == KeyCode.Escape) {
+      this.showPopup(false);
+    }
+
+    if (rowOffs)
+      this.gridViewModel.setHighlightRow(this.gridViewModel.getHighlightRow() + rowOffs, true);
+  };
+
   render() {
     const style = assign({}, this.props.style, {
       width: this.props.width,
@@ -125,6 +172,7 @@ export class ComboBox extends React.Component<Props, State> {
         style={style}
         className={className(classes.combobox, this.state.focus && classes.focus)}
         onBlur={this.onBlur}
+        onKeyDown={this.onKeyDown}
       >
         <div style={{display: 'flex'}}>
           <input
