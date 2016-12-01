@@ -3,5 +3,6 @@ export enum KeyCode {
   ArrowRight = 39,
   ArrowUp = 38,
   ArrowDown = 40,
-  Enter = 13
+  Enter = 13,
+  Escape = 27 
 }
