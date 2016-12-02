@@ -130,10 +130,17 @@ export class GridControl extends React.Component<Props, State> {
   }
 
   private onResizeColumn(column: number, event: React.MouseEvent) {
+    let rowsHighlight = this.props.model.isCellHighlightable();
     let size = this.props.model.getColumnSize(column);
     startDragging({x: size, y: 0}, {
-      onDragging: event => {
-        this.props.model.setColumnSize(column, event.x);
+      onDragStart: () => {
+        this.props.model.setCellHighlightable(false);
+      },
+      onDragging: e => {
+        this.props.model.setColumnSize(column, e.x);
+      },
+      onDragEnd: () => {
+        this.props.model.setCellHighlightable(rowsHighlight);
       }
     })(event as any as MouseEvent);
   }
@@ -203,22 +210,26 @@ export class GridControl extends React.Component<Props, State> {
       header
     } = this.props;
 
+    
     const aligned = this.props.model.isRowsAligned();
     const contentWidth = this.props.model.getSummOfSizes();
-    const contentHeight = cellHeight * (rows + (aligned ? 1 : 0));
-
-    if (cellHeight * rows < height)
+    let contentFullHeight = cellHeight * rows;
+    if (contentFullHeight <= height)
       vScroll = false;
+    
+    const panelHeight = (header == false) ? height : height - cellHeight;
+    if (aligned && panelHeight % cellHeight != 0)
+      contentFullHeight += cellHeight;
 
     return (
       <div className={className(classes.control, this.props.className)} style={this.props.style}>
         {header ? this.renderHeader(): null}
         <ScrollbarPanel
           width={width}
-          height={header ? height - cellHeight : height}
+          height={panelHeight}
 
           contentWidth={contentWidth}
-          contentHeight={contentHeight}
+          contentHeight={contentFullHeight}
 
           onScrolling = {this.onScrolling}
           onClientSize = {this.onClientSize}

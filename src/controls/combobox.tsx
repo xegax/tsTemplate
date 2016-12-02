@@ -124,6 +124,7 @@ export class ComboBox extends React.Component<Props, State> {
             onSelect={this.onSelect}
             className='combo-list'
             header={false}
+            highlightableRows
             sourceModel={this.props.sourceModel}
           />
         </FitToParent>

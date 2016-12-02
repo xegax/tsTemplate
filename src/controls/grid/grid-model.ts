@@ -45,6 +45,11 @@ export class GridModel extends Publisher {
 
   constructor(prevModel?: GridModel) {
     super(prevModel);
+
+    if (prevModel) {
+      this.cellHighlightable = prevModel.cellHighlightable;
+      this.cellSelectable = prevModel.cellSelectable;
+    }
   }
 
   setRows(rows: number): GridModel {
@@ -74,6 +79,14 @@ export class GridModel extends Publisher {
 
   isCellSelectable() {
     return this.cellSelectable;
+  }
+
+  isCellHighlightable() {
+    return this.cellHighlightable;
+  }
+
+  setCellHighlightable(hl: boolean) {
+    this.cellHighlightable = hl;
   }
 
   setCellSelectable(value: boolean) {

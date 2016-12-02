@@ -55,9 +55,21 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   renderTable() {
     if (!this.state.model)
       return (<div>No data to display</div>);
+
+    let columnRender = [];
+    let source = this.props.list[this.state.listItem];
+    if (['full.json', 'part-header.json'].indexOf(source) != -1) {
+      const icon = {
+        'psx': <img height={28} src={'../images/psx-logo-small.png'}/>,
+        'gens': <img height={28} src={'../images/gens-logo-small.png'}/>,
+        'snes': <img height={28} src={'../images/snes-logo-small.png'} />
+      };
+      columnRender[3] = (s) => icon[s] || '?';
+    }
+
     return (
       <FitToParent>
-        <Table sourceModel={this.state.model} style={{position: 'absolute'}}/>
+        <Table columnRender={columnRender} sourceModel={this.state.model} style={{position: 'absolute'}}/>
       </FitToParent>
     );
   }

@@ -9,6 +9,7 @@ import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
+  columnRender?: {[column: number]: (s: string, raw: string) => JSX.Element};
 
   header?: boolean;
   className?: string;
@@ -18,13 +19,19 @@ interface Props {
   width?: number;
   height?: number;
   focus?: boolean;
+  highlightableRows?: boolean;
 }
 
 interface State {
 }
 
 export class Table extends React.Component<Props, State> {
-  private sourceModel: OrderedColumnsSourceModel;
+  static defaultProps = {
+    columnRender: [],
+    highlightableRows: false
+  };
+
+  private sourceModel: TableSourceModel;
   private viewModel: GridModel;
 
   constructor(props: Props) {
@@ -34,8 +41,9 @@ export class Table extends React.Component<Props, State> {
     this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
     this.viewModel.setHeight(props.height);
+    this.viewModel.setCellHighlightable(this.props.highlightableRows === true);
 
-    this.sourceModel = new OrderedColumnsSourceModel(this.props.sourceModel);
+    this.sourceModel = this.props.sourceModel;
     this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
 
@@ -90,32 +98,34 @@ export class Table extends React.Component<Props, State> {
   };
 
   componentWillReceiveProps(newProps: Props) {
+    if (this.props.sourceModel != newProps.sourceModel) {
+      this.sourceModel = newProps.sourceModel;
+      this.viewModel.setRows(0);
+      this.viewModel.setColumns([]);
+    }
+
     this.viewModel.setWidth(newProps.width);
     this.viewModel.setHeight(newProps.height);
-    
-    if (this.props.sourceModel != newProps.sourceModel) {
-      this.viewModel = new GridModel(this.viewModel);
-      this.viewModel.setCellSelectable(true);
-      this.sourceModel = new OrderedColumnsSourceModel(newProps.sourceModel);
-    }
   }
 
   renderCell = (column: number, row: number) => {
     let cell = this.sourceModel.getCell(column, row).value;
+    
+    const render = this.props.columnRender[column];
+    if (render) {
+      return {
+        element: render(cell, cell)
+      };
+    }
+
     return {
        element: <div style={{padding: 3, whiteSpace: 'nowrap', textOverflow: 'inherit', overflow: 'hidden'}}>{cell}</div> as any
     };
   }
 
-  onClickByHeader(column: number) {
-    this.sourceModel.removeColumn(column);
-    this.onSourceChanged(TableModelEvent.TOTAL);
-  }
-
   renderHeader = (column: number) => {
-    let value;// = this.props.model.getColumn(column);
     return {
-      element: <div onClick={e => this.onClickByHeader(column)}>{'column ' + column}</div>
+      element: <div>{'column ' + column}</div>
     };
   }
 
