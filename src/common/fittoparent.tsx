@@ -41,12 +41,12 @@ export class FitToParent extends React.Component<Props, State> {
   }
 
   private doUpdateSize() {
-    if (this.parent.offsetWidth === this.state.width && this.parent.offsetHeight === this.state.height)
+    if (this.parent.clientWidth === this.state.width && this.parent.clientHeight === this.state.height)
       return;
 
     this.setState({
-      width: this.parent.offsetWidth,
-      height: this.parent.offsetHeight
+      width: this.parent.clientWidth,
+      height: this.parent.clientHeight
     });
   }
 
