@@ -9,7 +9,7 @@ import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
-  columnRender?: {[column: number]: (s: string, raw: string) => JSX.Element};
+  columnRender?: {[column: number]: (s: string, raw: any, row: number) => JSX.Element};
 
   header?: boolean;
   className?: string;
@@ -20,6 +20,7 @@ interface Props {
   height?: number;
   focus?: boolean;
   highlightableRows?: boolean;
+  rowHeight?: number;
 }
 
 interface State {
@@ -28,7 +29,8 @@ interface State {
 export class Table extends React.Component<Props, State> {
   static defaultProps = {
     columnRender: [],
-    highlightableRows: false
+    highlightableRows: false,
+    rowHeight: 30
   };
 
   private sourceModel: TableSourceModel;
@@ -42,6 +44,7 @@ export class Table extends React.Component<Props, State> {
     this.viewModel.setWidth(props.width);
     this.viewModel.setHeight(props.height);
     this.viewModel.setCellHighlightable(this.props.highlightableRows === true);
+    this.viewModel.setCellHeight(this.props.rowHeight);
 
     this.sourceModel = this.props.sourceModel;
     this.sourceModel.addSubscriber(this.onSourceChanged);
@@ -109,17 +112,17 @@ export class Table extends React.Component<Props, State> {
   }
 
   renderCell = (column: number, row: number) => {
-    let cell = this.sourceModel.getCell(column, row).value;
+    let cell = this.sourceModel.getCell(column, row);
     
     const render = this.props.columnRender[column];
-    if (render) {
+    if (render && cell.raw != null) {
       return {
-        element: render(cell, cell)
+        element: render(cell.value, cell.raw, row)
       };
     }
 
     return {
-       element: <div style={{padding: 3, whiteSpace: 'nowrap', textOverflow: 'inherit', overflow: 'hidden'}}>{cell}</div> as any
+       element: <div style={{padding: 3, whiteSpace: 'nowrap', textOverflow: 'inherit', overflow: 'hidden'}}>{cell.value}</div> as any
     };
   }
 

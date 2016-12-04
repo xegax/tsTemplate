@@ -17,7 +17,8 @@ export const enum TableModelEvent {
 }
 
 export interface Cell {
-  value: any;
+  value: string;
+  raw: any;
 }
 
 export type Cells = Array<Array<Cell>>;
@@ -193,8 +194,9 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
   }
 
   getCell(col: number, row: number): Cell {
+    let empty = {value: '', raw: null};
     if (this.columns.itemsPerBuffer == 0 || this.rows.itemsPerBuffer == 0) {
-      return this.empty;
+      return empty;
     }
 
     try {
@@ -210,9 +212,9 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
         return item[col][row];
       }
     } catch(e) {
-      return this.empty;
+      return empty;
     }
-    return this.empty;
+    return empty;
   }
 
   protected createOrGetCacheItem(col: number, row: number): CacheItem {
@@ -257,8 +259,10 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
       let rowArr = cache[c] = Array<Cell>(cacheRows[1] - cacheRows[0] + 1);
       for (let r = 0; r < rowArr.length; r++) {
         try {
+          let raw = getCacheData(c, r, cacheCols[0] + c, cacheRows[0] + r);
           rowArr[r] = {
-            value: getCacheData(c, r, cacheCols[0] + c, cacheRows[0] + r)
+            value: raw.toString(),
+            raw
           };
         } catch (e) {
           console.log(e);

@@ -54,7 +54,7 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   getCell(col: number, row: number) {
     let origCol = this.translateColumn(col);
-    return this.mapCell(col, row, origCol >= 0 ? this.sourceModel.getCell(origCol, row) : {value: '?'});
+    return this.mapCell(col, row, origCol >= 0 ? this.sourceModel.getCell(origCol, row) : {value: '?', raw: null});
   }
 
   addSubscriber(callback: (mask: number) => void) {

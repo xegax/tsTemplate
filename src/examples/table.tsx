@@ -65,11 +65,22 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
         'snes': <img height={28} src={'../images/snes-logo-small.png'} />
       };
       columnRender[3] = (s) => icon[s] || '?';
+      columnRender[2] = (str: string, raw: Array<string>, row: number) => {
+        return raw.map((item, i) => {
+          return (
+            <img
+              key={i}
+              height={100}
+              src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
+            />
+          );
+        });
+      }
     }
 
     return (
       <FitToParent>
-        <Table columnRender={columnRender} sourceModel={this.state.model} style={{position: 'absolute'}}/>
+        <Table rowHeight={100} columnRender={columnRender} sourceModel={this.state.model} style={{position: 'absolute'}}/>
       </FitToParent>
     );
   }
