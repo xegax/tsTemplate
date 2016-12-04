@@ -103,6 +103,7 @@ export class GridRender extends React.Component<Props, State> {
           onClick={e => this.props.model.setSelectRow(rowIdx)}
           onMouseEnter={e => this.props.model.setHighlightRow(rowIdx)}
           onMouseMove={e => this.props.model.setHighlightRow(rowIdx)}
+          onWheel={this.onWheel}
         >
           {cell.element}
         </div>
@@ -153,6 +154,16 @@ export class GridRender extends React.Component<Props, State> {
     let rows = this.props.model.getAxisRangeRows();
     return [rows.idx, Math.min(rows.idx + rows.num, this.getRows() - 1)];
   }
+
+  onWheel = (event: React.WheelEvent) => {
+    let [topRow] = this.props.model.getRowsRange();
+    if(event.deltaY < 0)
+      topRow -= 1;
+    else
+      topRow += 1;
+    this.props.model.setScrollTopRow(topRow);
+    event.preventDefault();
+  };
 
   onKeyDown = (event: React.KeyboardEvent) => {
     let row = this.props.model.getSelectRow();
