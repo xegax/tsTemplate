@@ -6,10 +6,15 @@ import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 
+export interface Column {
+  render?: (s: string, raw: any, row: number) => JSX.Element;
+  width?: number;
+}
+
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
-  columnRender?: {[column: number]: (s: string, raw: any, row: number) => JSX.Element};
+  columnsMap?: {[column: number]: Column};
 
   header?: boolean;
   className?: string;
@@ -74,7 +79,10 @@ export class Table extends React.Component<Props, State> {
 
       let columns = Array(total.columns);
       for (let n = 0; n < columns.length; n++) {
-        if (total.columns < 10) {
+        let colInfo = this.props.columnsMap[n];
+        if (colInfo != null && colInfo.width != null) {
+          columns[n] = colInfo.width;
+        } else if (total.columns < 10) {
           columns[n] = 1;
         } else {
           columns[n] = 150;
@@ -114,10 +122,10 @@ export class Table extends React.Component<Props, State> {
   renderCell = (column: number, row: number) => {
     let cell = this.sourceModel.getCell(column, row);
     
-    const render = this.props.columnRender[column];
-    if (render && cell.raw != null) {
+    const colInfo = this.props.columnsMap[column];
+    if (colInfo && colInfo.render && cell.raw != null) {
       return {
-        element: render(cell.value, cell.raw, row)
+        element: colInfo.render(cell.value, cell.raw, row)
       };
     }
 

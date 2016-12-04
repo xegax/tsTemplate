@@ -56,7 +56,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
     if (!this.state.model)
       return (<div>No data to display</div>);
 
-    let columnRender = [];
+    let columnsMap = [];
     let source = this.props.list[this.state.listItem];
     if (['full.json', 'part-header.json'].indexOf(source) != -1) {
       const icon = {
@@ -64,23 +64,27 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
         'gens': <img height={28} src={'../images/gens-logo-small.png'}/>,
         'snes': <img height={28} src={'../images/snes-logo-small.png'} />
       };
-      columnRender[3] = (s) => icon[s] || '?';
-      columnRender[2] = (str: string, raw: Array<string>, row: number) => {
-        return raw.map((item, i) => {
-          return (
-            <img
-              key={i}
-              height={100}
-              src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
-            />
-          );
-        });
+      columnsMap[3] = {
+        render: (s) => icon[s] || '?'
+      };
+      columnsMap[2] = {
+        render: (str: string, raw: Array<string>, row: number) => {
+          return raw.map((item, i) => {
+            return (
+              <img
+                key={i}
+                height={100}
+                src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
+              />
+            );
+          });
+        }
       }
     }
 
     return (
       <FitToParent>
-        <Table rowHeight={100} columnRender={columnRender} sourceModel={this.state.model} style={{position: 'absolute'}}/>
+        <Table rowHeight={100} columnsMap={columnsMap} sourceModel={this.state.model} style={{position: 'absolute'}}/>
       </FitToParent>
     );
   }
