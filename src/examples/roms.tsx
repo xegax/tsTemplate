@@ -16,7 +16,7 @@ interface Props {
 interface State {
   origSourceModel?: TableSourceModel;
   sourceModel?: TableSourceModel;
-  columnsMap?: {[idx: number]: Column};
+  columnsMap?: {[colId: string]: Column};
   images?: Array<string>;
 }
 
@@ -26,21 +26,36 @@ class Roms extends React.Component<Props, State> {
     this.state = {
       origSourceModel: new JSONPartialSourceModel(props.url),
       sourceModel: null,
-      columnsMap: []
+      columnsMap: {}
     };
-    this.state.sourceModel = new OrderedColumnsSourceModel(this.state.origSourceModel, [0, 0, 2, 3], {
-      0: (row: number) => ({value: '' + (row + 1), raw: '' + row}),
-      2: (row, cell) => cell.raw && cell.raw.length ? {value: '[img]', raw: ''} : {value: '', raw: ''}
-    });
+
+    this.state.sourceModel = new OrderedColumnsSourceModel(this.state.origSourceModel, [
+      {
+        colIdx: 0,
+        id: 'recNo',
+        mapper: (row: number) => ({value: '' + (row + 1), raw: '' + row})
+      }, {
+        colIdx: 0,
+        id: 'name'
+      }, {
+        colIdx: 2,
+        id: 'img',
+        mapper: (row, cell) => cell.raw && cell.raw.length ? {value: '[img]', raw: ''} : {value: '', raw: ''}
+      }, {
+        colIdx: 3,
+        id: 'platform'
+      }
+    ]);
 
     this.state.columnsMap = {
-      0: {
-        width: 50
+      'recNo': {
+        width: 50,
+        tooltip: 'index of record'
       },
-      2: {
+      'img': {
         width: 50,
       },
-      3: {
+      'platform': {
         width: 60,
         render: (s) => <div style={{textAlign: 'center'}}><img src={'../images/' + s + '-logo-small.png'}/></div>
       }

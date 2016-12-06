@@ -1,17 +1,36 @@
 import {TableSourceModel, DataRange, Cell} from 'model/table-source-model';
 
-type ColumnsMapper = {[column: number]: (row: number, data: Cell) => Cell}; 
+type Mapper = (row: number, data: Cell) => Cell;
+type ColumnsMapper = {[columnId: string]: Mapper}; 
+
+interface Column {
+  id?: string;
+  colIdx: number;
+  mapper?: Mapper;
+}
 
 export class OrderedColumnsSourceModel implements TableSourceModel {
   private sourceModel: TableSourceModel;
-  private columnsOrder: Array<number>;
+  private columnsOrder: Array<Column>;
   private columnsMapper: ColumnsMapper; // index = [0; columnsOrder.length)
 
-  constructor(sourceModel: TableSourceModel, newOrder?: Array<number>, mapper?: ColumnsMapper) {
+  constructor(sourceModel: TableSourceModel, newOrder?: Array<Column>, mapper?: ColumnsMapper) {
     this.sourceModel = sourceModel;
     
     this.columnsOrder = newOrder;
-    this.columnsMapper = mapper;
+    newOrder.forEach(column => {
+      if (!column.mapper)
+        return;
+      let mappers = this.columnsMapper || (this.columnsMapper = {});
+      mappers[column.id] = column.mapper;
+    });
+
+    if (mapper) {
+      Object.keys(mapper).forEach(key => {
+        let mappers = this.columnsMapper || (this.columnsMapper = {});
+        mappers[key] = mapper[key];
+      });
+    }
   }
 
   removeColumn(column: number) {
@@ -24,8 +43,10 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   loadData(range: DataRange) {
     if (this.columnsOrder && this.columnsOrder.length) {
       let cols = this.columnsOrder.slice(range.cols[0], range.cols[1] + 1)
+        .map(a => a.colIdx)
         .filter(a => a >= 0)
         .sort((a, b) => a - b);
+
       range.cols[0] = cols[0];
       range.cols[1] = cols[cols.length - 1];
     }
@@ -53,8 +74,24 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   }
 
   getCell(col: number, row: number) {
-    let origCol = this.translateColumn(col);
-    return this.mapCell(col, row, origCol >= 0 ? this.sourceModel.getCell(origCol, row) : {value: '?', raw: null});
+    let origCol = col;
+    let columnId: string;
+
+    let column = this.columnsOrder && this.columnsOrder[col];
+    if (column) {
+      origCol = column.colIdx;
+      columnId = column.id;
+    }
+
+    if (!columnId)
+      columnId = this.getColumn(origCol).id;
+
+    let cell = this.sourceModel.getCell(origCol, row);
+    let mapper = this.columnsMapper && this.columnsMapper[columnId];
+    if (!mapper)
+      return cell;
+    
+    return mapper(row, cell);
   }
 
   addSubscriber(callback: (mask: number) => void) {
@@ -65,21 +102,17 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     return this.sourceModel.removeSubscriber(callback);
   }
 
-  protected mapCell(col: number, row: number, data: Cell): Cell {
-    if (!this.columnsMapper)
-      return data;
+  getColumn(colIdx: number) {
+    if (!this.columnsOrder)
+      return this.sourceModel.getColumn(colIdx);
 
-    const getData = this.columnsMapper[col];
-    if (!getData)
-        return data;
+    if (this.columnsOrder && colIdx >= this.columnsOrder.length)
+      throw 'column index out of range';
 
-    return getData(row, data);
-  }
-
-  protected translateColumn(colIdx: number): number {
-    if (!this.columnsOrder || colIdx >= this.columnsOrder.length)
-      return colIdx;
-
-    return this.columnsOrder[colIdx];
+    let column = this.columnsOrder[colIdx];
+    let origColumn = this.sourceModel.getColumn(column.colIdx);
+    return {
+      id: column.id || origColumn.id
+    };
   }
 }

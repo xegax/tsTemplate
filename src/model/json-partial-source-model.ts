@@ -5,7 +5,8 @@ import {
   TableSourceModel,
   TableSourceModelImpl,
   DimensionEnum,
-  CacheVisitor
+  CacheVisitor,
+  Column
 } from 'model/table-source-model';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {parsePath} from 'common/common';
@@ -33,6 +34,9 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
       this.rows.itemsPerBuffer = header.rowsPerPart;
       this.columns.itemsPerBuffer = header.columns.length;
       this.setTotal(header.columns.length, header.rows);
+      this.fillCacheCol(0, (relCol, absCol) => {
+        return {id: this.header.columns[absCol]};
+      });
     });
   }
 
@@ -41,7 +45,7 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
   }
 
   protected updateCacheImpl(visit: CacheVisitor, callback: () => void) {
-    visit((cacheCol: number, cacheRow: number, cache) => {
+    visit((cacheCol: number, cacheRow: number, cache, cacheCols: Array<Column>) => {
       if (cache.cells != null)
         return;
 

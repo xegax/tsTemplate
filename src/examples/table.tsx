@@ -56,7 +56,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
     if (!this.state.model)
       return (<div>No data to display</div>);
 
-    let columnsMap = [];
+    let columnsMap = {};
     let source = this.props.list[this.state.listItem];
     if (['full.json', 'part-header.json'].indexOf(source) != -1) {
       const icon = {
@@ -64,10 +64,10 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
         'gens': <img height={28} src={'../images/gens-logo-small.png'}/>,
         'snes': <img height={28} src={'../images/snes-logo-small.png'} />
       };
-      columnsMap[3] = {
+      columnsMap['type'] = {
         render: (s) => icon[s] || '?'
       };
-      columnsMap[2] = {
+      columnsMap['images'] = {
         render: (str: string, raw: Array<string>, row: number) => {
           return raw.map((item, i) => {
             return (

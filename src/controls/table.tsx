@@ -9,12 +9,14 @@ import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 export interface Column {
   render?: (s: string, raw: any, row: number) => JSX.Element;
   width?: number;
+  label?: string;
+  tooltip?: string;
 }
 
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
-  columnsMap?: {[column: number]: Column};
+  columnsMap?: {[column: string]: Column};
 
   header?: boolean;
   className?: string;
@@ -72,6 +74,10 @@ export class Table extends React.Component<Props, State> {
     this.viewModel.removeSubscriber(this.onViewChanged);
   }
 
+  private getColumn(colId: string): Column {
+    return this.props.columnsMap && this.props.columnsMap[colId];
+  }
+
   private onSourceChanged = (eventMask: number) => {
     if (eventMask & TableModelEvent.TOTAL) {
       let total = this.sourceModel.getTotal();
@@ -79,15 +85,18 @@ export class Table extends React.Component<Props, State> {
 
       let columns = Array(total.columns);
       for (let n = 0; n < columns.length; n++) {
-        let colInfo = this.props.columnsMap[n];
-        if (colInfo != null && colInfo.width != null) {
-          columns[n] = colInfo.width;
-        } else if (total.columns < 10) {
+        if (total.columns < 10) {
           columns[n] = 1;
         } else {
           columns[n] = 150;
         }
+
+        let col = this.sourceModel.getColumn(n);
+        let colInfo = this.getColumn(col.id);
+        if (colInfo && colInfo.width != null)
+          columns[n] = colInfo.width;
       }
+
       this.viewModel.setColumns(columns);
     }
 
@@ -119,14 +128,16 @@ export class Table extends React.Component<Props, State> {
     this.viewModel.setHeight(newProps.height);
   }
 
-  renderCell = (column: number, row: number) => {
-    let cell = this.sourceModel.getCell(column, row);
+  renderCell = (columnIdx: number, rowIdx: number) => {
+    let cell = this.sourceModel.getCell(columnIdx, rowIdx);
+    let col = this.sourceModel.getColumn(columnIdx);
     
-    const colInfo = this.props.columnsMap[column];
-    if (colInfo && colInfo.render && cell.raw != null) {
-      return {
-        element: colInfo.render(cell.value, cell.raw, row)
-      };
+    if (cell.raw != null) {
+      const colInfo = this.getColumn(col.id);
+      if (colInfo && colInfo.render)
+        return {
+          element: colInfo.render(cell.value, cell.raw, rowIdx)
+        };
     }
 
     return {
@@ -135,8 +146,11 @@ export class Table extends React.Component<Props, State> {
   }
 
   renderHeader = (column: number) => {
+    let id = this.sourceModel.getColumn(column).id;
+    let colInfo = this.getColumn(id);
+    let tooltip = colInfo && colInfo.tooltip || undefined;
     return {
-      element: <div>{'column ' + column}</div>
+      element: <div title={tooltip}>{colInfo && colInfo.label || id}</div>
     };
   }
 

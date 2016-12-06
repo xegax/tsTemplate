@@ -5,7 +5,8 @@ import {
   CacheItem,
   TableSourceModel,
   TableSourceModelImpl,
-  DimensionEnum
+  DimensionEnum,
+  Column
 } from 'model/table-source-model';
 import {Publisher} from 'common/publisher';
 
@@ -19,15 +20,18 @@ export class JSONSourceModel extends TableSourceModelImpl {
 
     let columns = this.columnNames = Object.keys(json[0]);
     this.setTotal(columns.length, json.length);
+    this.columns.itemsPerBuffer = columns.length;
+    this.fillCacheCol(0, (relCol, absCol) => {
+      return {id: this.columnNames[absCol]};
+    });
   }
 
   protected updateCache(visit: CacheVisitor) {
-    visit((cacheCol, cacheRow, cache) => {
-      if (cache.cells != null)
-        return;
-      this.fillCache(cacheCol, cacheRow, cache.cells = [], (c, r, absCol, absRow) => {
-        return this.json[absRow][this.columnNames[c]]
-      });
+    visit((cacheCol, cacheRow, cache, colsCache: Array<Column>) => {
+      if (cache.cells == null)
+        this.fillCache(cacheCol, cacheRow, cache.cells = [], (relCol, relRow, absCol, absRow) => {
+          return this.json[absRow][this.columnNames[absCol]]
+        });
     });
     return null;
   }
