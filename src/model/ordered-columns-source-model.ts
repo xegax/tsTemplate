@@ -33,6 +33,10 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     }
   }
 
+  getSourceModel() {
+    return this.sourceModel;
+  }
+  
   removeColumn(column: number) {
     if (!this.columnsOrder)
       return;
@@ -71,6 +75,10 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   
   getRowsRange(): Array<number> {
     return this.sourceModel.getRowsRange();
+  }
+
+  getCellByColName(colId: string, row: number): Cell {
+    return this.sourceModel.getCellByColName(colId, row);
   }
 
   getCell(col: number, row: number) {
@@ -114,5 +122,9 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     return {
       id: column.id || origColumn.id
     };
+  }
+
+  getFilter() {
+    return this.sourceModel.getFilter();
   }
 }

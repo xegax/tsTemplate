@@ -4,6 +4,7 @@ import {assign} from 'lodash';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {Timer} from 'common/timer';
 import {IThenable} from 'promise';
+import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
 
 export interface Column {
   id: string;
@@ -32,6 +33,10 @@ export interface DataRange {
   rows?: Array<number>;
 }
 
+export interface Filter {
+  setCondition(condition: CompoundCondition | ColumnCondition);
+}
+
 export interface TableSourceModel {
   // load data
   loadData(range: DataRange): IThenable<any>;
@@ -41,9 +46,6 @@ export interface TableSourceModel {
   // return total rows number and total columns number
   getTotal(): Total;
 
-  // get loaded columns
-  //getColumns(): Array<Column>;
-
   // get range of requested columns
   getColumnsRange(): Array<number>;
   
@@ -51,7 +53,11 @@ export interface TableSourceModel {
   getRowsRange(): Array<number>;
 
   getCell(col: number, row: number): Cell;
+  getCellByColName(col: string, row: number): Cell;
+
   getColumn(col: number): Column;
+
+  getFilter(): Filter;
 
   addSubscriber(callback: (mask: number) => void);
   removeSubscriber(callback: (mask: number) => void);
@@ -111,7 +117,12 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     
     if (this.columns.total == 0 || this.rows.total == 0)
       return;
-      
+
+    for (let n = 0; n < 2; n++) {
+      range.rows[n] = range.rows[n] || 0;
+      range.cols[n] = range.cols[n] || 0;
+    }
+
     if (range.cols[1] - range.cols[0] < 0 || range.rows[1] - range.rows[0] < 0)
       return;
 
@@ -191,6 +202,10 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
 
   getRowsRange(): Array<number> {
     return this.rows.range.slice();
+  }
+
+  getCellByColName(colId: string, row: number): Cell {
+    return this.getCell(this.getColumnIdx(colId), row);
   }
 
   getCell(col: number, row: number): Cell {
@@ -307,5 +322,19 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
         }
       }
     }
+  }
+
+  getColumnIdx(colId: string): number {
+    for(let n = 0; n < this.columns.total; n++) {
+      let col = this.getColumn(n);
+      if (col.id == colId)
+        return n;
+    }
+
+    return -1;
+  }
+
+  getFilter(): Filter {
+    return null;
   }
 }

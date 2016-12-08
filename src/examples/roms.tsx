@@ -3,9 +3,11 @@ import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
 import {Table, Column} from 'controls/table';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
+import {JSONSourceModel} from 'model/json-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {TableSourceModel} from 'model/table-source-model';
 import {FitToParent} from 'common/fittoparent';
+import {Requestor} from 'requestor/requestor';
 
 interface Props {
   url: string;
@@ -14,8 +16,7 @@ interface Props {
 }
 
 interface State {
-  origSourceModel?: TableSourceModel;
-  sourceModel?: TableSourceModel;
+  sourceModel?: OrderedColumnsSourceModel;
   columnsMap?: {[colId: string]: Column};
   images?: Array<string>;
 }
@@ -24,12 +25,11 @@ class Roms extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      origSourceModel: new JSONPartialSourceModel(props.url),
       sourceModel: null,
       columnsMap: {}
     };
 
-    this.state.sourceModel = new OrderedColumnsSourceModel(this.state.origSourceModel, [
+    this.state.sourceModel = new OrderedColumnsSourceModel(JSONSourceModel.loadJSON(props.url), [
       {
         colIdx: 0,
         id: 'recNo',
@@ -63,8 +63,10 @@ class Roms extends React.Component<Props, State> {
   }
 
   onSelectRow = (row: number) => {
-    let type = this.state.origSourceModel.getCell(3, row).value;
-    let images: Array<string> = this.state.origSourceModel.getCell(2, row).raw;
+    let origSource = this.state.sourceModel.getSourceModel();
+    let type = origSource.getCellByColName('type', row).value;
+    let images: Array<string> = origSource.getCellByColName('images', row).raw;
+    
     images = images.map(item => ['../data/files', type, item].join('/'));
     this.setState({images});
   };
@@ -92,4 +94,4 @@ class Roms extends React.Component<Props, State> {
   }
 }
 
-ReactDOM.render(<FitToParent><Roms url={'../data/part-header.json'}/></FitToParent>, getContainer());
+ReactDOM.render(<FitToParent><Roms url={'../data/full.json'}/></FitToParent>, getContainer());
