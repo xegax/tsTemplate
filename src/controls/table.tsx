@@ -109,7 +109,11 @@ export class Table extends React.Component<Props, State> {
 
   private onViewChanged = (eventMask: number) => {
     if (eventMask & GridModelEvent.ROW_SELECT) {
-      this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow());
+      try {
+        this.props.onSelect && this.props.onSelect(this.viewModel.getSelectRow());
+      } catch(e) {
+        console.log('GridModelEvent.ROW_SELECT, onSelect handler', e);
+      }
     }
 
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
