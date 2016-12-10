@@ -11,7 +11,7 @@ import {JSONSourceModel} from 'model/json-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
-import {Table} from 'controls/table';
+import {Table} from 'controls/table/table';
 
 class DataSelector extends React.Component<{list: Array<string>}, {listItem?: number, data?: any, model?: TableSourceModel}> {
   constructor(props) {

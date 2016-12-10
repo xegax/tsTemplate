@@ -3,16 +3,21 @@ import * as ReactDOM from 'react-dom';
 import {GridControl} from 'controls/grid/grid-control';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
+import {TableSourceModel, TableModelEvent, ColumnType} from 'model/table-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {KeyCode} from 'common/keycode';
 import {Timer} from 'common/timer';
-import {Filterable} from 'model/filter-condition';
+import {Filterable, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from 'model/filter-condition';
+import {TextFilter} from 'controls/table/text-filter';
+import {CatFilter} from 'controls/table/cat-filter';
+
+export type ColumnsMap = {[column: string]: Column};
 
 export interface Column {
   renderHeader?: (s: string, colIdx: number) => JSX.Element;
   render?: (s: string, raw: any, row: number) => JSX.Element;
   width?: number;
+  tempWidth?: number;
   label?: string;
   tooltip?: string;
 }
@@ -20,7 +25,7 @@ export interface Column {
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
-  columnsMap?: {[column: string]: Column};
+  columnsMap?: ColumnsMap;
 
   header?: boolean;
   className?: string;
@@ -36,49 +41,7 @@ interface Props {
 
 interface State {
   filterCol?: number;
-}
-
-interface FiltProps {
-  column?: string;
-  filter?: Filterable;
-  onClose?: () => void;
-}
-
-interface FiltState {
-}
-
-class TextFilter extends React.Component<FiltProps, FiltState> {
-  private text: HTMLInputElement;
-  private timer = new Timer(() => {
-    this.props.filter.setConditions({
-      column: this.props.column,
-      textValue: this.text.value
-    });
-  });
-
-  componentDidMount() {
-    this.text.focus();
-  }
-
-  onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.keyCode == KeyCode.Escape)
-      this.props.onClose && this.props.onClose();
-  }
-
-  onChange = () => {
-    this.timer.run(2000);
-  }
-
-  render() {
-    return (
-      <input
-        onChange={this.onChange}
-        onKeyDown={this.onKeyDown}
-        onBlur={e => this.props.onClose && this.props.onClose()}
-        ref={e => this.text = e}
-      />
-    );
-  }
+  columnConditions?: {[column: string]: CompoundCondition | ColumnCondition};
 }
 
 export class Table extends React.Component<Props, State> {
@@ -93,7 +56,7 @@ export class Table extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {filterCol: -1};
+    this.state = {filterCol: -1, columnConditions: {}};
 
     this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
@@ -126,26 +89,35 @@ export class Table extends React.Component<Props, State> {
     return this.props.columnsMap && this.props.columnsMap[colId];
   }
 
+  private updateColumnSizes() {
+    let total = this.sourceModel.getTotal()
+    let columns = Array(total.columns);
+    for (let n = 0; n < columns.length; n++) {
+      if (total.columns < 10) {
+        columns[n] = 1;
+      } else {
+        columns[n] = 150;
+      }
+
+      let col = this.sourceModel.getColumn(n);
+      let colInfo = this.getColumn(col.id);
+      if (!colInfo)
+        continue;
+        
+      if (colInfo.tempWidth != null)
+        columns[n] = colInfo.tempWidth;
+      else if (colInfo.width != null)
+        columns[n] = colInfo.width;
+    }
+
+    this.viewModel.setColumns(columns);
+  }
+
   private onSourceChanged = (eventMask: number) => {
     if (eventMask & TableModelEvent.TOTAL) {
       let total = this.sourceModel.getTotal();
       this.viewModel.setRows(total.rows);
-
-      let columns = Array(total.columns);
-      for (let n = 0; n < columns.length; n++) {
-        if (total.columns < 10) {
-          columns[n] = 1;
-        } else {
-          columns[n] = 150;
-        }
-
-        let col = this.sourceModel.getColumn(n);
-        let colInfo = this.getColumn(col.id);
-        if (colInfo && colInfo.width != null)
-          columns[n] = colInfo.width;
-      }
-
-      this.viewModel.setColumns(columns);
+      this.updateColumnSizes();
     }
 
     if (eventMask & (TableModelEvent.ROWS_SELECTED | TableModelEvent.COLUMNS_SELECTED)) {
@@ -198,17 +170,63 @@ export class Table extends React.Component<Props, State> {
   }
 
   onColumnFilter(column: number) {
+    if (column != -1) {
+      let {id} = this.sourceModel.getColumn(column);
+      let colInfo = this.getColumn(id);
+      if (colInfo && this.viewModel.getColumnSize(column) < 200) {
+        colInfo.tempWidth = 200;
+        this.updateColumnSizes();
+      }
+    } else if (this.state.filterCol != -1) {
+      let {id} = this.sourceModel.getColumn(this.state.filterCol);
+      let colInfo = this.getColumn(id);
+      if (colInfo) {
+        colInfo.tempWidth = null;
+        this.updateColumnSizes();
+      }
+    }
     this.setState({filterCol: column});
   }
 
+  private setColumnCondition(colId: string, cond: CompoundCondition | ColumnCondition) {
+    let colCondMap = this.state.columnConditions;
+    colCondMap[colId] = cond;
+    
+    let ccond: CompoundCondition = {op: 'and', condition: []};
+    ccond.condition = Object.keys(colCondMap).map(colId => {
+      return colCondMap[colId];
+    });
+    this.sourceModel.setConditions(ccond);
+  }
+
   renderHeader = (column: number) => {
-    let id = this.sourceModel.getColumn(column).id;
+    let {id, type} = this.sourceModel.getColumn(column);
     let colInfo = this.getColumn(id);
     let tooltip = colInfo && colInfo.tooltip || undefined;
     if (this.state.filterCol == column) {
-      return {
-        element: <TextFilter column={id} filter={this.sourceModel} onClose={() => this.setState({filterCol: -1})}/>
-      };
+      if (type == ColumnType.cat) {
+        return {
+          element: (
+            <CatFilter
+              column={id}
+              condition={this.state.columnConditions[id] as ConditionCat}
+              applyCondition={cond => this.setColumnCondition(id, cond)}
+              source={this.sourceModel}
+              onClose={() => this.onColumnFilter(-1)}
+            />)
+        };
+      } else {
+        return {
+          element: (
+            <TextFilter
+              column={id}
+              condition={this.state.columnConditions[id] as ConditionText}
+              applyCondition={cond => this.setColumnCondition(id, cond)}
+              source={this.sourceModel}
+              onClose={() => this.onColumnFilter(-1)}
+            />)
+        };
+      }
     }
     
     if (colInfo && colInfo.renderHeader) {

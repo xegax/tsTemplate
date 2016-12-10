@@ -1,4 +1,4 @@
-import {TableSourceModelImpl, TableSourceModel, CacheVisitor, Column} from 'model/table-source-model';
+import {TableSourceModelImpl, TableSourceModel, CacheVisitor, Column, ColumnType} from 'model/table-source-model';
 import {Timer} from 'common/timer';
 
 export class TestTableSourceModel extends TableSourceModelImpl {
@@ -14,7 +14,7 @@ export class TestTableSourceModel extends TableSourceModelImpl {
     visit((col, row, cache, cacheCols: Array<Column>) => {
       if (cacheCols.length == 0)
         this.fillCacheCol(col, (relCol, absCol) => {
-          return {id: 'column_' + absCol};
+          return {id: 'column_' + absCol, type: ColumnType.text};
         });
 
       if (cache.cells == null)

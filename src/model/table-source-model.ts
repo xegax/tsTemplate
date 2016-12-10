@@ -6,8 +6,15 @@ import {Timer} from 'common/timer';
 import {IThenable} from 'promise';
 import {CompoundCondition, ColumnCondition, Filterable} from 'model/filter-condition';
 
+export enum ColumnType {
+  cat = 1,
+  num = 2,
+  text = 3
+};
+
 export interface Column {
   id: string;
+  type: ColumnType;
 }
 
 export const enum TableModelEvent {
@@ -34,7 +41,8 @@ export interface DataRange {
 }
 
 export enum Abilities {
-  Conditions = 1 << 1
+  Conditions = 1 << 1,
+  Sorting = 1 << 2
 };
 
 export interface TableSourceModel extends Filterable {
@@ -53,12 +61,13 @@ export interface TableSourceModel extends Filterable {
   getRowsRange(): Array<number>;
 
   getCell(col: number, row: number): Cell;
-  getCellByColName(col: string, row: number): Cell;
 
   getColumn(col: number): Column;
+  getColumnIdx(colId: string): number;
 
   // filtering
   getAbilities(): number;
+  getUniqueValues(col: number): TableSourceModel;
 
   addSubscriber(callback: (mask: number) => void);
   removeSubscriber(callback: (mask: number) => void);
@@ -234,7 +243,7 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
   }
 
   getColumn(col: number): Column {
-    let empty = {id: ''};
+    let empty = {id: '', type: -1};
     if (this.columns.itemsPerBuffer == 0)
       return empty;
 
@@ -343,6 +352,10 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
   }
 
   getConditions(): CompoundCondition | ColumnCondition {
+    return null;
+  }
+
+  getUniqueValues(col: number): TableSourceModel {
     return null;
   }
 }

@@ -1,4 +1,4 @@
-import {TableSourceModel, DataRange, Cell} from 'model/table-source-model';
+import {TableSourceModel, DataRange, Cell, ColumnType} from 'model/table-source-model';
 import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
 import {assign} from 'lodash';
 
@@ -7,6 +7,7 @@ type ColumnsMapper = {[columnId: string]: Mapper};
 
 interface Column {
   id?: string;
+  type?: ColumnType;
   colIdx: number;
   mapper?: Mapper;
 }
@@ -21,8 +22,16 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     
     this.columnsOrder = newOrder;
     newOrder.forEach(column => {
+      if (column.id == null) {
+        column.id = sourceModel.getColumn(column.colIdx).id
+      }
+
+      if (column.id == '' || column.id == null)
+        return;
+
       if (!column.mapper)
         return;
+        
       let mappers = this.columnsMapper || (this.columnsMapper = {});
       mappers[column.id] = column.mapper;
     });
@@ -79,10 +88,6 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     return this.sourceModel.getRowsRange();
   }
 
-  getCellByColName(colId: string, row: number): Cell {
-    return this.sourceModel.getCellByColName(colId, row);
-  }
-
   getCell(col: number, row: number) {
     let origCol = col;
     let columnId: string;
@@ -112,6 +117,18 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     return this.sourceModel.removeSubscriber(callback);
   }
 
+  getColumnIdx(colId: string) {
+    if (!this.columnsOrder)
+      return this.sourceModel.getColumnIdx(colId);
+    
+    for(let n = 0; n < this.columnsOrder.length; n++) {
+      if (this.columnsOrder[n].id == colId)
+        return this.columnsOrder[n].colIdx;
+    }
+
+    return -1;
+  }
+
   getColumn(colIdx: number) {
     if (!this.columnsOrder)
       return this.sourceModel.getColumn(colIdx);
@@ -122,7 +139,8 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     let column = this.columnsOrder[colIdx];
     let origColumn = this.sourceModel.getColumn(column.colIdx);
     return {
-      id: column.id || origColumn.id
+      id: column.id || origColumn.id,
+      type: column.type || origColumn.type
     };
   }
 
@@ -133,7 +151,7 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     conditions = assign({}, conditions);
     let compCond = conditions as CompoundCondition;
     if (compCond.op != null) {
-      compCond.condition.forEach(cond => this.remapColumns(cond));
+      compCond.condition = compCond.condition.map(cond => this.remapColumns(cond));
     } else {
       let colCond = conditions as ColumnCondition;
       if (colCond.column != null) {
@@ -158,5 +176,16 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   getAbilities() {
     return this.sourceModel.getAbilities();
+  }
+
+  getUniqueValues(col: number): TableSourceModel {
+    if (!this.columnsOrder)
+      return this.sourceModel.getUniqueValues(col);
+
+    if (col >= this.columnsOrder.length)
+      throw 'column index out of range';
+    
+    col = this.columnsOrder[col].colIdx;
+    return this.sourceModel.getUniqueValues(col);
   }
 }

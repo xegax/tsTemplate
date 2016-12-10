@@ -10,7 +10,7 @@
       position: absolute;
       cursor: w-resize;
     }
-    .grid_render--cell {
+    > .grid_render--column > .grid_render--cell {
       padding: 0;
       background-color: #cfcfcf;
     }

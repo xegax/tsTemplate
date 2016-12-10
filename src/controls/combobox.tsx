@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {className} from 'common/common';
-import {Table} from 'controls/table';
+import {Table, ColumnsMap} from 'controls/table/table';
 import {FitToParent} from 'common/fittoparent';
 import {findParentNode} from 'common/dom';
 import {assign} from 'lodash';
@@ -21,11 +21,15 @@ interface Props {
   height?: number;
   style?: React.CSSProperties;
   maxItems?: number;
-  
+  debug?: boolean;
+  defaultFocus?: boolean;
+  defaultPopup?: boolean
+  columnsMap?: ColumnsMap;
   sourceRow?: number;
   textValue?: string;
 
-  onSelect?: (value: string, row: number) => void;
+  onSelect?: (value: string, row: number) => boolean | void;
+  onBlur?: () => void;
 }
 
 interface State {
@@ -79,6 +83,10 @@ export class ComboBox extends React.Component<Props, State> {
 
   componentDidMount() {
     this.gridViewModel.setWidth(this.node.offsetWidth);
+    if (this.props.defaultPopup)
+      this.showPopup(true);
+    if (this.props.defaultFocus)
+      this.input.focus();
   }
 
   protected showPopup(show: boolean) {
@@ -89,9 +97,17 @@ export class ComboBox extends React.Component<Props, State> {
     if (this.props.sourceRow == row)
       return;
     
-    this.showPopup(false);
+    let close = true;
+    try {
+      if (this.props.onSelect)
+        close = !(this.props.onSelect(this.props.sourceModel.getCell(0, row).value, row) === false);
+    } catch(e) {
+      console.log('ComboBox, onSelect', e);
+    }
+
+    this.showPopup(!close);
     this.setState({index: row, text: this.props.sourceModel.getCell(0, row).value});
-    this.props.onSelect && this.props.onSelect(this.props.sourceModel.getCell(0, row).value, row);
+    
   }
 
   protected renderPopup() {
@@ -119,6 +135,7 @@ export class ComboBox extends React.Component<Props, State> {
       >
         <FitToParent width={this.node.offsetWidth} height={height}>
           <Table
+            columnsMap={this.props.columnsMap}
             viewModel={this.gridViewModel}
             selectedRow={this.state.index}
             onSelect={this.onSelect}
@@ -133,8 +150,13 @@ export class ComboBox extends React.Component<Props, State> {
   }
 
   protected onBlur = (e: React.FocusEvent) => {
+    if (this.props.debug)
+      return;
+
     if(findParentNode(e.relatedTarget as any, this.node) == true)
       return;
+
+    this.props.onBlur && this.props.onBlur();
     this.showPopup(false);
   };
 

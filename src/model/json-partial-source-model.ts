@@ -6,7 +6,8 @@ import {
   TableSourceModelImpl,
   DimensionEnum,
   CacheVisitor,
-  Column
+  Column,
+  ColumnType
 } from 'model/table-source-model';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {parsePath} from 'common/common';
@@ -15,6 +16,7 @@ import {Publisher} from 'common/publisher';
 interface HeaderFileJSON {
   rows: number;
   columns: Array<string>;
+  types: Array<ColumnType>;
   rowsPerPart: number;
   fileName: string;
 }
@@ -35,7 +37,7 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
       this.columns.itemsPerBuffer = header.columns.length;
       this.setTotal(header.columns.length, header.rows);
       this.fillCacheCol(0, (relCol, absCol) => {
-        return {id: this.header.columns[absCol]};
+        return {id: this.header.columns[absCol], type: this.header.types[absCol]};
       });
     });
   }

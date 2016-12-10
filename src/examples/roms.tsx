@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {Table, Column} from 'controls/table';
+import {Table, Column} from 'controls/table/table';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
-import {TableSourceModel} from 'model/table-source-model';
+import {TableSourceModel, ColumnType} from 'model/table-source-model';
 import {FitToParent} from 'common/fittoparent';
 import {Requestor} from 'requestor/requestor';
 
@@ -43,6 +43,7 @@ class Roms extends React.Component<Props, State> {
         mapper: (row, cell) => cell.raw && cell.raw.length ? {value: '[img]', raw: ''} : {value: '', raw: ''}
       }, {
         colIdx: 3,
+        type: ColumnType.cat,
         id: 'platform'
       }
     ]);
@@ -64,8 +65,8 @@ class Roms extends React.Component<Props, State> {
 
   onSelectRow = (row: number) => {
     let origSource = this.state.sourceModel.getSourceModel();
-    let type = origSource.getCellByColName('type', row).value;
-    let images: Array<string> = origSource.getCellByColName('images', row).raw;
+    let type = origSource.getCell(origSource.getColumnIdx('type'), row).value;
+    let images: Array<string> = origSource.getCell(origSource.getColumnIdx('images'), row).raw;
 
     images = images.map(item => ['../data/files', type, item].join('/'));
     this.setState({images});

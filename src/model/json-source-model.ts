@@ -7,6 +7,7 @@ import {
   TableSourceModelImpl,
   DimensionEnum,
   Column,
+  ColumnType,
   Abilities
 } from 'model/table-source-model';
 import {Publisher} from 'common/publisher';
@@ -62,7 +63,7 @@ export class JSONSourceModel extends TableSourceModelImpl {
   protected updateColsCache() {
     this.columns.itemsPerBuffer = this.columnNames.length;
     this.fillCacheCol(0, (relCol, absCol) => {
-      return {id: this.columnNames[absCol]};
+      return {id: this.columnNames[absCol], type: ColumnType.text};
     });
   }
 
@@ -110,5 +111,16 @@ export class JSONSourceModel extends TableSourceModelImpl {
         });
     });
     return null;
+  }
+
+  getUniqueValues(col: number) {
+    let values: Object = {};
+    for (let n = 0; n < this.json.length; n++) {
+      let value = this.json[n][this.columnNames[col]];
+      values[value] = values[value] + 1 || 1;
+    }
+    return new JSONSourceModel(
+      Object.keys(values).map((name, n) => ({idx: n, name, count: values[name]}))
+    );
   }
 }
