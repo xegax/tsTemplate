@@ -90,7 +90,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   }
 
   onFilter = () => {
-    this.state.model.getFilter().setCondition({
+    this.state.model.setConditions({
       op: 'or',
       condition: [
         {column: 'images', inverse: true, catValues: ['']}
@@ -99,7 +99,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   };
 
   onFilterSnes = () => {
-    this.state.model.getFilter().setCondition({
+    this.state.model.setConditions({
       op: 'or',
       condition: [
         {column: 'type', textValue: 'psx'},
@@ -109,7 +109,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
   };
 
   onClearFilter = () => {
-    this.state.model.getFilter().setCondition(null);
+    this.state.model.setConditions(null);
   };
 
   render() {

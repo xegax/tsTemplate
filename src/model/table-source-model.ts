@@ -4,7 +4,7 @@ import {assign} from 'lodash';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {Timer} from 'common/timer';
 import {IThenable} from 'promise';
-import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
+import {CompoundCondition, ColumnCondition, Filterable} from 'model/filter-condition';
 
 export interface Column {
   id: string;
@@ -33,11 +33,11 @@ export interface DataRange {
   rows?: Array<number>;
 }
 
-export interface Filter {
-  setCondition(condition: CompoundCondition | ColumnCondition);
-}
+export enum Abilities {
+  Conditions = 1 << 1
+};
 
-export interface TableSourceModel {
+export interface TableSourceModel extends Filterable {
   // load data
   loadData(range: DataRange): IThenable<any>;
 
@@ -57,7 +57,8 @@ export interface TableSourceModel {
 
   getColumn(col: number): Column;
 
-  getFilter(): Filter;
+  // filtering
+  getAbilities(): number;
 
   addSubscriber(callback: (mask: number) => void);
   removeSubscriber(callback: (mask: number) => void);
@@ -334,7 +335,14 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     return -1;
   }
 
-  getFilter(): Filter {
+  getAbilities(): number {
+    return 0;
+  }
+
+  setConditions(condition: CompoundCondition | ColumnCondition) {
+  }
+
+  getConditions(): CompoundCondition | ColumnCondition {
     return null;
   }
 }

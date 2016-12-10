@@ -5,8 +5,12 @@ import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
+import {KeyCode} from 'common/keycode';
+import {Timer} from 'common/timer';
+import {Filterable} from 'model/filter-condition';
 
 export interface Column {
+  renderHeader?: (s: string, colIdx: number) => JSX.Element;
   render?: (s: string, raw: any, row: number) => JSX.Element;
   width?: number;
   label?: string;
@@ -31,6 +35,50 @@ interface Props {
 }
 
 interface State {
+  filterCol?: number;
+}
+
+interface FiltProps {
+  column?: string;
+  filter?: Filterable;
+  onClose?: () => void;
+}
+
+interface FiltState {
+}
+
+class TextFilter extends React.Component<FiltProps, FiltState> {
+  private text: HTMLInputElement;
+  private timer = new Timer(() => {
+    this.props.filter.setConditions({
+      column: this.props.column,
+      textValue: this.text.value
+    });
+  });
+
+  componentDidMount() {
+    this.text.focus();
+  }
+
+  onKeyDown = (event: React.KeyboardEvent) => {
+    if (event.keyCode == KeyCode.Escape)
+      this.props.onClose && this.props.onClose();
+  }
+
+  onChange = () => {
+    this.timer.run(2000);
+  }
+
+  render() {
+    return (
+      <input
+        onChange={this.onChange}
+        onKeyDown={this.onKeyDown}
+        onBlur={e => this.props.onClose && this.props.onClose()}
+        ref={e => this.text = e}
+      />
+    );
+  }
 }
 
 export class Table extends React.Component<Props, State> {
@@ -45,7 +93,7 @@ export class Table extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {};
+    this.state = {filterCol: -1};
 
     this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
@@ -149,12 +197,28 @@ export class Table extends React.Component<Props, State> {
     };
   }
 
+  onColumnFilter(column: number) {
+    this.setState({filterCol: column});
+  }
+
   renderHeader = (column: number) => {
     let id = this.sourceModel.getColumn(column).id;
     let colInfo = this.getColumn(id);
     let tooltip = colInfo && colInfo.tooltip || undefined;
+    if (this.state.filterCol == column) {
+      return {
+        element: <TextFilter column={id} filter={this.sourceModel} onClose={() => this.setState({filterCol: -1})}/>
+      };
+    }
+    
+    if (colInfo && colInfo.renderHeader) {
+      return {
+        element: colInfo.renderHeader(id, column)
+      };
+    }
+
     return {
-      element: <div title={tooltip}>{colInfo && colInfo.label || id}</div>
+      element: <div onDoubleClick={e => this.onColumnFilter(column)} title={tooltip}>{colInfo && colInfo.label || id}</div>
     };
   }
 

@@ -7,7 +7,7 @@ import {
   TableSourceModelImpl,
   DimensionEnum,
   Column,
-  Filter
+  Abilities
 } from 'model/table-source-model';
 import {Publisher} from 'common/publisher';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
@@ -16,13 +16,11 @@ import {CompoundCondition, ColumnCondition, ConditionText, makeFilterFunction} f
 export class JSONSourceModel extends TableSourceModelImpl {
   private json: Array<Object>;
   private columnNames = Array<string>();
-  private filter: Filter;
   private rowIds: Array<number>;
 
   constructor(json: Array<Object>, prevModel?: TableSourceModel) {
     super(prevModel);
     this.initJSON(json);
-    this.initFilter();
   }
 
   private initJSON(json: Array<Object>) {
@@ -35,36 +33,6 @@ export class JSONSourceModel extends TableSourceModelImpl {
     }
     this.setTotal(this.columnNames.length, json.length);
     this.updateColsCache();
-  }
-
-  private initFilter() {
-    this.filter = {
-      setCondition: (condition: CompoundCondition | ColumnCondition) => {
-        if (condition == null) {
-          this.rowIds = null;
-          this.setTotal(this.columnNames.length, this.json.length);
-        } else {
-          this.rowIds = [];
-          let colIdxs = [];
-          this.extractColumns(condition, colIdxs);
-
-          let comparator = makeFilterFunction(condition);
-          for (let r = 0; r < this.json.length; r++) {
-            
-            let values = [];
-            for (let key in colIdxs)
-              values[+key] = this.json[r][this.columnNames[+key]];
-
-            if (comparator(values)) {
-              this.rowIds.push(r);
-            }
-          }
-          
-          this.setTotal(this.columnNames.length, this.rowIds.length);
-        }
-        this.reload();
-      }
-    };
   }
 
   static loadJSON(url: string, requestor?: Requestor): JSONSourceModel {
@@ -103,8 +71,33 @@ export class JSONSourceModel extends TableSourceModelImpl {
     this.updateColsCache();
   }
 
-  getFilter() {
-    return this.filter;
+  getAbilities() {
+    return Abilities.Conditions;
+  }
+
+  setConditions(condition: CompoundCondition | ColumnCondition) {
+    if (condition == null) {
+      this.rowIds = null;
+      this.setTotal(this.columnNames.length, this.json.length);
+    } else {
+      this.rowIds = [];
+      let colIdxs = [];
+      this.extractColumns(condition, colIdxs);
+
+      let comparator = makeFilterFunction(condition);
+      for (let r = 0; r < this.json.length; r++) {    
+        let values = [];
+        for (let key in colIdxs)
+          values[+key] = this.json[r][this.columnNames[+key]];
+
+        if (comparator(values)) {
+          this.rowIds.push(r);
+        }
+      }
+          
+      this.setTotal(this.columnNames.length, this.rowIds.length);
+    }
+    this.reload();
   }
 
   protected updateCache(visit: CacheVisitor) {

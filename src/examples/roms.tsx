@@ -66,7 +66,7 @@ class Roms extends React.Component<Props, State> {
     let origSource = this.state.sourceModel.getSourceModel();
     let type = origSource.getCellByColName('type', row).value;
     let images: Array<string> = origSource.getCellByColName('images', row).raw;
-    
+
     images = images.map(item => ['../data/files', type, item].join('/'));
     this.setState({images});
   };

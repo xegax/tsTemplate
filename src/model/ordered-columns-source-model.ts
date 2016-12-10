@@ -1,4 +1,6 @@
 import {TableSourceModel, DataRange, Cell} from 'model/table-source-model';
+import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
+import {assign} from 'lodash';
 
 type Mapper = (row: number, data: Cell) => Cell;
 type ColumnsMapper = {[columnId: string]: Mapper}; 
@@ -124,7 +126,37 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     };
   }
 
-  getFilter() {
-    return this.sourceModel.getFilter();
+  protected remapColumns(conditions: CompoundCondition | ColumnCondition) {
+    if (!this.columnsOrder || !this.columnsOrder.length)
+      return conditions;
+
+    conditions = assign({}, conditions);
+    let compCond = conditions as CompoundCondition;
+    if (compCond.op != null) {
+      compCond.condition.forEach(cond => this.remapColumns(cond));
+    } else {
+      let colCond = conditions as ColumnCondition;
+      if (colCond.column != null) {
+        this.columnsOrder.forEach(column => {
+          if (column.id == colCond.column)
+            colCond.column = this.sourceModel.getColumn(column.colIdx).id
+        });
+      }
+    }
+
+    return conditions;
+  }
+
+  setConditions(conditions: CompoundCondition | ColumnCondition) {
+    conditions = this.remapColumns(conditions);
+    this.sourceModel.setConditions(conditions);
+  }
+
+  getConditions() {
+    return this.sourceModel.getConditions();
+  }
+
+  getAbilities() {
+    return this.sourceModel.getAbilities();
   }
 }

@@ -1,5 +1,10 @@
 export type Operator = 'and' | 'or';
 
+export interface Filterable {
+  setConditions(condition: CompoundCondition | ColumnCondition);
+  getConditions(): CompoundCondition | ColumnCondition;
+}
+
 enum CmpOperator {
   equals,
   less,
