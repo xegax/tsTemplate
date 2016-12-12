@@ -10,7 +10,6 @@ import {FitToParent} from 'common/fittoparent';
 import {Requestor} from 'requestor/requestor';
 
 interface Props {
-  url: string;
   width?: number;
   height?: number;
 }
@@ -29,7 +28,28 @@ class Roms extends React.Component<Props, State> {
       columnsMap: {}
     };
 
-    this.state.sourceModel = new OrderedColumnsSourceModel(JSONSourceModel.loadJSON(props.url), [
+    this.initPs(props);
+  }
+
+  private initPs(props: Props) {
+    let cols = [
+      ["name"], ["genre"], ["dev", ColumnType.cat], ["esrbDescr"], ["players", ColumnType.cat], ["pub", ColumnType.cat], ["relaseDate"], ["esrb"], ["metascore"]
+    ];
+    let order: any = cols.map((col, i) => {
+      return {id: col[0], colIdx: i, type: (col[1] || ColumnType.text) as ColumnType};
+    });
+    order = [
+      {
+        colIdx: 0,
+        id: 'recNo',
+        mapper: (row) => ({value: '' + (row + 1), raw: '' + row})
+      }
+    ].concat(order);
+    this.state.sourceModel = new OrderedColumnsSourceModel(JSONSourceModel.loadJSON('../data/ps-detailed.json'), order);
+  }
+
+  private initFull(props: Props) {
+    this.state.sourceModel = new OrderedColumnsSourceModel(JSONSourceModel.loadJSON('../data/full.json'), [
       {
         colIdx: 0,
         id: 'recNo',
@@ -63,6 +83,7 @@ class Roms extends React.Component<Props, State> {
     };
   }
 
+
   onSelectRow = (row: number) => {
     let origSource = this.state.sourceModel.getSourceModel();
     let type = origSource.getCell(origSource.getColumnIdx('type'), row).value;
@@ -95,4 +116,4 @@ class Roms extends React.Component<Props, State> {
   }
 }
 
-ReactDOM.render(<FitToParent><Roms url={'../data/full.json'}/></FitToParent>, getContainer());
+ReactDOM.render(<FitToParent><Roms/></FitToParent>, getContainer());

@@ -6,6 +6,22 @@ import {Timer} from 'common/timer';
 import {IThenable} from 'promise';
 import {CompoundCondition, ColumnCondition, Filterable} from 'model/filter-condition';
 
+export enum SortDir {
+  asc = 1,
+  desc,
+  natural
+};
+
+export interface SortColumn {
+  column: string;
+  dir: SortDir
+}
+
+export interface Sortable {
+  setSorting(columns: Array<SortColumn>);
+  getSorting(): Array<SortColumn>;
+}
+
 export enum ColumnType {
   cat = 1,
   num = 2,
@@ -45,7 +61,7 @@ export enum Abilities {
   Sorting = 1 << 2
 };
 
-export interface TableSourceModel extends Filterable {
+export interface TableSourceModel extends Filterable, Sortable {
   // load data
   loadData(range: DataRange): IThenable<any>;
 
@@ -357,5 +373,12 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
 
   getUniqueValues(col: number): TableSourceModel {
     return null;
+  }
+
+  setSorting(columns: Array<SortColumn>) {
+  }
+
+  getSorting(): Array<SortColumn> {
+    return [];
   }
 }

@@ -1,4 +1,4 @@
-import {TableSourceModel, DataRange, Cell, ColumnType} from 'model/table-source-model';
+import {TableSourceModel, DataRange, Cell, ColumnType, SortColumn} from 'model/table-source-model';
 import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
 import {assign} from 'lodash';
 
@@ -21,7 +21,7 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     this.sourceModel = sourceModel;
     
     this.columnsOrder = newOrder;
-    newOrder.forEach(column => {
+    newOrder && newOrder.forEach(column => {
       if (column.id == null) {
         column.id = sourceModel.getColumn(column.colIdx).id
       }
@@ -117,13 +117,37 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     return this.sourceModel.removeSubscriber(callback);
   }
 
+  getOrigCol(colId: string): string {
+    if (!this.columnsOrder)
+      return this.sourceModel.getColumn(this.sourceModel.getColumnIdx(colId)).id;
+    
+    for(let n = 0; n < this.columnsOrder.length; n++) {
+      if (this.columnsOrder[n].id == colId)
+        return this.sourceModel.getColumn(this.columnsOrder[n].colIdx).id;
+    }
+
+    throw 'column not found';
+  }
+
+  getNewCol(colId: string): string {
+    if (!this.columnsOrder)
+      return colId;
+    
+    for(let n = 0; n < this.columnsOrder.length; n++) {
+      if (this.sourceModel.getColumn(this.columnsOrder[n].colIdx).id == colId)
+        return this.columnsOrder[n].id;
+    }
+
+    throw 'column not found';
+  }
+
   getColumnIdx(colId: string) {
     if (!this.columnsOrder)
       return this.sourceModel.getColumnIdx(colId);
     
     for(let n = 0; n < this.columnsOrder.length; n++) {
       if (this.columnsOrder[n].id == colId)
-        return this.columnsOrder[n].colIdx;
+        return n;
     }
 
     return -1;
@@ -187,5 +211,23 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
     
     col = this.columnsOrder[col].colIdx;
     return this.sourceModel.getUniqueValues(col);
+  }
+
+  setSorting(columns: Array<SortColumn>) {
+    if (this.columnsOrder) {
+      columns = columns.map(item => {
+        return {column: this.getOrigCol(item.column), dir: item.dir};
+      });
+    }
+    this.sourceModel.setSorting(columns);
+  }
+
+  getSorting(): Array<SortColumn> {
+    let cols = this.sourceModel.getSorting();
+    if (!this.columnsOrder)
+      return cols;
+    return cols.map(col => {
+      return {column: this.getNewCol(col.column), dir: col.dir};
+    });
   }
 }

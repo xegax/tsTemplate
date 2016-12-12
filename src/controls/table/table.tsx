@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import {GridControl} from 'controls/grid/grid-control';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
-import {TableSourceModel, TableModelEvent, ColumnType} from 'model/table-source-model';
+import {TableSourceModel, TableModelEvent, ColumnType, SortDir} from 'model/table-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {KeyCode} from 'common/keycode';
 import {Timer} from 'common/timer';
@@ -40,6 +40,7 @@ interface Props {
 }
 
 interface State {
+  columnsMap?: ColumnsMap;
   filterCol?: number;
   columnConditions?: {[column: string]: CompoundCondition | ColumnCondition};
 }
@@ -56,7 +57,7 @@ export class Table extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {filterCol: -1, columnConditions: {}};
+    this.state = {filterCol: -1, columnConditions: {}, columnsMap: props.columnsMap || {}};
 
     this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
@@ -86,7 +87,13 @@ export class Table extends React.Component<Props, State> {
   }
 
   private getColumn(colId: string): Column {
-    return this.props.columnsMap && this.props.columnsMap[colId];
+    return this.state.columnsMap[colId];
+  }
+
+  private getOrCreateColumn(colId: string): Column {
+    if (this.state.columnsMap[colId] == null)
+      this.state.columnsMap[colId] = {};
+    return this.getColumn(colId);
   }
 
   private updateColumnSizes() {
@@ -172,9 +179,9 @@ export class Table extends React.Component<Props, State> {
   onColumnFilter(column: number) {
     if (column != -1) {
       let {id} = this.sourceModel.getColumn(column);
-      let colInfo = this.getColumn(id);
-      if (colInfo && this.viewModel.getColumnSize(column) < 200) {
-        colInfo.tempWidth = 200;
+      let colInfo = this.getOrCreateColumn(id);
+      if (this.viewModel.getColumnSize(column) < 400) {
+        colInfo.tempWidth = 400;
         this.updateColumnSizes();
       }
     } else if (this.state.filterCol != -1) {
@@ -197,6 +204,10 @@ export class Table extends React.Component<Props, State> {
       return colCondMap[colId];
     });
     this.sourceModel.setConditions(ccond);
+  }
+
+  private onSortBy(column: number) {
+    this.sourceModel.setSorting([{column: this.sourceModel.getColumn(column).id, dir: SortDir.asc}]);
   }
 
   renderHeader = (column: number) => {
@@ -236,7 +247,14 @@ export class Table extends React.Component<Props, State> {
     }
 
     return {
-      element: <div onDoubleClick={e => this.onColumnFilter(column)} title={tooltip}>{colInfo && colInfo.label || id}</div>
+      element: (
+        <div
+          onDoubleClick={e => this.onColumnFilter(column)}
+          onClick={e => this.onSortBy(column)}
+          title={tooltip}
+        >
+          {colInfo && colInfo.label || id}
+        </div>)
     };
   }
 

@@ -48,17 +48,17 @@ class Example extends React.Component<Props, State> {
               sourceModel={source1}
             />
             <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
-              {value: 'item 1'},
-              {value: 'item 2'},
-              {value: 'item 3'}
-            ])}/>
+              ['item 1'],
+              ['item 2'],
+              ['item 3']
+            ], ['value'])}/>
             <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
-              {value: 'item 1'},
-              {value: 'item 2'}
-            ])}/>
+              ['item 1'],
+              ['item 2']
+            ], ['value'])}/>
             <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
-              {value: 'item 1'}
-            ])}/>
+              ['item 1']
+            ], ['value'])}/>
           </ColumnGroup>
         </ColumnGroup>
       </div>

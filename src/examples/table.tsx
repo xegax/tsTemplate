@@ -31,9 +31,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
     } else if (source.indexOf('-header.json') != -1) {
       this.setState({model: new JSONPartialSourceModel('../data/' + source, this.state.model)});
     } else {
-      d3.json('../data/' + source, (err, data: Array<{[key: string]: string}>) => {
-        this.setState({model: new JSONSourceModel(data, this.state.model)});
-      });
+      this.setState({model: JSONSourceModel.loadJSON('../data/' + source)});
     }
   }
 

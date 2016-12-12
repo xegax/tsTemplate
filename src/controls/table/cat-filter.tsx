@@ -16,7 +16,7 @@ interface Props {
 }
 
 interface State {
-  source?: TableSourceModel;
+  source?: OrderedColumnsSourceModel;
   columnsMap?: ColumnsMap;
   cats?: {[name: string]: boolean};
 }
@@ -48,7 +48,7 @@ export class CatFilter extends React.Component<Props, State> {
 
     let source = props.source.getUniqueValues(props.source.getColumnIdx(props.column));
     this.state.source = new OrderedColumnsSourceModel(source, [
-      { colIdx: 1}, { colIdx: 2 }
+      { colIdx: 1}
     ]);
     
     this.state.columnsMap = {
@@ -58,18 +58,15 @@ export class CatFilter extends React.Component<Props, State> {
           if (checked == null)
             checked = true;
           return (
-            <div>
+            <div style={{whiteSpace: 'nowrap'}}>
               <input
                 type='checkbox'
                 checked={checked}
-                onChange={e => this.onChange(s)}
-              /> {s}
+                onClick={e => this.onChange(s, e.ctrlKey)}
+              /> {s + ' (' + source.getCell(2, row).value + ')'}
             </div>
           );
         }
-      },
-      count: {
-        width: 0.4
       }
     };
   }
@@ -81,9 +78,17 @@ export class CatFilter extends React.Component<Props, State> {
     return false;
   }
 
-  onChange = (name) => {
+  onChange = (name, all) => {
     let checked = this.state.cats[name] == null ? true : this.state.cats[name];
-    this.state.cats[name] = !checked;
+    if (all) {
+      let total = this.state.source.getTotal();
+      for (let n = 0; n < total.rows; n++) {
+        this.state.cats[this.state.source.getSourceModel().getCell(1, n).value] = !checked;
+      }
+    } else {
+      this.state.cats[name] = !checked;
+    }
+
     this.timer.run(1000);
     this.forceUpdate();
   }
