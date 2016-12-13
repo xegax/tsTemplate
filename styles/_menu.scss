@@ -1,0 +1,42 @@
+.custom_menu {
+  min-width: 150px;
+  max-width: 150px;
+  border: 1px solid silver;
+  margin: 0px;
+  padding: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: white;
+  box-shadow: 3px 3px 11px 0px rgba(0,0,0,0.75);
+
+  &--separator {
+    font-size: 0px;
+    border-bottom: 1px solid silver;
+  }
+
+  &--item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+    padding: 1px 10px;
+    list-style-type: none;
+    color: black;
+
+    &:hover {
+      color: white;
+      background-color: #1E90FF;
+    }
+  }
+
+  &--submenu_icon {
+    position: absolute;
+    right: 2px;
+    left: inherit;
+  }
+
+  &--icon {
+    position: absolute;
+    left: 8px;
+  }
+}
