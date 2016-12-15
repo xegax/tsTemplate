@@ -35,8 +35,10 @@ interface Props {
   width?: number;
   height?: number;
   focus?: boolean;
-  highlightableRows?: boolean;
-  rowHeight?: number;
+  
+  // view model specific
+  defaultRowHeight?: number;
+  defaultFeatures?: number;
 }
 
 interface State {
@@ -46,12 +48,6 @@ interface State {
 }
 
 export class Table extends React.Component<Props, State> {
-  static defaultProps = {
-    columnRender: [],
-    highlightableRows: false,
-    rowHeight: 30
-  };
-
   private sourceModel: TableSourceModel;
   private viewModel: GridModel;
 
@@ -62,14 +58,16 @@ export class Table extends React.Component<Props, State> {
     this.viewModel = props.viewModel || new GridModel();
     this.viewModel.setWidth(props.width);
     this.viewModel.setHeight(props.height);
-    this.viewModel.setCellHighlightable(this.props.highlightableRows === true);
-    this.viewModel.setCellHeight(this.props.rowHeight);
+
+    if (props.defaultFeatures != null)
+      this.viewModel.replaceFeatures(props.defaultFeatures);
+
+    if (props.defaultRowHeight != null)
+      this.viewModel.setCellHeight(props.defaultRowHeight);
 
     this.sourceModel = this.props.sourceModel;
     this.sourceModel.addSubscriber(this.onSourceChanged);
     this.viewModel.addSubscriber(this.onViewChanged);
-
-    this.viewModel.setCellSelectable(true);
   }
 
   componentDidMount() {

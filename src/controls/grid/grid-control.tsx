@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import {GridRender, Cell} from 'controls/grid/grid-render';
 import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
-import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
+import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
 import {assign} from 'lodash';
 import {className} from 'common/common';
 
@@ -130,17 +130,18 @@ export class GridControl extends React.Component<Props, State> {
   }
 
   private onResizeColumn(column: number, event: React.MouseEvent) {
-    let rowsHighlight = this.props.model.isCellHighlightable();
+    const feature = GridModelFeatures.ROWS_HIGHLIGHTABLE;
+    const highlightable = this.props.model.hasFeatures(feature);
     let size = this.props.model.getColumnSize(column);
     startDragging({x: size, y: 0}, {
       onDragStart: () => {
-        this.props.model.setCellHighlightable(false);
+        this.props.model.setFeatures(feature, false);
       },
       onDragging: e => {
         this.props.model.setColumnSize(column, e.x);
       },
       onDragEnd: () => {
-        this.props.model.setCellHighlightable(rowsHighlight);
+        this.props.model.setFeatures(feature, highlightable);
       }
     })(event as any as MouseEvent);
   }
@@ -211,7 +212,7 @@ export class GridControl extends React.Component<Props, State> {
     } = this.props;
 
     
-    const aligned = this.props.model.isRowsAligned();
+    const aligned = this.props.model.hasFeatures(GridModelFeatures.ROWS_ALIGNED);
     const contentWidth = this.props.model.getSummOfSizes();
     let contentFullHeight = cellHeight * rows;
     if (contentFullHeight <= height)

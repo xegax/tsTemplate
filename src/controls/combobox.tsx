@@ -2,11 +2,11 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {className} from 'common/common';
-import {Table, ColumnsMap} from 'controls/table/table';
+import {Table} from 'controls/table/simple-table';
 import {FitToParent} from 'common/fittoparent';
 import {findParentNode} from 'common/dom';
 import {assign} from 'lodash';
-import {GridModel} from 'controls/grid/grid-model';
+import {GridModel, GridModelFeatures} from 'controls/grid/grid-model';
 import {KeyCode} from 'common/keycode';
 
 const classes = {
@@ -24,7 +24,6 @@ interface Props {
   debug?: boolean;
   defaultFocus?: boolean;
   defaultPopup?: boolean
-  columnsMap?: ColumnsMap;
   sourceRow?: number;
   textValue?: string;
 
@@ -135,13 +134,12 @@ export class ComboBox extends React.Component<Props, State> {
       >
         <FitToParent width={this.node.offsetWidth} height={height}>
           <Table
-            columnsMap={this.props.columnsMap}
             viewModel={this.gridViewModel}
             selectedRow={this.state.index}
             onSelect={this.onSelect}
             className='combo-list'
             header={false}
-            highlightableRows
+            defaultFeatures={GridModelFeatures.ROWS_HIGHLIGHTABLE | GridModelFeatures.ROWS_SELECTABLE}
             sourceModel={this.props.sourceModel}
           />
         </FitToParent>

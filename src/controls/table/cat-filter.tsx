@@ -17,7 +17,6 @@ interface Props {
 
 interface State {
   source?: OrderedColumnsSourceModel;
-  columnsMap?: ColumnsMap;
   cats?: {[name: string]: boolean};
 }
 
@@ -50,25 +49,6 @@ export class CatFilter extends React.Component<Props, State> {
     this.state.source = new OrderedColumnsSourceModel(source, [
       { colIdx: 1}
     ]);
-    
-    this.state.columnsMap = {
-      name: {
-        render: (s, raw, row) => {
-          let checked = this.state.cats[s];
-          if (checked == null)
-            checked = true;
-          return (
-            <div style={{whiteSpace: 'nowrap'}}>
-              <input
-                type='checkbox'
-                checked={checked}
-                onClick={e => this.onChange(s, e.ctrlKey)}
-              /> {s + ' (' + source.getCell(2, row).value + ')'}
-            </div>
-          );
-        }
-      }
-    };
   }
 
   componentDidMount() {
@@ -100,7 +80,6 @@ export class CatFilter extends React.Component<Props, State> {
         defaultPopup
         onSelect={this.onSelect}
         onBlur={this.props.onClose}
-        columnsMap={this.state.columnsMap}
         sourceModel={this.state.source}
       />
     );

@@ -1,20 +1,26 @@
 import {Publisher} from 'common/publisher';
 
 export enum GridModelEvent {
-  ROWS          = 1 << 0,
-  COLUMNS       = 1 << 1,
-  CELL_HEIGHT   = 1 << 2,
-  WIDTH         = 1 << 3,
-  HEIGHT        = 1 << 4,
-  SCROLL_LEFT   = 1 << 5,
-  SCROLL_TOP    = 1 << 6,
-  START_COLUMN  = 1 << 7,
-  COLUMNS_RENDER_RANGE = 1 << 8,
-  ROWS_RENDER_RANGE    = 1 << 9,
-  ROWS_ALIGNED  = 1 << 10,
-  CELL_SELECTION = 1 << 11,
-  ROW_SELECT = 1 << 12,
-  ROW_HIGHLIGHT = 1 << 13
+  ROWS                  = 1 << 0,
+  COLUMNS               = 1 << 1,
+  CELL_HEIGHT           = 1 << 2,
+  WIDTH                 = 1 << 3,
+  HEIGHT                = 1 << 4,
+  SCROLL_LEFT           = 1 << 5,
+  SCROLL_TOP            = 1 << 6,
+  START_COLUMN          = 1 << 7,
+  COLUMNS_RENDER_RANGE  = 1 << 8,
+  ROWS_RENDER_RANGE     = 1 << 9,
+  ROW_SELECT            = 1 << 10,
+  ROW_HIGHLIGHT         = 1 << 11,
+  FEATURES              = 1 << 12
+}
+
+export enum GridModelFeatures {
+  ROWS_ALIGNED        = 1 << 0,
+  ROWS_SELECTABLE     = 1 << 1,
+  CELLS_SELECTABLE    = 1 << 2,
+  ROWS_HIGHLIGHTABLE  = 1 << 3
 }
 
 export class GridModel extends Publisher {
@@ -35,9 +41,8 @@ export class GridModel extends Publisher {
   private columnsRenderRange = [0, 0];
   private rowsRenderRange = [0, 0];
 
-  private rowsAligned: boolean = true;
-  private cellSelectable: boolean = false;
-  private cellHighlightable: boolean = true;
+  private featuresMask: number = GridModelFeatures.ROWS_ALIGNED |
+                                 GridModelFeatures.ROWS_HIGHLIGHTABLE;
 
   private highlightRow: number = -1;
   private selectRow: number = -1;
@@ -47,8 +52,7 @@ export class GridModel extends Publisher {
     super(prevModel);
 
     if (prevModel) {
-      this.cellHighlightable = prevModel.cellHighlightable;
-      this.cellSelectable = prevModel.cellSelectable;
+      this.featuresMask = prevModel.featuresMask;
     }
   }
 
@@ -65,35 +69,24 @@ export class GridModel extends Publisher {
     return this.rows;
   }
 
-  setRowsAligned(value: boolean) {
-    if (this.rowsAligned == value)
+  setFeatures(featuresMask: number, state: boolean) {
+    let newFeatures = (state == true) ? this.featuresMask | featuresMask : this.featuresMask & (~featuresMask);
+    if (newFeatures == this.featuresMask)
       return;
 
-    this.rowsAligned = value;
-    this.updateVersion(GridModelEvent.ROWS_ALIGNED, 1);
+    this.updateVersion(GridModelEvent.FEATURES);
   }
 
-  isRowsAligned() {
-    return this.rowsAligned;
-  }
-
-  isCellSelectable() {
-    return this.cellSelectable;
-  }
-
-  isCellHighlightable() {
-    return this.cellHighlightable;
-  }
-
-  setCellHighlightable(hl: boolean) {
-    this.cellHighlightable = hl;
-  }
-
-  setCellSelectable(value: boolean) {
-    if (this.cellSelectable == value)
+  replaceFeatures(featuresMask: number) {
+    if (featuresMask == this.featuresMask)
       return;
-    this.cellSelectable = value;
-    this.updateVersion(GridModelEvent.CELL_SELECTION, 1);
+    
+    this.featuresMask = featuresMask;
+    this.updateVersion(GridModelEvent.FEATURES);
+  }
+
+  hasFeatures(featuresMask: number) {
+    return (this.featuresMask & featuresMask) != 0;
   }
 
   setColumns(columns: Array<number>) {
@@ -223,7 +216,7 @@ export class GridModel extends Publisher {
 
   getAxisRangeRows(onlyFullVisible?: boolean) {
     let scrollTop = this.scrollTop;
-    if (this.rowsAligned) {
+    if (this.hasFeatures(GridModelFeatures.ROWS_ALIGNED)) {
       scrollTop = Math.floor(scrollTop / this.cellHeight) * this.cellHeight;
     }
 
@@ -298,7 +291,7 @@ export class GridModel extends Publisher {
   }
 
   setSelectRow(row: number, force: boolean = false) {
-    if (!this.cellSelectable)
+    if (!this.hasFeatures(GridModelFeatures.CELLS_SELECTABLE | GridModelFeatures.ROWS_SELECTABLE))
       return;
 
     row = Math.max(0, row);
@@ -314,7 +307,7 @@ export class GridModel extends Publisher {
   }
 
   setHighlightRow(row: number, scrollToRow: boolean = false) {
-    if (!this.cellHighlightable)
+    if (!this.hasFeatures(GridModelFeatures.ROWS_HIGHLIGHTABLE))
       return;
 
     row = Math.max(-1, row);
@@ -340,7 +333,7 @@ export class GridModel extends Publisher {
   }
 
   isRowSelect(row: number): boolean {
-    return this.cellSelectable && row == this.selectRow;
+    return this.hasFeatures(GridModelFeatures.ROWS_SELECTABLE | GridModelFeatures.CELLS_SELECTABLE) && row == this.selectRow;
   }
 
   isCellSelect(column: number, row: number): boolean {

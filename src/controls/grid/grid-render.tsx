@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {className} from 'common/common';
-import {GridModel} from 'controls/grid/grid-model';
+import {GridModel, GridModelFeatures} from 'controls/grid/grid-model';
 import {KeyCode} from 'common/keycode';
 
 const classes = {
@@ -183,7 +183,7 @@ export class GridRender extends React.Component<Props, State> {
       width: this.props.width,
       height: this.props.height
     };
-    const selectable = this.props.model.isCellSelectable();
+    const selectable = this.props.model.hasFeatures(GridModelFeatures.CELLS_SELECTABLE);
 
     return (
       <div

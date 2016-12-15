@@ -4,7 +4,7 @@ import {getContainer} from 'examples-main/helpers';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
-import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
+import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
 import {DataRange, TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
@@ -82,7 +82,11 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
 
     return (
       <FitToParent>
-        <Table rowHeight={100} columnsMap={columnsMap} sourceModel={this.state.model} style={{position: 'absolute'}}/>
+        <Table
+          defaultRowHeight={100}
+          columnsMap={columnsMap}
+          sourceModel={this.state.model}
+          style={{position: 'absolute'}}/>
       </FitToParent>
     );
   }
