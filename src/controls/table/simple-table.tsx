@@ -24,12 +24,12 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   onSelect?: (row: number) => void;
-  selectedRow?: number;
   width?: number;
   height?: number;
   focus?: boolean;
 
   // view model specific
+  defaultSelectedRow?: number;
   defaultRowHeight?: number;
   defaultFeatures?: number; // GridModelFeatures
 }
@@ -61,11 +61,13 @@ export class Table extends React.Component<Props, State> {
 
   componentDidMount() {
     this.onSourceChanged(TableModelEvent.TOTAL);
-    if (this.props.selectedRow >= 0) {
+    
+    const selectedRow = this.props.defaultSelectedRow;
+    if (selectedRow >= 0) {
       let viewModel = this.state.viewModel;
-      viewModel.setSelectRow(this.props.selectedRow);
-      viewModel.setHighlightRow(this.props.selectedRow);
-      viewModel.setScrollTopRow(this.props.selectedRow);
+      viewModel.setSelectRow(selectedRow);
+      viewModel.setHighlightRow(selectedRow);
+      viewModel.setScrollTopRow(selectedRow);
     }
   }
 

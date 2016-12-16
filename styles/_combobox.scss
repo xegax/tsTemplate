@@ -12,9 +12,18 @@
   &.combobox__focus {
     border: 1px solid silver;
   }
+
+  &__popup {
+    display: flex;
+    position: absolute;
+    left: -1px;
+    border: 1px solid black;
+    box-sizing: border-box;
+    background-color: white;
+  }
 }
 
-.combo-list.grid_control .grid_render {
+.combobox__list.grid_control .grid_render {
   &--cell {
     border-left: none;
     border-top: none;

@@ -11,24 +11,29 @@ import {KeyCode} from 'common/keycode';
 
 const classes = {
   combobox: 'combobox',
-  focus: 'combobox__focus',
-  textbox: 'combobox__textbox'
+  focus:    'combobox__focus',
+  textbox:  'combobox__textbox',
+  list:     'combobox__list',
+  popup:    'combobox__popup'
 };
 
 interface Props {
   sourceModel: TableSourceModel;
-  width?: number;
-  height?: number;
-  style?: React.CSSProperties;
-  maxItems?: number;
   debug?: boolean;
-  defaultFocus?: boolean;
-  defaultPopup?: boolean
+  
   sourceRow?: number;
   textValue?: string;
 
+  maxItems?: number;
+  defaultFocus?: boolean;
+  defaultPopup?: boolean;
+
   onSelect?: (value: string, row: number) => boolean | void;
   onBlur?: () => void;
+
+  width?: number;
+  height?: number;
+  style?: React.CSSProperties;
 }
 
 interface State {
@@ -116,17 +121,12 @@ export class ComboBox extends React.Component<Props, State> {
     let height = 30 * Math.min(this.state.items, this.props.maxItems) + 2;
     return (
       <div
+        className={classes.popup}
         style={{
           zIndex: 1000,
-          display: 'flex',
-          position: 'absolute',
-          left: 0,
-          marginLeft: -1,
           width: this.node.offsetWidth,
-          height: height,
-          border: '1px solid black',
-          boxSizing: 'border-box',
-          backgroundColor: 'white'}}
+          height: height
+        }}
         onMouseDown={e => {
           e.preventDefault();
           e.stopPropagation();
@@ -135,10 +135,10 @@ export class ComboBox extends React.Component<Props, State> {
         <FitToParent width={this.node.offsetWidth} height={height}>
           <Table
             viewModel={this.gridViewModel}
-            selectedRow={this.state.index}
             onSelect={this.onSelect}
-            className='combo-list'
+            className={classes.list}
             header={false}
+            defaultSelectedRow={this.state.index}
             defaultFeatures={GridModelFeatures.ROWS_HIGHLIGHTABLE | GridModelFeatures.ROWS_SELECTABLE}
             sourceModel={this.props.sourceModel}
           />
