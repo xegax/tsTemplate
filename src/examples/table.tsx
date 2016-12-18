@@ -11,28 +11,40 @@ import {JSONSourceModel} from 'model/json-source-model';
 import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
-import {Table} from 'controls/table/table';
+import {Table} from 'controls/table/simple-table';
+import {assign} from 'lodash';
 
-class DataSelector extends React.Component<{list: Array<string>}, {listItem?: number, data?: any, model?: TableSourceModel}> {
+interface State {
+  listItem?: number;
+  data?: any;
+  model?: TableSourceModel;
+}
+
+class DataSelector extends React.Component<{list: Array<string>}, State> {
   constructor(props) {
     super(props);
-    this.state = {
-      listItem: 0
-    };
-    this.onDataSelected();
+    this.state = {};
+    
+    this.state = assign({
+      listItem: 2
+    }, this.getNewState(2));
   }
 
-  onDataSelected = () => {
-    let source = this.props.list[this.state.listItem];
+  getNewState(item: number): State {
+    let source = this.props.list[item];
     if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
-      this.setState({model: new TestTableSourceModel(dim[1], dim[0], delay, this.state.model)});
+      return {model: new TestTableSourceModel(dim[1], dim[0], delay, this.state.model)};
     } else if (source.indexOf('-header.json') != -1) {
-      this.setState({model: new JSONPartialSourceModel('../data/' + source, this.state.model)});
-    } else {
-      this.setState({model: JSONSourceModel.loadJSON('../data/' + source)});
+      return {model: new JSONPartialSourceModel('../data/' + source, this.state.model)};
     }
+    
+    return {model: JSONSourceModel.loadJSON('../data/' + source)};
+  }
+
+  onDataSelected = () => {
+    this.setState(this.getNewState(this.state.listItem));
   }
 
   setDataSelect() {
@@ -54,7 +66,7 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
     if (!this.state.model)
       return (<div>No data to display</div>);
 
-    let columnsMap = {};
+    /*let columnsMap = {};
     let source = this.props.list[this.state.listItem];
     if (['full.json', 'part-header.json'].indexOf(source) != -1) {
       const icon = {
@@ -78,13 +90,13 @@ class DataSelector extends React.Component<{list: Array<string>}, {listItem?: nu
           });
         }
       }
-    }
+    }*/
 
     return (
       <FitToParent>
         <Table
           defaultRowHeight={100}
-          columnsMap={columnsMap}
+          //columnsMap={columnsMap}
           sourceModel={this.state.model}
           style={{position: 'absolute'}}/>
       </FitToParent>

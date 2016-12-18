@@ -2,9 +2,18 @@ import {Timer} from './timer';
 
 type Callback = (eventBits: number, publisher: Publisher) => void;
 
+interface CallbackHolder {
+  order: number;
+  callback: Callback;
+}
+
 export class Publisher {
+  static readonly ORDER_BEGIN = 0;
+  static readonly ORDER_MIDDLE = 1;
+  static readonly ORDER_END = 2;
+
   private version: number = 0;
-  private subscribers = Array<Callback>();
+  private subscribers = Array<CallbackHolder>();
   private eventsMask: number = 0;
   private timer: Timer;
 
@@ -18,30 +27,39 @@ export class Publisher {
     
     // subscribers moved from prev
     if (prev) {
-      prev.subscribers.forEach(s => this.addSubscriber(s));
+      prev.subscribers.forEach(s => this.addSubscriber(s.callback));
       prev.removeAllSubscribers();
     }
   }
 
-  addSubscriber(callback: Callback) {
-    if (this.subscribers.indexOf(callback) != -1)
+  addSubscriber(callback: Callback, order: number = Publisher.ORDER_BEGIN) {
+    if (this.getSubscriberIndex(callback) != -1)
       return;
-    this.subscribers.push(callback);
+
+    this.subscribers.push({callback, order});
+    this.subscribers.sort((a, b) => a.order - b.order);
   }
 
   removeSubscriber(callback: Callback) {
-    let i = this.subscribers.indexOf(callback);
-    if (i == -1)
+    let n = this.getSubscriberIndex(callback);
+    if (n == -1)
       return;
-    this.subscribers.splice(i, 1);
+    
+    this.subscribers.splice(n, 1);
+    this.subscribers.sort((a, b) => a.order - b.order);
   }
 
   removeAllSubscribers() {
     this.subscribers.splice(0, this.subscribers.length);
   }
 
-  hasSubscriber(callback: Callback) {
-    return this.subscribers.indexOf(callback) != -1;
+  getSubscriberIndex(callback: Callback): number {
+    for (let n = 0; n < this.subscribers.length; n++) {
+      if (this.subscribers[n].callback == callback)
+        return n;
+    }
+
+    return -1;
   }
 
   getSubscriberCount() {
@@ -63,7 +81,7 @@ export class Publisher {
     this.timer.stop();
     for (let n = 0; n < this.subscribers.length; n++) {
       try {
-        this.subscribers[n](this.eventsMask, this);
+        this.subscribers[n].callback(this.eventsMask, this);
       } catch (e) {
         console.log(e);
       }

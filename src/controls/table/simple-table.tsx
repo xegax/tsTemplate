@@ -3,22 +3,16 @@ import * as ReactDOM from 'react-dom';
 import {GridControl} from 'controls/grid/grid-control';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
+import {ColumnsModel, Column} from 'controls/table/columns-model';
 
 const classes = {
   cellWrapper: 'table--cell-wrapper'
 };
 
-export interface Column {
-  renderHeader?: (s: string, colIdx: number) => JSX.Element;
-  render?: (s: string, raw: any, row: number) => JSX.Element;
-  width?: number;
-  label?: string;
-  tooltip?: string;
-}
-
 interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
+  columnsModel?: ColumnsModel;
 
   header?: boolean;
   className?: string;
@@ -36,13 +30,15 @@ interface Props {
 
 interface State {
   viewModel?: GridModel;
+  columnsModel?: ColumnsModel;
 }
 
 export class Table extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      viewModel: props.viewModel || new GridModel()
+      viewModel: props.viewModel || new GridModel(),
+      columnsModel: props.columnsModel || new ColumnsModel()
     };
 
     const viewModel = this.state.viewModel;
@@ -78,7 +74,7 @@ export class Table extends React.Component<Props, State> {
 
   componentWillReceiveProps(newProps: Props) {
     let viewModel = this.state.viewModel;
-    if (viewModel != newProps.viewModel) {
+    if (newProps.viewModel != null && viewModel != newProps.viewModel) {
       viewModel = this.state.viewModel = newProps.viewModel;
     }
 
@@ -130,6 +126,11 @@ export class Table extends React.Component<Props, State> {
       }
     }
 
+    if (eventMask & GridModelEvent.COLUMN_RESIZED) {
+      let col = this.state.viewModel.getResizingColumn();
+      console.log(col, this.state.viewModel.getColumnSize(col));
+    }
+
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
       this.props.sourceModel.loadData({cols: viewModel.getColumnsRange(), rows: viewModel.getRowsRange()});
     }
@@ -165,7 +166,7 @@ export class Table extends React.Component<Props, State> {
         focus={this.props.focus}
         renderCell={this.renderCell}
         renderHeader={this.renderHeader}
-        model={this.props.viewModel}
+        model={this.state.viewModel}
       />
     );
   }

@@ -136,12 +136,14 @@ export class GridControl extends React.Component<Props, State> {
     startDragging({x: size, y: 0}, {
       onDragStart: () => {
         this.props.model.setFeatures(feature, false);
+        this.props.model.startColumnResizing(column);
       },
       onDragging: e => {
         this.props.model.setColumnSize(column, e.x);
       },
       onDragEnd: () => {
         this.props.model.setFeatures(feature, highlightable);
+        this.props.model.endColumnResizing();
       }
     })(event as any as MouseEvent);
   }

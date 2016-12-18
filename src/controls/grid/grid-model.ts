@@ -13,7 +13,9 @@ export enum GridModelEvent {
   ROWS_RENDER_RANGE     = 1 << 9,
   ROW_SELECT            = 1 << 10,
   ROW_HIGHLIGHT         = 1 << 11,
-  FEATURES              = 1 << 12
+  FEATURES              = 1 << 12,
+  COLUMN_RESIZING       = 1 << 13,
+  COLUMN_RESIZED        = 1 << 14
 }
 
 export enum GridModelFeatures {
@@ -25,8 +27,11 @@ export enum GridModelFeatures {
 
 export class GridModel extends Publisher {
   private cellHeight: number = 30;
-  private columns = Array<number>();
-  private columnsProps = Array<number>();
+  
+  private columnSize = Array<number>();     // calculated column size
+  private columnProp = Array<number>();     // [0;1] = column proportion, > 1 = column size
+  private columnToResize: number;
+
   private columnsSizeSumm: number = 0;
 
   private rows: number = 0;
@@ -90,20 +95,24 @@ export class GridModel extends Publisher {
   }
 
   setColumns(columns: Array<number>) {
-    this.columnsProps = columns.slice();
+    this.columnProp = columns.slice();
     this.resizeColumns();
 
     this.updateStartColumn();
-    this.updateColumnsRange(); 
+    this.updateColumnsRange();
     this.updateVersion(GridModelEvent.COLUMNS, 1);
   }
 
   getColumnsSizes(): Array<number> {
-    return this.columns.slice();
+    return this.columnSize.slice();
   }
 
   getColumns(): Array<number> {
-    return this.columnsProps.slice();
+    return this.columnProp.slice();
+  }
+
+  getResizingColumn() {
+    return this.columnToResize;
   }
 
   getSummOfSizes(): number {
@@ -193,7 +202,7 @@ export class GridModel extends Publisher {
   getAxisRangeColumns() {
     let {startColumn, startColumnOffs} = this;
     let pos = -startColumnOffs;
-    for (var num = startColumn; num < this.columns.length; num++) {
+    for (var num = startColumn; num < this.columnSize.length; num++) {
       if (pos > this.width)
         break;
       pos += this.getColumnSize(num);
@@ -233,27 +242,43 @@ export class GridModel extends Publisher {
   }
 
   getColumnSize(column: number) {
-    return this.columns[column];
+    return this.columnSize[column];
   }
 
-  setColumnSize(column: number, size: number) {
-    if (this.columnsProps[column] == size)
+  startColumnResizing(column: number) {
+    if (this.columnToResize == column)
       return;
-    this.columnsProps[column] = size;
+    this.columnToResize = column;
+    this.updateVersion(GridModelEvent.COLUMN_RESIZING, 1);
+  }
+
+  endColumnResizing() {
+    if (this.columnToResize == -1)
+      return;
+    this.updateVersion(GridModelEvent.COLUMN_RESIZED, 0);
+    this.columnToResize = -1;
+  }
+
+
+  setColumnSize(column: number, size: number) {
+    if (this.columnProp[column] == size)
+      return;
+
+    this.columnProp[column] = size;
     this.resizeColumns();
     this.updateColumnsRange();
-    this.updateVersion(GridModelEvent.COLUMNS);
+    this.updateVersion(GridModelEvent.COLUMNS | GridModelEvent.COLUMN_RESIZING);
   }
 
   getSizeToProp(size: number) {
     let fixedSize = 0;
     let props = 0;
     let scale = 1;
-    for (let n = 0; n < this.columnsProps.length; n++) {
-      if (this.columnsProps[n] > 1) {
-        fixedSize += this.columnsProps[n];
+    for (let n = 0; n < this.columnProp.length; n++) {
+      if (this.columnProp[n] > 1) {
+        fixedSize += this.columnProp[n];
       } else {
-        props += this.columnsProps[n];
+        props += this.columnProp[n];
       }
     }
 
@@ -264,7 +289,7 @@ export class GridModel extends Publisher {
   }
 
   getColumnsNum() {
-    return this.columns.length;
+    return this.columnSize.length;
   }
 
   getStartColumnOffs() {
@@ -344,29 +369,29 @@ export class GridModel extends Publisher {
     let fixedSize = 0;
     let props = 0;
     let scale = 1;
-    for (let n = 0; n < this.columnsProps.length; n++) {
-      if (this.columnsProps[n] > 1) {
-        fixedSize += this.columnsProps[n];
+    for (let n = 0; n < this.columnProp.length; n++) {
+      if (this.columnProp[n] > 1) {
+        fixedSize += this.columnProp[n];
       } else {
-        props += this.columnsProps[n];
+        props += this.columnProp[n];
       }
     }
 
     if (props != 1)
       scale = 1 / props;
 
-    this.columns = this.columnsProps.slice();
-    for (let n = 0; n < this.columns.length; n++) {
-      if (this.columnsProps[n] > 1) {
-        this.columns[n] = this.columnsProps[n];
+    this.columnSize = this.columnProp.slice();
+    for (let n = 0; n < this.columnSize.length; n++) {
+      if (this.columnProp[n] > 1) {
+        this.columnSize[n] = this.columnProp[n];
       } else {
-        this.columns[n] = this.columnsProps[n] * (this.width - fixedSize) * scale;
+        this.columnSize[n] = this.columnProp[n] * (this.width - fixedSize) * scale;
       }
     }
 
     let s = 0;
-    for (let n = 0; n < this.columns.length; n++)
-      s += this.columns[n];
+    for (let n = 0; n < this.columnSize.length; n++)
+      s += this.columnSize[n];
 
     this.columnsSizeSumm = s;
   }
@@ -375,13 +400,13 @@ export class GridModel extends Publisher {
     let startColumn = 0;
     let startColumnOffs = 0;
     let pos = 0;
-    for (let col = 0; col < this.columns.length; col++) {
+    for (let col = 0; col < this.columnSize.length; col++) {
       if (pos > this.scrollLeft) {
         startColumn = Math.max(col - 1, 0);
-        startColumnOffs = this.scrollLeft - (pos - this.columns[startColumn]);
+        startColumnOffs = this.scrollLeft - (pos - this.columnSize[startColumn]);
         break;
       }
-      pos += this.columns[col];
+      pos += this.columnSize[col];
     }
 
     if (startColumn != this.startColumn || startColumnOffs != this.startColumnOffs) {
@@ -393,7 +418,7 @@ export class GridModel extends Publisher {
 
   private updateColumnsRange() {
     let cols = this.getAxisRangeColumns();
-    let arr = [cols.idx, Math.min(cols.idx + cols.num - 1, this.columns.length - 1)];
+    let arr = [cols.idx, Math.min(cols.idx + cols.num - 1, this.columnSize.length - 1)];
     if (this.columnsRenderRange[0] == arr[0] && this.columnsRenderRange[1] == arr[1])
       return;
     this.columnsRenderRange[0] = arr[0];
