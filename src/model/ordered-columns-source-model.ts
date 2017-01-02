@@ -1,6 +1,7 @@
 import {TableSourceModel, DataRange, Cell, ColumnType, SortColumn} from 'model/table-source-model';
 import {CompoundCondition, ColumnCondition} from 'model/filter-condition';
 import {assign} from 'lodash';
+import {Publisher} from 'common/publisher';
 
 type Mapper = (row: number, data: Cell) => Cell;
 type ColumnsMapper = {[columnId: string]: Mapper}; 
@@ -115,6 +116,10 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   removeSubscriber(callback: (mask: number) => void) {
     return this.sourceModel.removeSubscriber(callback);
+  }
+
+  moveSubscribersFrom(from: Publisher) {
+    this.sourceModel.moveSubscribersFrom(from);
   }
 
   getOrigCol(colId: string): string {

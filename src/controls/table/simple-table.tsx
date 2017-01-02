@@ -81,6 +81,7 @@ export class Table extends React.Component<Props, State> {
     if (this.props.sourceModel != newProps.sourceModel) {
       viewModel.setRows(0);
       viewModel.setColumns([]);
+      newProps.sourceModel.moveSubscribersFrom(this.props.sourceModel as any);
     }
 
     viewModel.setWidth(newProps.width);
@@ -88,7 +89,9 @@ export class Table extends React.Component<Props, State> {
   }
 
   private updateColumnSizes() {
-    const total = this.props.sourceModel.getTotal()
+    const colModel = this.state.columnsModel;
+    const {sourceModel} = this.props;
+    const total = sourceModel.getTotal();
     const columns = Array(total.columns);
     for (let n = 0; n < columns.length; n++) {
       if (total.columns < 10) {
@@ -96,6 +99,11 @@ export class Table extends React.Component<Props, State> {
       } else {
         columns[n] = 150;
       }
+
+      let srcCol = sourceModel.getColumn(n);
+      let col = this.state.columnsModel.getColumn(srcCol.id);
+      if (col && col.width != null)
+        columns[n] = col.width;
     }
 
     this.state.viewModel.setColumns(columns);
@@ -126,9 +134,13 @@ export class Table extends React.Component<Props, State> {
       }
     }
 
+    // event from user column resizing
     if (eventMask & GridModelEvent.COLUMN_RESIZED) {
-      let col = this.state.viewModel.getResizingColumn();
-      console.log(col, this.state.viewModel.getColumnSize(col));
+      const colIdx = this.state.viewModel.getResizingColumn();
+      const srcCol = this.props.sourceModel.getColumn(colIdx);
+
+      const newSize = this.state.viewModel.getColumnSize(colIdx);
+      this.state.columnsModel.setColumnSize(srcCol.id, newSize);
     }
 
     if (eventMask & (GridModelEvent.COLUMNS_RENDER_RANGE | GridModelEvent.ROWS_RENDER_RANGE)) {
@@ -137,18 +149,31 @@ export class Table extends React.Component<Props, State> {
   };
 
   protected renderHeader = (colIdx: number) => {
-    const column = this.props.sourceModel.getColumn(colIdx);
+    const srcCol = this.props.sourceModel.getColumn(colIdx);
+    const colModel = this.state.columnsModel.getColumn(srcCol.id);
+
+    let colValue = srcCol && srcCol.id || 'column' + colIdx;
+    if (colModel && colModel.renderHeader) {
+      return {
+        element: colModel.renderHeader(colValue, colIdx)
+      };
+    }
+
     return {
-      element: (
-        <div>
-          {column && column.id || 'column' + colIdx}
-        </div>
-      )
+      element: <div>{colValue}</div>
     };
   }
 
   protected renderCell = (columnIdx: number, rowIdx: number) => {
     const cell = this.props.sourceModel.getCell(columnIdx, rowIdx);
+    const srcCol = this.props.sourceModel.getColumn(columnIdx);
+    const colModel = this.state.columnsModel.getColumn(srcCol.id);
+    if (colModel && colModel.render) {
+      return {
+        element: colModel.render(cell.value, cell.raw, rowIdx)
+      };
+    }
+
     return {
        element: <div className={classes.cellWrapper}>{cell.value}</div> as any
     };

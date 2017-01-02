@@ -13,6 +13,7 @@ import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {assign} from 'lodash';
+import {ColumnsModel} from 'controls/table/columns-model';
 
 interface State {
   listItem?: number;
@@ -35,9 +36,9 @@ class DataSelector extends React.Component<{list: Array<string>}, State> {
     if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
-      return {model: new TestTableSourceModel(dim[1], dim[0], delay, this.state.model)};
+      return {model: new TestTableSourceModel(dim[1], dim[0], delay)};
     } else if (source.indexOf('-header.json') != -1) {
-      return {model: new JSONPartialSourceModel('../data/' + source, this.state.model)};
+      return {model: new JSONPartialSourceModel('../data/' + source)};
     }
     
     return {model: JSONSourceModel.loadJSON('../data/' + source)};
@@ -66,37 +67,45 @@ class DataSelector extends React.Component<{list: Array<string>}, State> {
     if (!this.state.model)
       return (<div>No data to display</div>);
 
-    /*let columnsMap = {};
-    let source = this.props.list[this.state.listItem];
+    const columns = new ColumnsModel({
+      'title': {width: 100},
+      'type': {width: 50},
+      'file': {width: 200}
+    });
+
+    const source = this.props.list[this.state.listItem];
     if (['full.json', 'part-header.json'].indexOf(source) != -1) {
       const icon = {
         'psx': <img height={28} src={'../images/psx-logo-small.png'}/>,
         'gens': <img height={28} src={'../images/gens-logo-small.png'}/>,
         'snes': <img height={28} src={'../images/snes-logo-small.png'} />
       };
-      columnsMap['type'] = {
-        render: (s) => icon[s] || '?'
-      };
-      columnsMap['images'] = {
-        render: (str: string, raw: Array<string>, row: number) => {
-          return raw.map((item, i) => {
-            return (
-              <img
-                key={i}
-                height={100}
-                src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
-              />
-            );
-          });
+      columns.insertColumns({
+        'type': {
+          width: 50,
+          render: (s) => icon[s] || '?'
+        },
+        'images': {
+          render: (str: string, raw, row: number) => {
+            return (raw || []).map((item, i) => {
+              return (
+                <img
+                  key={i}
+                  height={100}
+                  src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
+                />
+              );
+            });
+          }
         }
-      }
-    }*/
+      });
+    }
 
     return (
       <FitToParent>
         <Table
           defaultRowHeight={100}
-          //columnsMap={columnsMap}
+          columnsModel={columns}
           sourceModel={this.state.model}
           style={{position: 'absolute'}}/>
       </FitToParent>

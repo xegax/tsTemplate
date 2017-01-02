@@ -4,8 +4,8 @@ import {Timer} from 'common/timer';
 export class TestTableSourceModel extends TableSourceModelImpl {
   protected delay: number;
 
-  constructor(cols: number, rows: number, delay: number = 0, prevModel: TableSourceModel) {
-    super(prevModel);
+  constructor(cols: number, rows: number, delay: number = 0) {
+    super();
     this.delay = delay;
     this.setTotal(cols, rows);
   }

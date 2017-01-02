@@ -47,14 +47,15 @@ export class GridModel extends Publisher {
   private rowsRenderRange = [0, 0];
 
   private featuresMask: number = GridModelFeatures.ROWS_ALIGNED |
-                                 GridModelFeatures.ROWS_HIGHLIGHTABLE;
+                                 GridModelFeatures.ROWS_HIGHLIGHTABLE |
+                                 GridModelFeatures.ROWS_SELECTABLE;
 
   private highlightRow: number = -1;
   private selectRow: number = -1;
   private selectColumn: number = 0;
 
   constructor(prevModel?: GridModel) {
-    super(prevModel);
+    super();
 
     if (prevModel) {
       this.featuresMask = prevModel.featuresMask;

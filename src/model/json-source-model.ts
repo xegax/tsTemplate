@@ -25,8 +25,8 @@ export class JSONSourceModel extends TableSourceModelImpl {
   private sorting = Array<SortColumn>();
   private condition: CompoundCondition | ColumnCondition;
 
-  constructor(json: Array<Array<any>>, columns: Array<string>, prevModel?: TableSourceModel) {
-    super(prevModel);
+  constructor(json: Array<Array<any>>, columns: Array<string>) {
+    super();
     this.initJSON(json, columns);
   }
 

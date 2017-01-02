@@ -87,7 +87,7 @@ class Roms extends React.Component<Props, State> {
   onSelectRow = (row: number) => {
     let origSource = this.state.sourceModel.getSourceModel();
     let type = origSource.getCell(origSource.getColumnIdx('type'), row).value;
-    let images: Array<string> = origSource.getCell(origSource.getColumnIdx('images'), row).raw;
+    let images: Array<string> = origSource.getCell(origSource.getColumnIdx('images'), row).raw || [];
 
     images = images.map(item => ['../data/files', type, item].join('/'));
     this.setState({images});

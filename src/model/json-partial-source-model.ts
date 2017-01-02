@@ -26,8 +26,8 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
   private headerPath = '';
   private requestor: Requestor;
 
-  constructor(headerFile: string, prevModel?: TableSourceModel, requestor?: Requestor) {
-    super(prevModel);
+  constructor(headerFile: string, requestor?: Requestor) {
+    super();
     this.requestor = requestor || getGlobalRequestor();
     this.headerPath = parsePath(headerFile).path;
 

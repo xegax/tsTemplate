@@ -17,19 +17,18 @@ export class Publisher {
   private eventsMask: number = 0;
   private timer: Timer;
 
-  constructor(prev?: Publisher, timer?: Timer) {
+  constructor(timer?: Timer) {
     if (timer) {
       this.timer = timer;
     } else {
       this.timer = new Timer();
     }
     this.timer.addUniqueCallback(() => this.notifySubscribers());
-    
-    // subscribers moved from prev
-    if (prev) {
-      prev.subscribers.forEach(s => this.addSubscriber(s.callback));
-      prev.removeAllSubscribers();
-    }
+  }
+
+  moveSubscribersFrom(from: Publisher) {
+    from.subscribers.forEach(s => this.addSubscriber(s.callback));
+    from.removeAllSubscribers();
   }
 
   addSubscriber(callback: Callback, order: number = Publisher.ORDER_BEGIN) {

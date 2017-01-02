@@ -85,8 +85,10 @@ export interface TableSourceModel extends Filterable, Sortable {
   getAbilities(): number;
   getUniqueValues(col: number): TableSourceModel;
 
+  // Publisher
   addSubscriber(callback: (mask: number) => void);
   removeSubscriber(callback: (mask: number) => void);
+  moveSubscribersFrom(from: Publisher);
 }
 
 export interface Dimension {
@@ -130,10 +132,6 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
 
   protected columnsCache = Array< Array<Column> >();
   protected cache = Array< Array<CacheItem> >();  // [row][column]
-
-  constructor(prevModel?: TableSourceModel) {
-    super(prevModel as any);
-  }
 
   loadData(_range: DataRange): IThenable<any> {
     const range: DataRange = {
