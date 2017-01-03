@@ -1,5 +1,7 @@
 import {Publisher} from 'common/publisher';
 import {assign, isEqual} from 'lodash';
+import {ColumnType} from 'model/table-source-model';
+import {Appearance} from 'common/appearance';
 
 export interface Column {
   renderHeader?: (s: string, colIdx: number) => JSX.Element;
@@ -7,6 +9,7 @@ export interface Column {
   width?: number;
   label?: string;
   tooltip?: string;
+  type?: ColumnType;
 }
 
 interface ColumnHolder {
@@ -18,12 +21,22 @@ export class ColumnsModel extends Publisher {
   static readonly EVENT_WIDTH   = 1 << 1;
 
   private map: {[name: string]: ColumnHolder} = {};
+  private appr: Appearance;
 
-  constructor(map?: {[name: string]: Column}) {
+  constructor(map?: {[name: string]: Column}, appr?: Appearance) {
     super();
 
     if (map != null)
       this.insertColumns(map);
+
+    this.appr = appr;
+    if (appr) {
+      let apprMap = appr.getMap('sizes');
+      Object.keys(apprMap).forEach(name => {
+        let col = this.getOrCreateHolder(name);
+        col.column.width = +apprMap[name];
+      });
+    }
   }
 
   getColumn(name: string): Column {
@@ -38,7 +51,7 @@ export class ColumnsModel extends Publisher {
     if (isEqual(holder.column, column))
       return;
 
-    holder.column = assign({}, column);
+    holder.column = assign(holder.column, column);
     this.updateVersion(ColumnsModel.EVENT_CHANGED, 1);
   }
 
@@ -50,6 +63,10 @@ export class ColumnsModel extends Publisher {
     let holder = this.getOrCreateHolder(name);
     if (holder.column.width == size)
       return;
+
+    if (this.appr) {
+      this.appr.putToMap('sizes', name, '' + size);
+    }
 
     holder.column.width = size;
     this.updateVersion(ColumnsModel.EVENT_WIDTH, 1);

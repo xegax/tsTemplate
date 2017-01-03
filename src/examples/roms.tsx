@@ -28,7 +28,7 @@ class Roms extends React.Component<Props, State> {
       columnsMap: {}
     };
 
-    this.initPs(props);
+    this.initFull(props);
   }
 
   private initPs(props: Props) {

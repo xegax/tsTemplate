@@ -14,38 +14,55 @@ import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {assign} from 'lodash';
 import {ColumnsModel} from 'controls/table/columns-model';
+import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
 
 interface State {
   listItem?: number;
   data?: any;
   model?: TableSourceModel;
+  columns?: ColumnsModel;
 }
 
-class DataSelector extends React.Component<{list: Array<string>}, State> {
-  constructor(props) {
+interface Props {
+  list: Array<string>;
+}
+
+class DataSelector extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    this.state = {};
-    
-    this.state = assign({
+    this.state = {
       listItem: 2
-    }, this.getNewState(2));
+    };
+
+    this.state.model = this.createModel(this.state.listItem);
+    this.state.columns = new ColumnsModel(null, this.createAppearance(this.state.listItem));
   }
 
-  getNewState(item: number): State {
-    let source = this.props.list[item];
+  createModel(item: number): TableSourceModel {
+    const source = this.props.list[item];
     if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
-      return {model: new TestTableSourceModel(dim[1], dim[0], delay)};
+      return new TestTableSourceModel(dim[1], dim[0], delay);
     } else if (source.indexOf('-header.json') != -1) {
-      return {model: new JSONPartialSourceModel('../data/' + source)};
+      return new JSONPartialSourceModel('../data/' + source);
     }
     
-    return {model: JSONSourceModel.loadJSON('../data/' + source)};
+    return JSONSourceModel.loadJSON('../data/' + source);
+  }
+
+  createAppearance(item: number): Appearance {
+    const source = this.props.list[item];
+    return new AppearanceFromLocalStorage('table-example/' + source, {
+      sizes: {}
+    });
   }
 
   onDataSelected = () => {
-    this.setState(this.getNewState(this.state.listItem));
+    this.setState({
+      model: this.createModel(this.state.listItem),
+      columns: new ColumnsModel(null, this.createAppearance(this.state.listItem))
+    });
   }
 
   setDataSelect() {
@@ -67,73 +84,16 @@ class DataSelector extends React.Component<{list: Array<string>}, State> {
     if (!this.state.model)
       return (<div>No data to display</div>);
 
-    const columns = new ColumnsModel({
-      'title': {width: 100},
-      'type': {width: 50},
-      'file': {width: 200}
-    });
-
-    const source = this.props.list[this.state.listItem];
-    if (['full.json', 'part-header.json'].indexOf(source) != -1) {
-      const icon = {
-        'psx': <img height={28} src={'../images/psx-logo-small.png'}/>,
-        'gens': <img height={28} src={'../images/gens-logo-small.png'}/>,
-        'snes': <img height={28} src={'../images/snes-logo-small.png'} />
-      };
-      columns.insertColumns({
-        'type': {
-          width: 50,
-          render: (s) => icon[s] || '?'
-        },
-        'images': {
-          render: (str: string, raw, row: number) => {
-            return (raw || []).map((item, i) => {
-              return (
-                <img
-                  key={i}
-                  height={100}
-                  src={['../data/files', this.state.model.getCell(3, row).value, item].join('/')}
-                />
-              );
-            });
-          }
-        }
-      });
-    }
-
     return (
       <FitToParent>
         <Table
           defaultRowHeight={100}
-          columnsModel={columns}
+          columnsModel={this.state.columns}
           sourceModel={this.state.model}
           style={{position: 'absolute'}}/>
       </FitToParent>
     );
   }
-
-  onFilter = () => {
-    this.state.model.setConditions({
-      op: 'or',
-      condition: [
-        {column: 'images', inverse: true, catValues: ['']}
-      ]
-    });
-  };
-
-  onFilterSnes = () => {
-    this.state.model.setConditions({
-      op: 'or',
-      condition: [
-        {column: 'type', textValue: 'psx'},
-        {column: 'type', textValue: 'snes'}
-      ]
-    });
-  };
-
-  onClearFilter = () => {
-    this.state.model.setConditions(null);
-  };
 
   render() {
     return (
@@ -141,9 +101,6 @@ class DataSelector extends React.Component<{list: Array<string>}, State> {
         <div style={{padding: 4}}>
           {this.renderDataList()}
           <button onClick={() => this.state.model.reload()}>reload</button>
-          <button onClick={this.onFilter}>filter</button>
-          <button onClick={this.onFilterSnes}>snes</button>
-          <button onClick={this.onClearFilter}>clear</button>
         </div>
         <div style={{flexGrow: 1}}>
           {this.renderTable()}
@@ -155,4 +112,11 @@ class DataSelector extends React.Component<{list: Array<string>}, State> {
 
 document.body.style.overflow = 'hidden';
 getContainer().style.position = 'relative';
-ReactDOM.render(<DataSelector list={['full.json', 'gens.json', 'part-header.json', 'test-900000x1000']}/>, getContainer());
+let list = [
+  'ps-detailed.json',
+  'full.json',
+  'gens.json',
+  'part-header.json',
+  'test-900000x1000'
+];
+ReactDOM.render(<DataSelector list={list}/>, getContainer());

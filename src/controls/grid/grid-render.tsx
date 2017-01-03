@@ -183,7 +183,7 @@ export class GridRender extends React.Component<Props, State> {
       width: this.props.width,
       height: this.props.height
     };
-    const selectable = this.props.model.hasFeatures(GridModelFeatures.CELLS_SELECTABLE);
+    const selectable = this.props.model.hasFeatures(GridModelFeatures.CELLS_SELECTABLE | GridModelFeatures.ROWS_SELECTABLE);
 
     return (
       <div
