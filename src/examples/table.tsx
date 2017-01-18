@@ -21,6 +21,7 @@ interface State {
   data?: any;
   model?: TableSourceModel;
   columns?: ColumnsModel;
+  appr?: Appearance;
 }
 
 interface Props {
@@ -34,40 +35,53 @@ class DataSelector extends React.Component<Props, State> {
       listItem: 2
     };
 
-    this.state.model = this.createModel(this.state.listItem);
-    this.state.columns = new ColumnsModel(null, this.createAppearance(this.state.listItem));
-  }
-
-  createModel(item: number): TableSourceModel {
-    const source = this.props.list[item];
-    if (source.indexOf('test-') == 0) {
-      const delay = 0;
-      let dim = source.split('-')[1].split('x').map(n => +n);
-      return new TestTableSourceModel(dim[1], dim[0], delay);
-    } else if (source.indexOf('-header.json') != -1) {
-      return new JSONPartialSourceModel('../data/' + source);
-    }
-    
-    return JSONSourceModel.loadJSON('../data/' + source);
+    this.state.appr = this.createAppearance(this.state.listItem);
+    this.state.columns = this.createColumnsModel(this.state.appr, this.state.listItem);
+    this.state.model = this.createModel(this.state.appr, this.state.listItem);
   }
 
   createAppearance(item: number): Appearance {
     const source = this.props.list[item];
     return new AppearanceFromLocalStorage('table-example/' + source, {
-      sizes: {}
+      sizes: {},
+      columns: []
     });
+  }
+
+  createModel(appr: Appearance, item: number): TableSourceModel {
+    let model: TableSourceModel;
+
+    const source = this.props.list[item];
+    if (source.indexOf('test-') == 0) {
+      const delay = 0;
+      let dim = source.split('-')[1].split('x').map(n => +n);
+      model = new TestTableSourceModel(dim[1], dim[0], delay);
+    } else if (source.indexOf('-header.json') != -1) {
+      model = new JSONPartialSourceModel('../data/' + source);
+    } else {    
+      model = JSONSourceModel.loadJSON('../data/' + source);
+    }
+
+    return new OrderedColumnsSourceModel(model);
+  }
+
+  createColumnsModel(appr: Appearance, item: number): ColumnsModel {
+    const source = this.props.list[item];
+    return new ColumnsModel(null, appr);
   }
 
   onDataSelected = () => {
+    const appr = this.createAppearance(this.state.listItem);
     this.setState({
-      model: this.createModel(this.state.listItem),
-      columns: new ColumnsModel(null, this.createAppearance(this.state.listItem))
+      appr,
+      columns: this.createColumnsModel(appr, this.state.listItem),
+      model: this.createModel(appr, this.state.listItem)
     });
-  }
+  };
 
   setDataSelect() {
     let listItem = +(this.refs['select'] as HTMLInputElement).value;
-    this.setState({listItem}, () => this.onDataSelected());
+    this.setState({listItem}, this.onDataSelected);
   }
 
   renderDataList() {
@@ -87,7 +101,7 @@ class DataSelector extends React.Component<Props, State> {
     return (
       <FitToParent>
         <Table
-          defaultRowHeight={100}
+          defaultRowHeight={40}
           columnsModel={this.state.columns}
           sourceModel={this.state.model}
           style={{position: 'absolute'}}/>

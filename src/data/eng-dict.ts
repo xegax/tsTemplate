@@ -51,4 +51,16 @@ export let dict2 = [
   ['monkey', 'обезьяна']
 ];
 
-export let dict = dict2;
+export let dict3 = [
+  ['shelf', 'полка'],
+  ['sofa', 'диван'],
+  ['bed', 'кровать'],
+  ['wardrobe', 'шкаф для одежды'],
+  ['desk', 'писменный стол'],
+  ['armchair', 'кресло'],
+  ['carpet', 'ковёр'],
+  ['table', 'стол'],
+  ['bookcase', 'книжный шкаф']
+];
+
+export let dict = dict3;

@@ -5,7 +5,7 @@ import {ScrollbarPanel} from 'controls/scrollbar/scrollbar-panel';
 import {startDragging} from 'common/start-dragging';
 import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
 import {assign} from 'lodash';
-import {className} from 'common/common';
+import {className, clamp} from 'common/common';
 
 interface ChangeEvent {
   columns: Array<number>;
@@ -139,7 +139,7 @@ export class GridControl extends React.Component<Props, State> {
         this.props.model.startColumnResizing(column);
       },
       onDragging: e => {
-        this.props.model.setColumnSize(column, e.x);
+        this.props.model.setColumnSize(column, clamp(e.x, [2, this.props.width]));
       },
       onDragEnd: () => {
         this.props.model.setFeatures(feature, highlightable);

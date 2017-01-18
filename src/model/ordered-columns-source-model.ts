@@ -9,7 +9,7 @@ type ColumnsMapper = {[columnId: string]: Mapper};
 interface Column {
   id?: string;
   type?: ColumnType;
-  colIdx: number;
+  colIdx?: number;
   mapper?: Mapper;
 }
 
@@ -20,11 +20,26 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
 
   constructor(sourceModel: TableSourceModel, newOrder?: Array<Column>, mapper?: ColumnsMapper) {
     this.sourceModel = sourceModel;
+
+    this.setOrder(newOrder);
     
+    if (mapper) {
+      Object.keys(mapper).forEach(key => {
+        let mappers = this.columnsMapper || (this.columnsMapper = {});
+        mappers[key] = mapper[key];
+      });
+    }
+  }
+
+  setOrder(newOrder?: Array<Column>) {
     this.columnsOrder = newOrder;
     newOrder && newOrder.forEach(column => {
       if (column.id == null) {
-        column.id = sourceModel.getColumn(column.colIdx).id
+        column.id = this.sourceModel.getColumn(column.colIdx).id
+      }
+
+      if (column.colIdx == null) {
+        column.colIdx = this.sourceModel.getColumnIdx(column.id);
       }
 
       if (column.id == '' || column.id == null)
@@ -36,13 +51,6 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
       let mappers = this.columnsMapper || (this.columnsMapper = {});
       mappers[column.id] = column.mapper;
     });
-
-    if (mapper) {
-      Object.keys(mapper).forEach(key => {
-        let mappers = this.columnsMapper || (this.columnsMapper = {});
-        mappers[key] = mapper[key];
-      });
-    }
   }
 
   getSourceModel() {
@@ -119,7 +127,12 @@ export class OrderedColumnsSourceModel implements TableSourceModel {
   }
 
   moveSubscribersFrom(from: Publisher) {
-    this.sourceModel.moveSubscribersFrom(from);
+    if (from instanceof OrderedColumnsSourceModel) {
+      const orderedFrom: OrderedColumnsSourceModel = from;
+      this.sourceModel.moveSubscribersFrom(orderedFrom.sourceModel as any);
+    } else {
+      throw '"from" must be OrderedColumnsSourceModel';
+    }
   }
 
   getOrigCol(colId: string): string {

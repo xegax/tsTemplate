@@ -12,7 +12,7 @@ export interface Appearance {
   getNumber(key: string): number;
 
   setArray(key: string, value: Array<string>);
-  getArray(ket: string): Array<string>;
+  getArray(key: string): Array<string>;
 
   putToMap(key: string, mapKey: string, mapValue: string);
   getFromMap(key: string, mapKey: string): string;
