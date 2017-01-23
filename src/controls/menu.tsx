@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {PopupContext} from 'controls/popup';
 import {className} from 'common/common';
+import {Point} from 'common/point';
 
 let popupCtx = new PopupContext();
 
@@ -50,6 +51,13 @@ export class Menu extends React.Component<Props, State> {
       x: bbox.left,
       y: bbox.top + bbox.height
     };
+    let wndRect = document.body.getBoundingClientRect();
+    if (pos.x + MENU_SIZE > wndRect.right)
+      pos.x = wndRect.right - MENU_SIZE;
+    popupCtx.show(pos, menu);
+  }
+
+  static showAt(pos: Point, menu: JSX.Element) {
     let wndRect = document.body.getBoundingClientRect();
     if (pos.x + MENU_SIZE > wndRect.right)
       pos.x = wndRect.right - MENU_SIZE;
