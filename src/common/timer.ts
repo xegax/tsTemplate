@@ -13,7 +13,7 @@ export class Timer {
     this.stop();
 
     this.repeat = true;
-    this.timerId = setInterval(() => this.doRunCallbacks(), time);
+    this.timerId = setInterval(() => this.doRunCallbacks(), time) as any;
     this.time = time;
     return this;
   }
@@ -22,7 +22,7 @@ export class Timer {
     this.stop();
 
     this.repeat = false;
-    this.timerId = setTimeout(() => this.doRunCallbacks(), time);
+    this.timerId = setTimeout(() => this.doRunCallbacks(), time) as any;
     this.time = time;
     return this;
   }
