@@ -63,7 +63,7 @@ export class ComboBox extends React.Component<Props, State> {
       items: 0
     };
 
-    this.props.sourceModel.addSubscriber(this.watchTotal);
+    this.props.sourceModel.getPublisher().addSubscriber(this.watchTotal);
   }
 
   protected watchTotal = (mask: number) => {

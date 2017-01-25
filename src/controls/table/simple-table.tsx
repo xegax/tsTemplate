@@ -13,6 +13,7 @@ interface Props {
   sourceModel: TableSourceModel;
   viewModel?: GridModel;
   columnsModel?: ColumnsModel;
+  wrapHeader?: (header: JSX.Element, colId: string, colIdx: number) => JSX.Element;
 
   header?: boolean;
   className?: string;
@@ -34,6 +35,10 @@ interface State {
 }
 
 export class Table extends React.Component<Props, State> {
+  static defaultProps = {
+    wrapHeader: (e: JSX.Element) => e
+  };
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -51,7 +56,7 @@ export class Table extends React.Component<Props, State> {
     if (props.defaultFeatures != null)
       viewModel.replaceFeatures(props.defaultFeatures);
 
-    this.props.sourceModel.addSubscriber(this.onSourceChanged);
+    this.props.sourceModel.getPublisher().addSubscriber(this.onSourceChanged);
     viewModel.addSubscriber(this.onViewChanged);
   }
 
@@ -68,7 +73,7 @@ export class Table extends React.Component<Props, State> {
   }
 
   componentWillUnmount() {
-    this.props.sourceModel.removeSubscriber(this.onSourceChanged);
+    this.props.sourceModel.getPublisher().removeSubscriber(this.onSourceChanged);
     this.state.viewModel.removeSubscriber(this.onViewChanged);
   }
 
@@ -81,7 +86,7 @@ export class Table extends React.Component<Props, State> {
     if (this.props.sourceModel != newProps.sourceModel) {
       viewModel.setRows(0);
       viewModel.setColumns([]);
-      newProps.sourceModel.moveSubscribersFrom(this.props.sourceModel as any);
+      newProps.sourceModel.getPublisher().moveSubscribersFrom(this.props.sourceModel.getPublisher());
     }
 
     viewModel.setWidth(newProps.width);
@@ -153,14 +158,15 @@ export class Table extends React.Component<Props, State> {
     const colModel = this.state.columnsModel.getColumn(srcCol.id);
 
     let colValue = srcCol && srcCol.id || 'column' + colIdx;
+    let element: JSX.Element;
     if (colModel && colModel.renderHeader) {
-      return {
-        element: colModel.renderHeader(colValue, colIdx)
-      };
+      element = this.props.wrapHeader(colModel.renderHeader(colValue, colIdx), srcCol.id, colIdx);
+    } else {
+      element = this.props.wrapHeader(<div>{colValue}</div>, srcCol.id, colIdx);
     }
-
+    
     return {
-      element: <div>{colValue}</div>
+      element
     };
   }
 

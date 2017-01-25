@@ -81,14 +81,15 @@ export interface TableSourceModel extends Filterable, Sortable {
   getColumn(col: number): Column;
   getColumnIdx(colId: string): number;
 
+  // select columns and order
+  setColumnsAndOrder(columns: Array<string>);
+  getColumnsAndOrder(): Array<string>;
+
   // filtering
   getAbilities(): number;
   getUniqueValues(col: number): TableSourceModel;
 
-  // Publisher
-  addSubscriber(callback: (mask: number) => void);
-  removeSubscriber(callback: (mask: number) => void);
-  moveSubscribersFrom(from: Publisher);
+  getPublisher(): Publisher;
 }
 
 export interface Dimension {
@@ -115,7 +116,7 @@ export interface CacheItem {
 
 export type CacheVisitor = (visit: (colCache: number, rowCache: number, cache: CacheItem, colsCache: Array<Column>) => void) => void;
 
-export class TableSourceModelImpl extends Publisher implements TableSourceModel {
+export class TableSourceModelImpl implements TableSourceModel {
   protected columns: Dimension = {
     itemsPerBuffer: 0,
     buffer: Array<number>(2),
@@ -130,8 +131,17 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     total: 0
   };
 
+  protected publisher: Publisher = new Publisher();
   protected columnsCache = Array< Array<Column> >();
+  
+  private columnsOrder = Array<number>();
+  private selectColumns = Array<string>();
+
   protected cache = Array< Array<CacheItem> >();  // [row][column]
+
+  getPublisher(): Publisher {
+    return this.publisher;
+  }
 
   loadData(_range: DataRange): IThenable<any> {
     const range: DataRange = {
@@ -157,7 +167,7 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
       return;
 
     const notify = () => {
-      this.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
+      this.publisher.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
     }
 
     const promise = this._updateCacheImpl(this.columns.buffer, this.rows.buffer);
@@ -215,7 +225,7 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
 
   getTotal(): Total {
     return {
-      columns: this.columns.total,
+      columns: this.columnsOrder.length ? this.columnsOrder.length : this.columns.total,
       rows: this.rows.total
     };
   }
@@ -239,6 +249,9 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     }
 
     try {
+      if (this.columnsOrder.length)
+        col = this.columnsOrder[col];
+
       const colBuff = Math.floor(col / this.columns.itemsPerBuffer);
       const rowBuff = Math.floor(row / this.rows.itemsPerBuffer);
 
@@ -262,6 +275,9 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
       return empty;
 
     try {
+      if (this.columnsOrder.length)
+        col = this.columnsOrder[col];
+
       const colBuff = Math.floor(col / this.columns.itemsPerBuffer);
       const cols = this.columnsCache[colBuff];
       col -= colBuff * this.columns.itemsPerBuffer;
@@ -271,6 +287,19 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
       return empty;
     }
     return empty;
+  }
+
+  setColumnsAndOrder(columns: Array<string>) {
+    this.selectColumns = columns;
+    if (this.columnsCache.length == 0)
+      return;
+
+    this.updateColumnsOrder();
+    this.publisher.updateVersion(TableModelEvent.TOTAL, 1);
+  }
+
+  getColumnsAndOrder(): Array<string> {
+    return this.selectColumns;
   }
 
   protected createOrGetCacheItem(col: number, row: number): CacheItem {
@@ -307,10 +336,16 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
     return null;
   }
 
+  protected updateColumnsOrder() {
+    this.columnsOrder = [];
+    this.columnsOrder = this.selectColumns.map(col => this.getColumnIdx(col)).filter(n => n != -1);
+  }
+
   protected setTotal(columns: number, rows: number) {
     this.columns.total = columns;
     this.rows.total = rows;
-    this.updateVersion(TableModelEvent.TOTAL, 1);
+
+    this.publisher.updateVersion(TableModelEvent.TOTAL, 1);
   }
 
   protected fillCacheCol(cacheCol: number, getCacheCol: (relCol: number, absCol: number) => Column) {
@@ -323,6 +358,7 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
         console.log(e);
       }
     }
+    this.updateColumnsOrder();
   }
 
   protected fillCache(cacheCol: number, 
@@ -349,8 +385,9 @@ export class TableSourceModelImpl extends Publisher implements TableSourceModel 
   }
 
   getColumnIdx(colId: string): number {
-    for(let n = 0; n < this.columns.total; n++) {
-      let col = this.getColumn(n);
+    const total = this.getTotal();
+    for(let n = 0; n < total.columns; n++) {
+      const col = this.getColumn(n);
       if (col.id == colId)
         return n;
     }

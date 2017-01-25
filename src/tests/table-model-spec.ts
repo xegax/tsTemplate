@@ -47,7 +47,7 @@ describe('table-model-spec.ts', () => {
       calls++;
     };
     expect(model.getTotal()).toEqual({rows: rowsTotal, columns: colsTotal});
-    model.notifySubscribers();
+    model.getPublisher().notifySubscribers();
   });
 
   it('loadData', () => {

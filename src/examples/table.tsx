@@ -8,13 +8,13 @@ import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-m
 import {DataRange, TableSourceModel, TableModelEvent} from 'model/table-source-model';
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
-import {OrderedColumnsSourceModel} from 'model/ordered-columns-source-model';
 import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {assign} from 'lodash';
 import {ColumnsModel} from 'controls/table/columns-model';
 import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
+import {Menu} from 'controls/menu';
 
 interface State {
   listItem?: number;
@@ -58,11 +58,12 @@ class DataSelector extends React.Component<Props, State> {
       model = new TestTableSourceModel(dim[1], dim[0], delay);
     } else if (source.indexOf('-header.json') != -1) {
       model = new JSONPartialSourceModel('../data/' + source);
-    } else {    
+    } else {
       model = JSONSourceModel.loadJSON('../data/' + source);
+      model.setColumnsAndOrder(appr.getArray('columns'));
     }
 
-    return new OrderedColumnsSourceModel(model);
+    return model;
   }
 
   createColumnsModel(appr: Appearance, item: number): ColumnsModel {
@@ -94,6 +95,42 @@ class DataSelector extends React.Component<Props, State> {
     );
   }
 
+  hideColumn(colId: string) {
+    const {model} = this.state;
+    let total = model.getTotal();
+    let order = model.getColumnsAndOrder();
+    if (order.length == 0) {
+      for (let n = 0; n < total.columns; n++) {
+        order.push(model.getColumn(n).id);
+      }
+    }
+    order = order.filter(col => colId != col);
+    model.setColumnsAndOrder(order);
+    this.state.appr.setArray('columns', order);
+  }
+
+  wrapHeader = (e: JSX.Element, colId: string) => {
+    const onContextMenu = (event: React.MouseEvent) => {
+      event.preventDefault();
+      let items = [
+        {
+          label: 'hide column',
+          command: () => {
+            this.hideColumn(colId);
+          }
+        }, {
+          label: 'show all',
+          command: () => {
+            this.state.appr.setArray('columns', []);
+            this.state.model.setColumnsAndOrder([]);
+          }
+        }
+      ];
+      Menu.showAt({x: event.pageX, y: event.pageY}, <Menu items={items}/>);
+    };
+    return <div onContextMenu={onContextMenu}>{e}</div>;
+  }
+
   renderTable() {
     if (!this.state.model)
       return (<div>No data to display</div>);
@@ -104,6 +141,7 @@ class DataSelector extends React.Component<Props, State> {
           defaultRowHeight={40}
           columnsModel={this.state.columns}
           sourceModel={this.state.model}
+          wrapHeader={this.wrapHeader}
           style={{position: 'absolute'}}/>
       </FitToParent>
     );
