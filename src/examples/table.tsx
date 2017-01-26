@@ -53,7 +53,7 @@ class DataSelector extends React.Component<Props, State> {
 
     const source = this.props.list[item];
     if (source.indexOf('server-') == 0) {
-      model = new JSONServerSourceModel('http://localhost:8088', 'morpho');
+      model = new JSONServerSourceModel('http://localhost:8088', 'books');
     } else if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);

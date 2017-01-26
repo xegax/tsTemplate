@@ -54,7 +54,10 @@ export class JSONPartialSourceModel extends TableSourceModelImpl {
 
       cache.cells = [];
       this.requestor.getJSON(this.getFilePartUrl(cacheRow), {}).then(data => {
-        this.fillCache(cacheCol, cacheRow, cache.cells, (c, r) => data[r][c]);
+        this.fillCache(cacheCol, cacheRow, cache.cells, (c, r) => {
+          const raw = data[r][c];
+          return raw == null ? '' : raw;
+        });
         callback && callback();
       }).catch(err => {
           console.log('error', err);
@@ -107,7 +110,10 @@ export class JSONServerSourceModel extends TableSourceModelImpl {
         rowsRange: [startRow, startRow + this.rows.itemsPerBuffer - 1]
       })).then(data => {
         data = JSON.parse(data);
-        this.fillCache(cacheCol, cacheRow, cache.cells, (c, r) => data[r][c]);
+        this.fillCache(cacheCol, cacheRow, cache.cells, (c, r) => {
+          const raw = data[r][c];
+          return raw == null ? '' : raw;
+        });
         callback && callback();
       }).catch(err => {
           console.log('error', err);

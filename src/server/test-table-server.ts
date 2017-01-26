@@ -10,7 +10,7 @@ interface Params {
   columns?: Array<string>;
 }
 
-let db = new Database('rus-morpho.db', (err) => {
+let db = new Database('data/books.db', (err) => {
   if (err)
     console.log(err);
 });
