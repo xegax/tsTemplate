@@ -7,3 +7,4 @@
 /// <reference path="requirejs/require.d.ts" />
 /// <reference path="promise/promise.d.ts" />
 /// <reference path="node/node.d.ts" />
+/// <reference path="sqlite3.d.ts" />

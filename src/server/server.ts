@@ -54,9 +54,8 @@ export class ServerImpl implements Server  {
       return response.end();
     }
     
-    let handlerArgs = {get: null};
-
     const writeOK = (data) => {
+      //console.log(data);
       let res = typeof data == 'string' ? data : JSON.stringify(data);
       response.writeHead(200, {'Content-Type': 'application/json'});
       response.write(res);
@@ -81,7 +80,7 @@ export class ServerImpl implements Server  {
           }
         }
         try {
-          holder.handler({get: params, post: postData}, writeOK, writeErr);
+          holder.handler({get: params, post: postJSON}, writeOK, writeErr);
         } catch (err) {
           writeErr(err);
         }

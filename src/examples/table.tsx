@@ -6,7 +6,7 @@ import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
 import {DataRange, TableSourceModel, TableModelEvent} from 'model/table-source-model';
-import {JSONPartialSourceModel} from 'model/json-partial-source-model';
+import {JSONPartialSourceModel, JSONServerSourceModel} from 'model/json-partial-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
 import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
@@ -52,7 +52,9 @@ class DataSelector extends React.Component<Props, State> {
     let model: TableSourceModel;
 
     const source = this.props.list[item];
-    if (source.indexOf('test-') == 0) {
+    if (source.indexOf('server-') == 0) {
+      model = new JSONServerSourceModel('http://localhost:8088', 'morpho');
+    } else if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
       model = new TestTableSourceModel(dim[1], dim[0], delay);
@@ -169,6 +171,7 @@ let list = [
   'full.json',
   'gens.json',
   'part-header.json',
-  'test-900000x1000'
+  'test-900000x1000',
+  'server-morpho'
 ];
 ReactDOM.render(<DataSelector list={list}/>, getContainer());
