@@ -18,8 +18,8 @@ export interface SortColumn {
 }
 
 export interface Sortable {
-  setSorting(columns: Array<SortColumn>);
-  getSorting(): Array<SortColumn>;
+  setColumns(columns: Array<SortColumn>);
+  getColumns(): Array<SortColumn>;
 }
 
 export enum ColumnType {
@@ -36,7 +36,8 @@ export interface Column {
 export const enum TableModelEvent {
   COLUMNS_SELECTED = 1 << 0,
   ROWS_SELECTED = 1 << 1,
-  TOTAL = 1 << 2
+  TOTAL = 1 << 2,
+  SORTING = 1 << 3
 }
 
 export interface Cell {
@@ -61,7 +62,7 @@ export enum Abilities {
   Sorting = 1 << 2
 };
 
-export interface TableSourceModel extends Filterable, Sortable {
+export interface TableSourceModel extends Filterable {
   // load data
   loadData(range: DataRange): IThenable<any>;
 
@@ -84,6 +85,8 @@ export interface TableSourceModel extends Filterable, Sortable {
   // select columns and order
   setColumnsAndOrder(columns: Array<string>);
   getColumnsAndOrder(): Array<string>;
+
+  getSorting(): Sortable;
 
   // filtering
   getAbilities(): number;
@@ -116,6 +119,24 @@ export interface CacheItem {
 
 export type CacheVisitor = (visit: (colCache: number, rowCache: number, cache: CacheItem, colsCache: Array<Column>) => void) => void;
 
+class SortingDataHolder implements Sortable {
+  private columns = Array<SortColumn>();
+  private publisher: Publisher;
+
+  constructor(publisher: Publisher) {
+    this.publisher = publisher;
+  }
+
+  setColumns(columns: Array<SortColumn>) {
+    this.columns = columns;
+    this.publisher.updateVersion(TableModelEvent.SORTING);
+  }
+
+  getColumns(): Array<SortColumn> {
+    return this.columns;
+  }
+}
+
 export class TableSourceModelImpl implements TableSourceModel {
   protected columns: Dimension = {
     itemsPerBuffer: 0,
@@ -132,12 +153,20 @@ export class TableSourceModelImpl implements TableSourceModel {
   };
 
   protected publisher: Publisher = new Publisher();
+  protected sorting = new SortingDataHolder(this.publisher);
   protected columnsCache = Array< Array<Column> >();
   
   private columnsOrder = Array<number>();
   private selectColumns = Array<string>();
 
   protected cache = Array< Array<CacheItem> >();  // [row][column]
+
+  constructor() {
+    this.publisher.addSubscriber((mask: number) => {
+      if (mask & TableModelEvent.SORTING)
+        this.reload();
+    });
+  }
 
   getPublisher(): Publisher {
     return this.publisher;
@@ -182,7 +211,7 @@ export class TableSourceModelImpl implements TableSourceModel {
 
   reload() {
     this.cache = [];
-    this.columnsCache = [];
+    //this.columnsCache = [];
     this.rows.buffer = [];
     this.columns.buffer = [];
     this.loadData({cols: this.columns.range, rows: this.rows.range});
@@ -410,10 +439,7 @@ export class TableSourceModelImpl implements TableSourceModel {
     return null;
   }
 
-  setSorting(columns: Array<SortColumn>) {
-  }
-
-  getSorting(): Array<SortColumn> {
-    return [];
+  getSorting(): Sortable {
+    return this.sorting;
   }
 }

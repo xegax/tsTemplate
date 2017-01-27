@@ -1,13 +1,24 @@
 import * as http from 'http';
 import {createServer} from './server';
 import {Database} from 'sqlite3';
-
 var srv = createServer(8088);
+
+enum SortDir {
+  asc = 1,
+  desc,
+  natural
+};
+
+interface SortColumn {
+  column: string;
+  dir: SortDir
+}
 
 interface Params {
   table: string;
-  rowsRange?: Array<number>;
-  columns?: Array<string>;
+  rowsRange: Array<number>;
+  columns: Array<string>;
+  sorting: Array<SortColumn>;
 }
 
 let db = new Database('data/books.db', (err) => {
@@ -15,7 +26,7 @@ let db = new Database('data/books.db', (err) => {
     console.log(err);
 });
 
-srv.addJsonHandler<{name: string}, Params>('/table-info', (params, resolve) => {
+srv.addJsonHandler<{name: string}, Params>('/handler/table-info', (params, resolve) => {
   db.serialize(() => {
     const info = {
       rows: 0,
@@ -42,7 +53,15 @@ srv.addJsonHandler<{name: string}, Params>('/table-info', (params, resolve) => {
   });
 });
 
-srv.addJsonHandler<{name: string}, Params>('/table-data', (params, resolve) => {
+function sortDirToStr(dir: SortDir) {
+  if (dir == SortDir.asc)
+    return 'asc';
+  else if (dir == SortDir.desc)
+    return 'desc';
+  return '';
+}
+
+srv.addJsonHandler<{name: string}, Params>('/handler/table-data', (params, resolve) => {
   db.serialize(() => {
     let columns = '*';
     if (params.post.columns)
@@ -55,8 +74,11 @@ srv.addJsonHandler<{name: string}, Params>('/table-data', (params, resolve) => {
       offset = `offset ${params.post.rowsRange[0]}`;
     }
 
-    let select = `select ${columns} from ${params.get.name} ${limit} ${offset}`;
-    //console.log(select);
+    let sorting = '';
+    if (params.post.sorting && params.post.sorting.length)
+      sorting = 'order by ' + params.post.sorting.map(k => k.column + ' ' + sortDirToStr(k.dir)).join(', ');
+    let select = `select ${columns} from ${params.get.name} ${sorting} ${limit} ${offset}`;
+    console.log(select);
     db.all(select, (err, rows) => {
       if (!err) {
         resolve(rows.map(row => Object.keys(row).map(key => row[key])));

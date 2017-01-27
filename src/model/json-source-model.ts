@@ -22,7 +22,6 @@ export class JSONSourceModel extends TableSourceModelImpl {
   private columnNames = Array<string>();
   private sortIds: Array<number>;
   private rowIds: Array<number>;
-  private sorting = Array<SortColumn>();
   private condition: CompoundCondition | ColumnCondition;
 
   constructor(json: Array<Array<any>>, columns: Array<string>) {
@@ -144,38 +143,5 @@ export class JSONSourceModel extends TableSourceModelImpl {
       return 0;
     });
     return new JSONSourceModel(rows, ['idx', 'name', 'cond']);
-  }
-
-  setSorting(columns: Array<SortColumn>) {
-    this.sorting = assign([], columns);
-    
-    if (this.sorting == null || this.sorting.length == 0) {
-      this.sortIds = null;
-    } else {
-      this.sortIds = Array(this.json.length);
-      for (let n = 0; n < this.json.length; n++) {
-        this.sortIds[n] = n;
-      }
-
-      let colIdx = this.getColumnIdx(columns[0].column);
-      if (columns[0].dir != SortDir.natural) {
-        this.sortIds.sort((a, b) => {
-          if (this.json[a][colIdx] > this.json[b][colIdx])
-            return 1;
-          if (this.json[a][colIdx] < this.json[b][colIdx])
-            return -1;
-          return 0;
-        });
-      }
-    }
-
-    if (this.condition)
-      this.setConditions(this.condition);
-    else
-      this.reload();
-  }
-
-  getSorting(): Array<SortColumn> {
-    return this.sorting;
   }
 }

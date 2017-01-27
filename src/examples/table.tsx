@@ -5,8 +5,9 @@ import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
 import {FitToParent} from 'common/fittoparent';
 import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
-import {DataRange, TableSourceModel, TableModelEvent} from 'model/table-source-model';
-import {JSONPartialSourceModel, JSONServerSourceModel} from 'model/json-partial-source-model';
+import {DataRange, SortDir, TableSourceModel, TableModelEvent} from 'model/table-source-model';
+import {JSONPartialSourceModel} from 'model/json-partial-source-model';
+import {JSONServerSourceModel} from 'model/json-server-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
 import {TestTableSourceModel} from 'model/test-table-source-model';
 import {className} from 'common/common';
@@ -53,7 +54,7 @@ class DataSelector extends React.Component<Props, State> {
 
     const source = this.props.list[item];
     if (source.indexOf('server-') == 0) {
-      model = new JSONServerSourceModel('http://localhost:8088', 'books');
+      model = new JSONServerSourceModel('/handler', 'books');
     } else if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
@@ -126,11 +127,32 @@ class DataSelector extends React.Component<Props, State> {
             this.state.appr.setArray('columns', []);
             this.state.model.setColumnsAndOrder([]);
           }
+        }, {
+          label: 'sort asc',
+          command: () => {
+            this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.asc}]);
+          }
+        }, {
+          label: 'sort desc',
+          command: () => {
+            this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.desc}]);
+          }
         }
       ];
       Menu.showAt({x: event.pageX, y: event.pageY}, <Menu items={items}/>);
     };
-    return <div onContextMenu={onContextMenu}>{e}</div>;
+
+    let icon = null;
+    let sort = this.state.model.getSorting();
+    if (sort) {
+      let arr = sort.getColumns().filter(item => item.column == colId);
+      if (arr.length && arr[0].dir == SortDir.asc) {
+        icon = <i className='fa fa-sort-amount-asc'/>;
+      } else if (arr.length && arr[0].dir == SortDir.desc) {
+        icon = <i className='fa fa-sort-amount-desc'/>;
+      }
+    }
+    return <div style={{display: 'flex'}} onContextMenu={onContextMenu}>{e}{icon}</div>;
   }
 
   renderTable() {

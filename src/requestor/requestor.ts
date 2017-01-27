@@ -2,7 +2,7 @@ import {IThenable} from 'promise';
 import * as d3 from 'd3';
 
 export interface Requestor {
-  sendData(url: string, params?: Object, postData?: any): IThenable<string>;
+  sendData(url: string, params?: Object, postData?: string): IThenable<string>;
   getData(url: string, params?: Object): IThenable<string>;
   getJSON(url: string, params?: Object): IThenable<any>;
 }
@@ -17,7 +17,7 @@ function getUrl(url: string, params: Object): string {
 }
 
 class RequestorImpl implements Requestor {
-  sendData(url: string, params?: Object, postData?: any): IThenable<string> {
+  sendData(url: string, params?: Object, postData?: string): IThenable<string> {
     return new Promise((resolve, reject) => {
       d3.text(getUrl(url, params)).post(postData, (err, data: string) => {
         if (err) {
