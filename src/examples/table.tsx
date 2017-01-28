@@ -9,21 +9,24 @@ import {DataRange, SortDir, TableSourceModel, TableModelEvent} from 'model/table
 import {JSONPartialSourceModel} from 'model/json-partial-source-model';
 import {JSONServerSourceModel} from 'model/json-server-source-model';
 import {JSONSourceModel} from 'model/json-source-model';
-import {TestTableSourceModel} from 'model/test-table-source-model';
+import {TestTableSourceModel,} from 'model/test-table-source-model';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {assign} from 'lodash';
 import {ColumnsModel} from 'controls/table/columns-model';
 import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
 import {Menu} from 'controls/menu';
+import {Timer} from 'common/timer';
 
 interface State {
   listItem?: number;
   data?: any;
+  view?: GridModel;
   model?: TableSourceModel;
   columns?: ColumnsModel;
   appr?: Appearance;
   hoverColumn?: string;
+  status?: string;
 }
 
 interface Props {
@@ -38,15 +41,34 @@ const classes = {
 };
 
 class DataSelector extends React.Component<Props, State> {
+  private updateStatus = new Timer(() => {
+    let total = this.state.model.getTotal();
+    let range = this.state.view.getRowsRange();
+    this.setState({
+      status: `total rows: ${total.rows}, start row: ${range[0]}`
+    });
+  });
+
   constructor(props: Props) {
     super(props);
     this.state = {
-      listItem: 2
+      listItem: 2,
+      view: new GridModel()
     };
 
     this.state.appr = this.createAppearance(this.state.listItem);
     this.state.columns = this.createColumnsModel(this.state.appr, this.state.listItem);
     this.state.model = this.createModel(this.state.appr, this.state.listItem);
+    
+    this.state.model.getPublisher().addSubscriber((mask) => {
+      if (mask & TableModelEvent.TOTAL)
+        this.updateStatus.run(1000);
+    });
+
+    this.state.view.addSubscriber((mask) => {
+      if (mask & GridModelEvent.ROWS_RENDER_RANGE)
+        this.updateStatus.run(1000);
+    });
   }
 
   createAppearance(item: number): Appearance {
@@ -200,14 +222,22 @@ class DataSelector extends React.Component<Props, State> {
       return (<div>No data to display</div>);
 
     return (
-      <FitToParent>
-        <Table
-          defaultRowHeight={40}
-          columnsModel={this.state.columns}
-          sourceModel={this.state.model}
-          wrapHeader={this.wrapHeader}
-          style={{position: 'absolute'}}/>
-      </FitToParent>
+      <div style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
+        <div>
+          {this.state.status}
+        </div>
+        <div style={{flexGrow: 1}}>
+        <FitToParent>
+          <Table
+            defaultRowHeight={40}
+            viewModel={this.state.view}
+            columnsModel={this.state.columns}
+            sourceModel={this.state.model}
+            wrapHeader={this.wrapHeader}
+            style={{position: 'absolute'}}/>
+        </FitToParent>
+        </div>
+      </div>
     );
   }
 
@@ -218,7 +248,7 @@ class DataSelector extends React.Component<Props, State> {
           {this.renderDataList()}
           <button onClick={() => this.state.model.reload()}>reload</button>
         </div>
-        <div style={{flexGrow: 1}}>
+        <div style={{flexGrow: 1, display: 'flex'}}>
           {this.renderTable()}
         </div>
       </div>
