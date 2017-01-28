@@ -23,11 +23,19 @@ interface State {
   model?: TableSourceModel;
   columns?: ColumnsModel;
   appr?: Appearance;
+  hoverColumn?: string;
 }
 
 interface Props {
   list: Array<string>;
 }
+
+const classes = {
+  headerWrapper: 'table-header-wrapper',
+  headerLabel: 'table-header-wrapper__label',
+  hover: 'hover',
+  sorted: 'sorted'
+};
 
 class DataSelector extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -112,47 +120,79 @@ class DataSelector extends React.Component<Props, State> {
     this.state.appr.setArray('columns', order);
   }
 
-  wrapHeader = (e: JSX.Element, colId: string) => {
+  wrapHeader = (e: JSX.Element, colId: string, colIdx: number) => {
+    const column = this.state.columns.getColumn(colId);
+    const items = [
+      {
+        label: 'hide column',
+        command: () => {
+          this.hideColumn(colId);
+        }
+      }, {
+        label: 'show all',
+        command: () => {
+          this.state.appr.setArray('columns', []);
+          this.state.model.setColumnsAndOrder([]);
+        }
+      }, {
+        label: 'sort asc',
+        command: () => {
+          this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.asc}]);
+        }
+      }, {
+        label: 'sort desc',
+        command: () => {
+          this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.desc}]);
+        }
+      }
+    ];
     const onContextMenu = (event: React.MouseEvent) => {
       event.preventDefault();
-      let items = [
-        {
-          label: 'hide column',
-          command: () => {
-            this.hideColumn(colId);
-          }
-        }, {
-          label: 'show all',
-          command: () => {
-            this.state.appr.setArray('columns', []);
-            this.state.model.setColumnsAndOrder([]);
-          }
-        }, {
-          label: 'sort asc',
-          command: () => {
-            this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.asc}]);
-          }
-        }, {
-          label: 'sort desc',
-          command: () => {
-            this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.desc}]);
-          }
-        }
-      ];
-      Menu.showAt({x: event.pageX, y: event.pageY}, <Menu items={items}/>);
+      Menu.showAt({x: event.pageX, y: event.pageY}, <Menu items={items} onShow={(show: boolean) => {
+        this.setState({hoverColumn: !show ? null : colId});
+      }}/>);
     };
 
-    let icon = null;
+    const onClickBy = (event: React.MouseEvent) => {
+      event.stopPropagation();
+      Menu.showUnder(event.currentTarget as HTMLElement, <Menu items={items} onShow={(show: boolean) => {
+        this.setState({hoverColumn: !show ? null : colId});
+      }}/>);
+    };
+
+    let icon = (
+      <i
+        className='fa fa-bars'
+        onMouseDown={onClickBy}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      />);
+    let iconSort;
+
     let sort = this.state.model.getSorting();
     if (sort) {
       let arr = sort.getColumns().filter(item => item.column == colId);
       if (arr.length && arr[0].dir == SortDir.asc) {
-        icon = <i className='fa fa-sort-amount-asc'/>;
+        iconSort = <i className='fa fa-sort-amount-asc' onMouseDown={onClickBy}/>;
       } else if (arr.length && arr[0].dir == SortDir.desc) {
-        icon = <i className='fa fa-sort-amount-desc'/>;
+        iconSort = <i className='fa fa-sort-amount-desc' onMouseDown={onClickBy}/>;
       }
     }
-    return <div style={{display: 'flex'}} onContextMenu={onContextMenu}>{e}{icon}</div>;
+
+    return (
+      <div
+        className={className(
+          classes.headerWrapper,
+          this.state.hoverColumn == colId && classes.hover,
+          iconSort && classes.sorted)}
+        title={colId}
+        onContextMenu={onContextMenu}>
+          <div className={classes.headerLabel}>{e}</div>
+          {iconSort || icon}
+      </div>
+    );
   }
 
   renderTable() {

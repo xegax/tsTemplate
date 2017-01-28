@@ -53,25 +53,21 @@ export class PopupContext {
       this.close();
   }
 
-  show(pos: Point, control: React.ReactChild): IThenable<Popup> {
+  show(pos: Point, control: React.ReactChild) {
     this.close();
     this.container = document.createElement('div');
     document.body.appendChild(this.container);
     window.addEventListener('mousedown', this.onMouseDown);
 
-    return new Promise((resolve, reject) => {
-      ReactDOM.render((
-        <Popup
-          onMount={popup => {
-            popup.setState({left: pos.x, top: pos.y});
-            resolve(popup);
-          }}
-          onUnmount={popup => reject(popup)}
-        >
-          {control}
-        </Popup>
-      ), this.container);
-    });
+    ReactDOM.render((
+      <Popup
+        onMount={popup => {
+          popup.setState({left: pos.x, top: pos.y});
+        }}
+      >
+        {control}
+      </Popup>
+    ), this.container);
   }
 
   close() {

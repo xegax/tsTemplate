@@ -4,3 +4,38 @@
   text-overflow: inherit;
   overflow: hidden;
 }
+
+.table-header-wrapper {
+  display: flex;
+  height: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+
+  &:hover i {
+    display: inherit;
+    opacity: 0.3;
+  }
+
+  &.hover {
+    i {
+      display: inherit;
+      opacity: 0.3;
+    }
+  }
+
+  &.sorted {
+    i {
+      display: inherit;
+      opacity: 0.3;
+    }
+  }
+
+  & i {
+    display: none;
+  }
+
+  &__label {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+}

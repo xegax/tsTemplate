@@ -29,6 +29,7 @@ export interface MenuItem {
 interface Props {
   items: Array<MenuItem>;
   autoClose?: boolean;
+  onShow?: (show: boolean) => void;
 }
 
 interface State {
@@ -43,6 +44,14 @@ export class Menu extends React.Component<Props, State> {
   constructor(props) {
     super(props);
     this.state = {items: Array<MenuItem>()};
+  }
+
+  componentDidMount() {
+    this.props.onShow && this.props.onShow(true);
+  }
+
+  componentWillUnmount() {
+    this.props.onShow && this.props.onShow(false);
   }
 
   static showUnder(element: HTMLElement, menu: JSX.Element) {
