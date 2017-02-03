@@ -66,7 +66,7 @@ export class Table extends React.Component<Props, State> {
     const selectedRow = this.props.defaultSelectedRow;
     if (selectedRow >= 0) {
       let viewModel = this.state.viewModel;
-      viewModel.setSelectRow(selectedRow);
+      viewModel.setSelectRowSilent(selectedRow);
       viewModel.setHighlightRow(selectedRow);
       viewModel.setScrollTopRow(selectedRow);
     }

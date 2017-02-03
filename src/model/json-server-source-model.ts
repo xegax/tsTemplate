@@ -29,7 +29,7 @@ export class JSONServerSourceModel extends TableSourceModelImpl {
   private requestor: Requestor;
   private cacheUpdaterArr = Array<() => void>();
   private timer: Timer = new Timer(() => {
-    this.cacheUpdaterArr.forEach(updater => updater());
+    this.cacheUpdaterArr.reverse().forEach(updater => updater());
   });
 
   constructor(srcHandler: string, srcName: string, rowsPerBuffer: number = 300, requestor?: Requestor) {
@@ -83,8 +83,9 @@ export class JSONServerSourceModel extends TableSourceModelImpl {
     return new Promise(resolve => {
       let arr = this.cacheUpdaterArr;
       arr.push(this.makeUpdater(resolve, visit));
-      if (arr.length > 2)
+      if (arr.length > 2) {
         this.cacheUpdaterArr = arr.slice(arr.length - 2);
+      }
       this.timer.run(100);
     });
   }

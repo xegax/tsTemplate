@@ -15,7 +15,8 @@ export enum GridModelEvent {
   ROW_HIGHLIGHT         = 1 << 11,
   FEATURES              = 1 << 12,
   COLUMN_RESIZING       = 1 << 13,
-  COLUMN_RESIZED        = 1 << 14
+  COLUMN_RESIZED        = 1 << 14,
+  COLUMN_SELECT         = 1 << 15
 }
 
 export enum GridModelFeatures {
@@ -316,20 +317,57 @@ export class GridModel extends Publisher {
       this.setScrollTop((row - rows.num) * this.cellHeight);
   }
 
-  setSelectRow(row: number, force: boolean = false) {
+  scrollToColumn(column: number) {
+    column = Math.max(0, column);
+    column = Math.min(this.columnSize.length - 1, column);
+
+    const cols = this.getAxisRangeColumns();
+    const range = [cols.idx, cols.idx + cols.num - 1];
+    
+    if (this.getColumnPos(range[0]) < this.scrollLeft)
+      range[0]++;
+
+    if (column < range[0])
+      return this.setScrollLeft(this.getColumnPos(column));
+
+    if (this.getColumnPos(range[1]) + this.columnSize[range[1]] - this.scrollLeft > this.width)
+      range[1]--;
+    if (column > range[1]) {
+      this.setScrollLeft(this.getColumnPos(column) + this.columnSize[column] - this.width);
+    }
+  }
+
+  setSelectRowSilent(row: number, force: boolean = false) {
     if (!this.hasFeatures(GridModelFeatures.CELLS_SELECTABLE | GridModelFeatures.ROWS_SELECTABLE))
-      return;
+      return false;
 
     row = Math.max(0, row);
     row = Math.min(this.rows - 1, row);
 
     if (force == false && this.selectRow == row)
-      return;
+      return false;
 
     this.selectRow = row;
     this.scrollToRow(row);
+    return true;
+  }
 
-    this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+  setSelectRow(row: number, force: boolean = false) {
+    if (this.setSelectRowSilent(row, force))
+      this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+  }
+
+  setSelectColumn(column: number, force: boolean = false) {
+    column = Math.max(0, column);
+    column = Math.min(this.columnSize.length - 1, column);
+
+    if (force == false && this.selectColumn == column)
+      return false;
+    
+    this.selectColumn = column;
+    this.scrollToColumn(column);
+    this.updateVersion(GridModelEvent.COLUMN_SELECT, 1);
+    return true;
   }
 
   setHighlightRow(row: number, scrollToRow: boolean = false) {
@@ -366,6 +404,10 @@ export class GridModel extends Publisher {
     return row == this.selectRow && this.selectColumn == column;
   }
 
+  getSelectColumn(): number {
+    return this.selectColumn;
+  }
+
   private resizeColumns() {
     let fixedSize = 0;
     let props = 0;
@@ -397,6 +439,14 @@ export class GridModel extends Publisher {
     this.columnsSizeSumm = s;
   }
 
+  private getColumnPos(column: number) {
+    let pos = 0;
+    for (let col = 0; col < column; col++) {
+      pos += this.columnSize[col];
+    }
+    return pos;
+  }
+
   private updateStartColumn() {
     let startColumn = 0;
     let startColumnOffs = 0;
@@ -424,7 +474,7 @@ export class GridModel extends Publisher {
       return;
     this.columnsRenderRange[0] = arr[0];
     this.columnsRenderRange[1] = arr[1];
-    console.log('columns range', this.columnsRenderRange);
+
     this.updateVersion(GridModelEvent.COLUMNS_RENDER_RANGE, 1);
   }
 

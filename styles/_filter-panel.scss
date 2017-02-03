@@ -1,0 +1,48 @@
+.filter_panel {
+  display: flex;
+  flex-direction: row;
+
+  &--columns {
+    box-sizing: border-box;
+    padding: 5px;
+    flex-grow: 1;
+    background-color: silver;
+    margin-right: 10px;
+  }
+  
+  &--filters {
+    box-sizing: border-box;
+    padding: 5px;
+    flex-grow: 1;
+    background-color: silver;
+  }
+
+  &--item_wrapper {
+    display: flex;
+
+    & i {
+      visibility: hidden;
+      cursor: pointer;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+    &:hover {
+      background: lightgreen;
+      & i {
+        visibility: initial;
+      }
+    }
+  }
+
+  &--item_label {
+    flex-grow: 1;
+  }
+
+  &--add_control {
+    cursor: pointer;
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: 2px;
+    display: inline-block;
+  }
+}

@@ -37,7 +37,8 @@ export const enum TableModelEvent {
   COLUMNS_SELECTED = 1 << 0,
   ROWS_SELECTED = 1 << 1,
   TOTAL = 1 << 2,
-  SORTING = 1 << 3
+  SORTING = 1 << 3,
+  FILTERING = 1 << 4
 }
 
 export interface Cell {
@@ -62,7 +63,7 @@ export enum Abilities {
   Sorting = 1 << 2
 };
 
-export interface TableSourceModel extends Filterable {
+export interface TableSourceModel {
   // load data
   loadData(range: DataRange): IThenable<any>;
 
@@ -87,6 +88,7 @@ export interface TableSourceModel extends Filterable {
   getColumnsAndOrder(): Array<string>;
 
   getSorting(): Sortable;
+  getFiltering(): Filterable;
 
   // filtering
   getAbilities(): number;
@@ -119,7 +121,7 @@ export interface CacheItem {
 
 export type CacheVisitor = (visit: (colCache: number, rowCache: number, cache: CacheItem, colsCache: Array<Column>) => void) => void;
 
-class SortingDataHolder implements Sortable {
+class SortDataHolder implements Sortable {
   private columns = Array<SortColumn>();
   private publisher: Publisher;
 
@@ -134,6 +136,21 @@ class SortingDataHolder implements Sortable {
 
   getColumns(): Array<SortColumn> {
     return this.columns;
+  }
+}
+
+class FilterDataHolder implements Filterable {
+  private publisher: Publisher;
+
+  constructor(publisher: Publisher) {
+    this.publisher = publisher;
+  }
+
+  setConditions(condition: CompoundCondition | ColumnCondition) {
+  }
+
+  getConditions(): CompoundCondition | ColumnCondition {
+    return null;
   }
 }
 
@@ -153,7 +170,8 @@ export class TableSourceModelImpl implements TableSourceModel {
   };
 
   protected publisher: Publisher = new Publisher();
-  protected sorting = new SortingDataHolder(this.publisher);
+  protected sorting = new SortDataHolder(this.publisher);
+  protected filtering = new FilterDataHolder(this.publisher);
   protected columnsCache = Array< Array<Column> >();
   
   private columnsOrder = Array<number>();
@@ -163,7 +181,7 @@ export class TableSourceModelImpl implements TableSourceModel {
 
   constructor() {
     this.publisher.addSubscriber((mask: number) => {
-      if (mask & TableModelEvent.SORTING)
+      if (mask & (TableModelEvent.SORTING | TableModelEvent.FILTERING))
         this.reload();
     });
   }
@@ -428,18 +446,15 @@ export class TableSourceModelImpl implements TableSourceModel {
     return 0;
   }
 
-  setConditions(condition: CompoundCondition | ColumnCondition) {
-  }
-
-  getConditions(): CompoundCondition | ColumnCondition {
-    return null;
-  }
-
   getUniqueValues(col: number): TableSourceModel {
     return null;
   }
 
   getSorting(): Sortable {
     return this.sorting;
+  }
+
+  getFiltering(): Filterable {
+    return this.filtering;
   }
 }

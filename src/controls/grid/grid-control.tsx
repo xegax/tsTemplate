@@ -168,13 +168,15 @@ export class GridControl extends React.Component<Props, State> {
     let cellHeight = this.state.header.getCellHeight();
 
     return (
-      <GridRender
-        className = {classes.header}
-        width = {clientWidth}
-        height = {cellHeight}
-        model = {this.state.header}
-        renderCell = {this.renderHeaderCell}
-      />
+      <div style={{background: 'white'}}>
+        <GridRender
+          className = {classes.header}
+          width = {clientWidth}
+          height = {cellHeight}
+          model = {this.state.header}
+          renderCell = {this.renderHeaderCell}
+        />
+      </div>
     );
   }
 
@@ -217,10 +219,11 @@ export class GridControl extends React.Component<Props, State> {
     const aligned = this.props.model.hasFeatures(GridModelFeatures.ROWS_ALIGNED);
     const contentWidth = this.props.model.getSummOfSizes();
     let contentFullHeight = cellHeight * rows;
-    if (contentFullHeight <= height)
-      vScroll = false;
     
     const panelHeight = (header == false) ? height : height - cellHeight;
+    if (contentFullHeight <= panelHeight)
+      vScroll = false;
+
     if (aligned && panelHeight % cellHeight != 0)
       contentFullHeight += cellHeight;
 

@@ -17,6 +17,9 @@ import {ColumnsModel} from 'controls/table/columns-model';
 import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
 import {Menu} from 'controls/menu';
 import {Timer} from 'common/timer';
+import {Dialog} from 'controls/dialog';
+import {FilterPanel} from 'controls/filter/filter-panel';
+import {FilterModel} from 'controls/filter/filter-model';
 
 interface State {
   listItem?: number;
@@ -27,6 +30,7 @@ interface State {
   appr?: Appearance;
   hoverColumn?: string;
   status?: string;
+  filter?: FilterModel;
 }
 
 interface Props {
@@ -44,16 +48,17 @@ class DataSelector extends React.Component<Props, State> {
   private updateStatus = new Timer(() => {
     let total = this.state.model.getTotal();
     let range = this.state.view.getRowsRange();
-    this.setState({
-      status: `total rows: ${total.rows}, start row: ${range[0]}`
-    });
+    let status = `total rows: ${total.rows}, start row: ${range[0]}`;
+    if (this.state.status != status)
+      this.setState({status});
   });
 
   constructor(props: Props) {
     super(props);
     this.state = {
       listItem: 2,
-      view: new GridModel()
+      view: new GridModel(),
+      filter: new FilterModel()
     };
 
     this.state.appr = this.createAppearance(this.state.listItem);
@@ -165,6 +170,11 @@ class DataSelector extends React.Component<Props, State> {
         label: 'sort desc',
         command: () => {
           this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.desc}]);
+        }
+      }, {
+        label: 'filter',
+        command: () => {
+          Dialog.showModal(<FilterPanel dataSource={this.state.model} model={this.state.filter}/>);
         }
       }
     ];

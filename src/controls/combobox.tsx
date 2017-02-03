@@ -55,14 +55,15 @@ export class ComboBox extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
+
+    let total = props.sourceModel.getTotal();
     this.state = {
       text: '',
       index: props.sourceRow != null ? props.sourceRow : -1,
       popup: false,
       focus: false,
-      items: 0
+      items: total.rows
     };
-
     this.props.sourceModel.getPublisher().addSubscriber(this.watchTotal);
   }
 
@@ -98,9 +99,6 @@ export class ComboBox extends React.Component<Props, State> {
   }
 
   protected onSelect = (row: number) => {
-    if (this.props.sourceRow == row)
-      return;
-    
     let close = true;
     try {
       if (this.props.onSelect)

@@ -1,6 +1,8 @@
 $hover-color: #C8D5B9;
 $select-color: #8FC0A9;
-$bg-color: white;
+$select-cell-color: #c8fbe3;
+$bg-color: transparent;
+$cell-bg-color: white;
 $border-color: black;
 
 .grid_render {
@@ -11,16 +13,13 @@ $border-color: black;
     position: absolute;
   }
 
-  &--hover_row {
-    background-color: $hover-color;
-  }
-
   &--cell {
     box-sizing: border-box;
     border-left: 1px solid $border-color;
     border-top: 1px solid $border-color;
     text-overflow: ellipsis;
     cursor: default;
+    background-color: $cell-bg-color;
 
     &_rightmost {
       border-right: 1px solid $border-color;
@@ -29,8 +28,18 @@ $border-color: black;
     &_lowermost {
       border-bottom: 1px solid $border-color;
     }
+  }
 
-    &_select {
+  &--hover_row {
+    background-color: $hover-color;
+  }
+
+  &--cell {
+    &-select {
+      background-color: $select-cell-color;
+    }
+
+    &_select_row {
       background-color: $select-color;
     }
   }
