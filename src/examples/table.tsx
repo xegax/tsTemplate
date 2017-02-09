@@ -74,6 +74,11 @@ class DataSelector extends React.Component<Props, State> {
       if (mask & GridModelEvent.ROWS_RENDER_RANGE)
         this.updateStatus.run(1000);
     });
+
+    this.state.filter.addSubscriber(mask => {
+      this.state.model.getFiltering().setConditions(this.state.filter.makeCondition());
+      //console.log(this.state.filter.makeCondition());
+    });
   }
 
   createAppearance(item: number): Appearance {
@@ -258,7 +263,35 @@ class DataSelector extends React.Component<Props, State> {
           {this.renderDataList()}
           <button onClick={() => this.state.model.reload()}>reload</button>
         </div>
-        <div style={{flexGrow: 1, display: 'flex'}}>
+        <div
+          style={{flexGrow: 1, display: 'flex'}}
+          onContextMenu={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            let columnIdx = this.state.view.getSelectColumn();
+            let cell = this.state.model.getCell(columnIdx, this.state.view.getSelectRow());
+            let column = this.state.model.getColumn(columnIdx);
+            const items = [
+              {
+                label: `include "${cell.value}"`,
+                command: () => {
+                  this.state.filter.getInclude().addItem(column.id, cell.value);
+                }
+              }, {
+                label: `include all`,
+                command: () => {
+                  this.state.filter.getInclude().clear();
+                  this.state.filter.getExclude().clear();
+                }
+              }, {
+                label: `exclude "${cell.value}"`,
+                command: () => {
+                  this.state.filter.getExclude().addItem(column.id, cell.value);
+                }
+              }
+            ];
+            Menu.showAt({x: e.pageX, y: e.pageY}, <Menu items={items}/>)
+          }}>
           {this.renderTable()}
         </div>
       </div>

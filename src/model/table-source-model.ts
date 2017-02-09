@@ -1,10 +1,10 @@
-import {Publisher} from 'common/publisher';
-import {parsePath} from 'common/common';
+import {Publisher} from '../common/publisher';
+import {parsePath} from '../common/common';
 import {assign} from 'lodash';
-import {Requestor, getGlobalRequestor} from 'requestor/requestor';
-import {Timer} from 'common/timer';
+import {Requestor, getGlobalRequestor} from '../requestor/requestor';
+import {Timer} from '../common/timer';
 import {IThenable} from 'promise';
-import {CompoundCondition, ColumnCondition, Filterable} from 'model/filter-condition';
+import {CompoundCondition, ColumnCondition, Filterable, FilterCondition} from '../model/filter-condition';
 
 export enum SortDir {
   asc = 1,
@@ -131,7 +131,7 @@ class SortDataHolder implements Sortable {
 
   setColumns(columns: Array<SortColumn>) {
     this.columns = columns;
-    this.publisher.updateVersion(TableModelEvent.SORTING);
+    this.publisher.updateVersion(TableModelEvent.SORTING, 5);
   }
 
   getColumns(): Array<SortColumn> {
@@ -141,16 +141,19 @@ class SortDataHolder implements Sortable {
 
 class FilterDataHolder implements Filterable {
   private publisher: Publisher;
+  private condition: FilterCondition;
 
   constructor(publisher: Publisher) {
     this.publisher = publisher;
   }
 
-  setConditions(condition: CompoundCondition | ColumnCondition) {
+  setConditions(condition: FilterCondition) {
+    this.condition = condition;
+    this.publisher.updateVersion(TableModelEvent.FILTERING, 5);
   }
 
-  getConditions(): CompoundCondition | ColumnCondition {
-    return null;
+  getConditions(): FilterCondition {
+    return this.condition;
   }
 }
 
@@ -181,7 +184,7 @@ export class TableSourceModelImpl implements TableSourceModel {
 
   constructor() {
     this.publisher.addSubscriber((mask: number) => {
-      if (mask & (TableModelEvent.SORTING | TableModelEvent.FILTERING))
+      if (mask & (TableModelEvent.SORTING))
         this.reload();
     });
   }

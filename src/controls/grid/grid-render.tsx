@@ -104,7 +104,14 @@ export class GridRender extends React.Component<Props, State> {
           key={r}
           style={style}
           className={cn}
-          onClick={e => {this.props.model.setSelectRow(rowIdx, true); this.props.model.setSelectColumn(column, true);}}
+          onClick={e => {
+            this.props.model.setSelectRow(rowIdx, true);
+            this.props.model.setSelectColumn(column, true);
+          }}
+          onContextMenu={e => {
+            this.props.model.setSelectRow(rowIdx, true);
+            this.props.model.setSelectColumn(column, true);
+          }}
           onMouseEnter={e => e.buttons == 0 && this.props.model.setHighlightRow(rowIdx)}
           onMouseMove={e => e.buttons == 0 && this.props.model.setHighlightRow(rowIdx)}
           onWheel={this.onWheel}

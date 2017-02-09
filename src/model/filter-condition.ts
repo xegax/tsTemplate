@@ -44,6 +44,7 @@ export interface CompoundCondition {
   op: Operator;
   condition: Array<CompoundCondition | ColumnCondition>;
 }
+export type FilterCondition = CompoundCondition | ColumnCondition;
 
 export type FilterFunction = (values: {[colIdx: number]: string | number}) => boolean;
 
