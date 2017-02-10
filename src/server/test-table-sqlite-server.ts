@@ -1,7 +1,7 @@
 import * as http from 'http';
 import {createServer} from './server';
 import {Database} from 'sqlite3';
-import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat} from '../model/filter-condition';
+import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../model/filter-condition';
 import {SortColumn, SortDir} from '../model/table-source-model';
 
 var srv = createServer(8088);
@@ -24,11 +24,14 @@ function getSqlCondition(condition: FilterCondition): string {
 
   let comp = condition as CompoundCondition;
   
-  return comp.condition.map((cond: ConditionCat | CompoundCondition) => {
+  return comp.condition.map((cond: ConditionCat | ConditionText | CompoundCondition) => {
     let compCond = cond as CompoundCondition;
     if (compCond.op != null)
       return getSqlCondition(compCond);
     let catCond = cond as ConditionCat;
+    let textCond = cond as ConditionText;
+    if (textCond.textValue != null)
+      return `(${textCond.column} like "${textCond.textValue}")`;
     return '(' + catCond.catValues.map(value => (catCond.inverse ? 'not ': '') + `${catCond.column}="${value}"`).join(catCond.inverse ? ' and ' : ' or ') + ')';
   }).join(` ${comp.op} `);
 }

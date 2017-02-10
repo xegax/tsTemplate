@@ -94,6 +94,9 @@ export class ComboBox extends React.Component<Props, State> {
       this.input.focus();
   }
 
+  /*componentWillReceiveProps(newProps: Props) {
+  }*/
+
   protected showPopup(show: boolean) {
     this.setState({popup: show});
   }

@@ -1,6 +1,7 @@
 import {Publisher} from 'common/publisher';
 import {FilterCondition} from 'model/filter-condition';
 
+type FilterItemType = 'cat' | 'text';
 export interface FilterItem {
   column: string;
   value: string;

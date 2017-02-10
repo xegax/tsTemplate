@@ -20,6 +20,9 @@ import {Timer} from 'common/timer';
 import {Dialog} from 'controls/dialog';
 import {FilterPanel} from 'controls/filter/filter-panel';
 import {FilterModel} from 'controls/filter/filter-model';
+import {ComboBox} from 'controls/combobox';
+import {KeyCode} from 'common/keycode';
+import {CompoundCondition} from 'model/filter-condition';
 
 interface State {
   listItem?: number;
@@ -31,6 +34,9 @@ interface State {
   hoverColumn?: string;
   status?: string;
   filter?: FilterModel;
+  columnsSource?: TableSourceModel;
+  textFilterColumn?: string;
+  textFilter?: string;
 }
 
 interface Props {
@@ -66,19 +72,54 @@ class DataSelector extends React.Component<Props, State> {
     this.state.model = this.createModel(this.state.appr, this.state.listItem);
     
     this.state.model.getPublisher().addSubscriber((mask) => {
-      if (mask & TableModelEvent.TOTAL)
+      if (!(mask & TableModelEvent.TOTAL))
+        return;
+
+      if (!this.updateStatus.isRunning())
         this.updateStatus.run(1000);
+      
+      let total = this.state.model.getTotal();
+      let columns = [];
+      for (let n = 0; n < total.columns; n++) {
+        columns.push(this.state.model.getColumn(n));
+      }
+
+      let json = new JSONSourceModel(columns.map(col => [col.id]), ['name']);
+      if (this.state.columnsSource)
+        json.getPublisher().moveSubscribersFrom(this.state.columnsSource.getPublisher());
+
+      this.setState({columnsSource: json});
     });
 
     this.state.view.addSubscriber((mask) => {
-      if (mask & GridModelEvent.ROWS_RENDER_RANGE)
+      if (mask & GridModelEvent.ROWS_RENDER_RANGE && !this.updateStatus.isRunning())
         this.updateStatus.run(1000);
     });
 
     this.state.filter.addSubscriber(mask => {
-      this.state.model.getFiltering().setConditions(this.state.filter.makeCondition());
-      //console.log(this.state.filter.makeCondition());
+      this.updateFilter();
     });
+  }
+
+  updateFilter() {
+    let {textFilter, textFilterColumn, model, filter} = this.state;
+    let filterCond = filter.makeCondition();
+    if (textFilter) {
+      let cond: CompoundCondition = {
+        condition: [
+          {
+            textValue: textFilter,
+            column: textFilterColumn
+          }
+        ],
+        op: 'and'
+      };
+      if (filterCond)
+        cond.condition.push(filterCond);
+      model.getFiltering().setConditions(cond);
+    } else {
+      model.getFiltering().setConditions(filterCond);
+    }
   }
 
   createAppearance(item: number): Appearance {
@@ -232,6 +273,30 @@ class DataSelector extends React.Component<Props, State> {
     );
   }
 
+  
+  renderTextFilter() {
+    if (!this.state.columnsSource)
+      return;
+
+    return (
+        <div>
+          <ComboBox
+            style={{display: 'inline-block', width: 100}}
+            sourceModel={this.state.columnsSource}
+            onSelect={(value, row) => {
+              this.setState({textFilterColumn: value});
+            }}/>
+            <input defaultValue={this.state.textFilter} onKeyDown={(e) => {
+              if (e.keyCode == KeyCode.Enter) {
+                this.setState({textFilter: (e.target as any as HTMLInputElement).value}, () => {
+                  this.updateFilter();
+                });
+              }
+            }}/>
+        </div>
+      );
+  }
+
   renderTable() {
     if (!this.state.model)
       return (<div>No data to display</div>);
@@ -240,6 +305,7 @@ class DataSelector extends React.Component<Props, State> {
       <div style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
         <div>
           {this.state.status}
+          {this.renderTextFilter()}
         </div>
         <div style={{flexGrow: 1}}>
         <FitToParent>
