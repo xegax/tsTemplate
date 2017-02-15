@@ -14,6 +14,7 @@ interface Props {
   viewModel?: GridModel;
   columnsModel?: ColumnsModel;
   wrapHeader?: (header: JSX.Element, colId: string, colIdx: number) => JSX.Element;
+  wrapCell?: (cell: JSX.Element, colId: string, colIdx: number, row: number) => JSX.Element;
 
   header?: boolean;
   className?: string;
@@ -36,7 +37,8 @@ interface State {
 
 export class Table extends React.Component<Props, State> {
   static defaultProps = {
-    wrapHeader: (e: JSX.Element) => e
+    wrapHeader: (e: JSX.Element) => e,
+    wrapCell: (e: JSX.Element) => e
   };
 
   constructor(props: Props) {
@@ -160,13 +162,13 @@ export class Table extends React.Component<Props, State> {
     let colValue = srcCol && srcCol.id || 'column' + colIdx;
     let element: JSX.Element;
     if (colModel && colModel.renderHeader) {
-      element = this.props.wrapHeader(colModel.renderHeader(colValue, colIdx), srcCol.id, colIdx);
+      element = colModel.renderHeader(colValue, colIdx);
     } else {
-      element = this.props.wrapHeader(<div>{colValue}</div>, srcCol.id, colIdx);
+      element = <div>{colValue}</div>;
     }
     
     return {
-      element
+      element: this.props.wrapHeader(element, srcCol.id, colIdx)
     };
   }
 
@@ -174,14 +176,16 @@ export class Table extends React.Component<Props, State> {
     const cell = this.props.sourceModel.getCell(columnIdx, rowIdx);
     const srcCol = this.props.sourceModel.getColumn(columnIdx);
     const colModel = this.state.columnsModel.getColumn(srcCol.id);
+
+    let element: JSX.Element;
     if (colModel && colModel.render) {
-      return {
-        element: colModel.render(cell.value, cell.raw, rowIdx)
-      };
+      element = colModel.render(cell.value, cell.raw, rowIdx)
+    } else {
+      element = <div className={classes.cellWrapper}>{cell.value}</div>;
     }
 
     return {
-       element: <div className={classes.cellWrapper}>{cell.value}</div> as any
+       element: this.props.wrapCell(element, srcCol.id, columnIdx, rowIdx)
     };
   }
 

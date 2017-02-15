@@ -62,7 +62,7 @@ class DataSelector extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      listItem: 2,
+      listItem: 5,
       view: new GridModel(),
       filter: new FilterModel()
     };
@@ -272,8 +272,43 @@ class DataSelector extends React.Component<Props, State> {
       </div>
     );
   }
-
   
+  showCellContextMenu(x: number, y: number) {
+    let columnIdx = this.state.view.getSelectColumn();
+    let cell = this.state.model.getCell(columnIdx, this.state.view.getSelectRow());
+    let column = this.state.model.getColumn(columnIdx);
+    const items = [
+      {
+        label: `include "${cell.value}"`,
+        command: () => {
+          this.state.filter.getInclude().addItem(column.id, cell.value);
+        }
+      }, {
+        label: `include all`,
+        command: () => {
+          this.state.filter.getInclude().clear();
+          this.state.filter.getExclude().clear();
+        }
+      }, {
+        label: `exclude "${cell.value}"`,
+        command: () => {
+          this.state.filter.getExclude().addItem(column.id, cell.value);
+        }
+      }
+    ];
+    Menu.showAt({x, y}, <Menu items={items}/>);
+  }
+
+  onCellContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const pos = [e.pageX, e.pageY];
+    new Timer(() => this.showCellContextMenu(pos[0], pos[1])).run(1);
+  }
+
+  wrapCell = (e) => {
+    return <div onContextMenu={this.onCellContextMenu} style={{height: '100%'}}>{e}</div>;
+  }
+
   renderTextFilter() {
     if (!this.state.columnsSource)
       return;
@@ -315,6 +350,7 @@ class DataSelector extends React.Component<Props, State> {
             columnsModel={this.state.columns}
             sourceModel={this.state.model}
             wrapHeader={this.wrapHeader}
+            wrapCell={this.wrapCell}
             style={{position: 'absolute'}}/>
         </FitToParent>
         </div>
@@ -329,35 +365,7 @@ class DataSelector extends React.Component<Props, State> {
           {this.renderDataList()}
           <button onClick={() => this.state.model.reload()}>reload</button>
         </div>
-        <div
-          style={{flexGrow: 1, display: 'flex'}}
-          onContextMenu={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            let columnIdx = this.state.view.getSelectColumn();
-            let cell = this.state.model.getCell(columnIdx, this.state.view.getSelectRow());
-            let column = this.state.model.getColumn(columnIdx);
-            const items = [
-              {
-                label: `include "${cell.value}"`,
-                command: () => {
-                  this.state.filter.getInclude().addItem(column.id, cell.value);
-                }
-              }, {
-                label: `include all`,
-                command: () => {
-                  this.state.filter.getInclude().clear();
-                  this.state.filter.getExclude().clear();
-                }
-              }, {
-                label: `exclude "${cell.value}"`,
-                command: () => {
-                  this.state.filter.getExclude().addItem(column.id, cell.value);
-                }
-              }
-            ];
-            Menu.showAt({x: e.pageX, y: e.pageY}, <Menu items={items}/>)
-          }}>
+        <div style={{flexGrow: 1, display: 'flex'}}>
           {this.renderTable()}
         </div>
       </div>
