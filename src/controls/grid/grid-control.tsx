@@ -228,7 +228,7 @@ export class GridControl extends React.Component<Props, State> {
       contentFullHeight += cellHeight;
 
     return (
-      <div className={className(classes.control, this.props.className)} style={this.props.style}>
+      <div className={className(classes.control, this.props.className)} style={assign({width, height}, this.props.style)}>
         {header ? this.renderHeader(): null}
         <ScrollbarPanel
           width={width}

@@ -23,10 +23,11 @@ import {FilterModel} from 'controls/filter/filter-model';
 import {ComboBox} from 'controls/combobox';
 import {KeyCode} from 'common/keycode';
 import {CompoundCondition} from 'model/filter-condition';
+import {Layout} from 'controls/layout/layout';
+import * as Scheme from 'controls/layout/Scheme';
 
 interface State {
   listItem?: number;
-  data?: any;
   view?: GridModel;
   model?: TableSourceModel;
   columns?: ColumnsModel;
@@ -37,6 +38,8 @@ interface State {
   columnsSource?: TableSourceModel;
   textFilterColumn?: string;
   textFilter?: string;
+  cell?: string;
+  scheme?: Scheme.Children | Scheme.Item;
 }
 
 interface Props {
@@ -64,7 +67,8 @@ class DataSelector extends React.Component<Props, State> {
     this.state = {
       listItem: 5,
       view: new GridModel(),
-      filter: new FilterModel()
+      filter: new FilterModel(),
+      scheme: this.getScheme()
     };
 
     this.state.appr = this.createAppearance(this.state.listItem);
@@ -94,6 +98,13 @@ class DataSelector extends React.Component<Props, State> {
     this.state.view.addSubscriber((mask) => {
       if (mask & GridModelEvent.ROWS_RENDER_RANGE && !this.updateStatus.isRunning())
         this.updateStatus.run(1000);
+      if (mask & (GridModelEvent.COLUMN_SELECT | GridModelEvent.ROW_SELECT)) {
+        const col = this.state.view.getSelectColumn();
+        const row = this.state.view.getSelectRow();
+        this.setState({
+          cell: this.state.model.getCell(col, row).value
+        });
+      }
     });
 
     this.state.filter.addSubscriber(mask => {
@@ -169,9 +180,9 @@ class DataSelector extends React.Component<Props, State> {
     this.setState({listItem}, this.onDataSelected);
   }
 
-  renderDataList() {
+  renderDataList(id: string) {
     return (
-      <select ref={'select'} onChange={e => this.setDataSelect()} value={'' + this.state.listItem}>
+      <select key={id} ref={'select'} onChange={e => this.setDataSelect()} value={'' + this.state.listItem}>
         {this.props.list.map((item, i) => {
           return <option key={i} value={'' + i}>{item}</option>;
         })}
@@ -306,7 +317,14 @@ class DataSelector extends React.Component<Props, State> {
   }
 
   wrapCell = (e) => {
-    return <div onContextMenu={this.onCellContextMenu} style={{height: '100%'}}>{e}</div>;
+    return (
+      <div
+        onContextMenu={this.onCellContextMenu}
+        style={{height: '100%'}}
+      >
+        {e}
+      </div>
+    );
   }
 
   renderTextFilter() {
@@ -332,43 +350,61 @@ class DataSelector extends React.Component<Props, State> {
       );
   }
 
-  renderTable() {
+  renderStatus(id: string) {
+    return (
+      <div key={id}>
+        {this.state.status}
+        {this.renderTextFilter()}
+      </div>
+    );
+  }
+
+  renderCell(id: string) {
+    return (
+      <div key={id} style={{flexGrow: 1, overflow: 'auto'}}>
+        {this.state.cell}
+      </div>
+    );
+  }
+
+  renderTable(id: string) {
     if (!this.state.model)
-      return (<div>No data to display</div>);
+      return (<div key={id}>No data to display</div>);
 
     return (
-      <div style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-        <div>
-          {this.state.status}
-          {this.renderTextFilter()}
-        </div>
-        <div style={{flexGrow: 1}}>
-        <FitToParent>
           <Table
+            key={id}
             defaultRowHeight={40}
             viewModel={this.state.view}
             columnsModel={this.state.columns}
             sourceModel={this.state.model}
             wrapHeader={this.wrapHeader}
             wrapCell={this.wrapCell}
-            style={{position: 'absolute'}}/>
-        </FitToParent>
-        </div>
-      </div>
+          />
     );
+  }
+
+  getScheme() {
+    return Scheme.column(
+      Scheme.row(
+        Scheme.item('combobox', 0),
+        Scheme.item('reload', 0)
+      ).grow(0),
+      Scheme.item('status', 0),
+      Scheme.item('cell', 1),
+      Scheme.item('table', 10)
+    ).get();
   }
 
   render() {
     return (
-      <div style={{display: 'flex', flexGrow: 1, flexDirection: 'column'}}>
-        <div style={{padding: 4}}>
-          {this.renderDataList()}
-          <button onClick={() => this.state.model.reload()}>reload</button>
-        </div>
-        <div style={{flexGrow: 1, display: 'flex'}}>
-          {this.renderTable()}
-        </div>
-      </div>
+      <Layout scheme={this.state.scheme}>
+        {this.renderDataList('combobox')}
+        <button key='reload' onClick={() => this.state.model.reload()}>reload</button>
+        {this.renderTable('table')}
+        {this.renderStatus('status')}
+        {this.renderCell('cell')}
+      </Layout>
     );
   }
 }

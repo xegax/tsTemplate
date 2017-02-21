@@ -104,7 +104,7 @@ export class JSONServerSourceModel extends TableSourceModelImpl {
       if (arr.length > 2) {
         this.cacheUpdaterArr = arr.slice(arr.length - 2);
       }
-      this.timer.run(5);
+      this.timer.run(100);
     });
   }
 }

@@ -32,3 +32,88 @@
     flex-grow: 1;
   }
 }
+
+.layout {
+    position: relative;
+    display: flex;
+    flex-grow: 1;
+
+    &-row {
+      display: flex;
+      flex-direction: row;
+      position: relative;
+    }
+    &-column {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    &-item {
+      display: flex; 
+      position: relative;
+    }
+    &-growable-item {
+      display: flex;
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+    }
+    &-title {
+      background-color: silver;
+      border: 1px solid gray;
+      padding: 5px;
+    }
+    &-cursor {
+      position: absolute;
+      opacity: 0.2;
+      background-color: blue;
+    }
+
+    &-block-holder {
+      display: flex;
+    }
+
+    &-block-holder-growable {
+      position: absolute;
+      display: flex;
+      left: 0px;
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+    }
+
+    &-growable-wrapper {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      bottom: 0px;
+      right: 0px;
+      flex-grow: 1;
+      display: flex;
+    }
+
+    &-wrapper {
+      flex-grow: 1;
+      display: flex;
+    }
+
+    &-row-split {
+      width: 5px;
+      box-sizing: border-box;
+      border-left: 1px solid gray;
+      border-right: 1px solid silver;
+      cursor: e-resize;
+      background-color: white;
+    }
+
+    &-column-split {
+      height: 5px;
+      box-sizing: border-box;
+      background-color: white;
+      border-top: 1px solid gray;
+      border-bottom: 1px solid silver;
+      cursor: n-resize;
+    }
+}
