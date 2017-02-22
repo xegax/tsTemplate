@@ -38,12 +38,12 @@ class Dummy extends React.Component<Props, {s?: string}> {
   }
 }
 
-class LayoutTest extends React.Component<{}, {scheme: Scheme.Scheme}> {
+class LayoutTest extends React.Component<{}, {scheme: {root: Scheme.Scheme}}> {
   constructor(props) {
     super(props);
 
     this.state = {
-      scheme: this.getScheme()
+      scheme: {root: this.getScheme()}
     };
   }
 

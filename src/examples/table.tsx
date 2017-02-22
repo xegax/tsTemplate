@@ -12,7 +12,7 @@ import {JSONSourceModel} from 'model/json-source-model';
 import {TestTableSourceModel,} from 'model/test-table-source-model';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
-import {assign} from 'lodash';
+import {assign, cloneDeep} from 'lodash';
 import {ColumnsModel} from 'controls/table/columns-model';
 import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
 import {Menu} from 'controls/menu';
@@ -39,7 +39,7 @@ interface State {
   textFilterColumn?: string;
   textFilter?: string;
   cell?: string;
-  scheme?: Scheme.Children | Scheme.Item;
+  scheme?: {root: Scheme.Scheme};
 }
 
 interface Props {
@@ -68,7 +68,7 @@ class DataSelector extends React.Component<Props, State> {
       listItem: 5,
       view: new GridModel(),
       filter: new FilterModel(),
-      scheme: this.getScheme()
+      scheme: {root: this.getScheme(true)}
     };
 
     this.state.appr = this.createAppearance(this.state.listItem);
@@ -137,7 +137,8 @@ class DataSelector extends React.Component<Props, State> {
     const source = this.props.list[item];
     return new AppearanceFromLocalStorage('table-example/' + source, {
       sizes: {},
-      columns: []
+      columns: [],
+      scheme: JSON.stringify(this.getScheme(true))
     });
   }
 
@@ -171,7 +172,8 @@ class DataSelector extends React.Component<Props, State> {
     this.setState({
       appr,
       columns: this.createColumnsModel(appr, this.state.listItem),
-      model: this.createModel(appr, this.state.listItem)
+      model: this.createModel(appr, this.state.listItem),
+      scheme: JSON.parse(appr.getString('scheme'))
     });
   };
 
@@ -305,6 +307,15 @@ class DataSelector extends React.Component<Props, State> {
         command: () => {
           this.state.filter.getExclude().addItem(column.id, cell.value);
         }
+      }, {
+        label: 'show/hide text panel',
+        command: () => {
+          const {root} = this.state.scheme;
+          const item = Scheme.find('cell', root as Scheme.Children);
+          item.show = !item.show;
+          
+          this.setState({scheme: {root}});
+        }
       }
     ];
     Menu.showAt({x, y}, <Menu items={items}/>);
@@ -384,21 +395,26 @@ class DataSelector extends React.Component<Props, State> {
     );
   }
 
-  getScheme() {
+  getScheme(textPanel: boolean) {
     return Scheme.column(
       Scheme.row(
         Scheme.item('combobox', 0),
         Scheme.item('reload', 0)
       ).grow(0),
       Scheme.item('status', 0),
-      Scheme.item('cell', 1),
+      Scheme.item('cell', 1, textPanel),
       Scheme.item('table', 10)
     ).get();
   }
 
   render() {
     return (
-      <Layout scheme={this.state.scheme}>
+      <Layout
+        scheme={this.state.scheme}
+        onChanged={root => {
+          this.setState({scheme: {root}});
+          this.state.appr.setString('scheme', JSON.stringify(root));
+        }}>
         {this.renderDataList('combobox')}
         <button key='reload' onClick={() => this.state.model.reload()}>reload</button>
         {this.renderTable('table')}

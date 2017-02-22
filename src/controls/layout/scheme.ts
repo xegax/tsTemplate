@@ -5,20 +5,19 @@ export type Scheme = Item | Children;
 export interface Item {
   type: 'item';
   label?: string;
-  id?: string;
+  uid: string;
   grow?: number;
   title?: boolean;
   show?: boolean;
-  uid?: string;
 }
 
 export interface Children {
+  uid?: string;
   type: 'column' | 'row';
   title?: boolean;
   children?: Array<Item | Children>;
   grow?: number;
   show?: boolean;
-  uid?: string;
 }
 
 interface Getter {
@@ -84,13 +83,27 @@ export function row(...children: Array<Item | Children | Getter>): Getter {
   return res;
 }
 
-export function item(id: string, grow?: number): Item {
+export function find(uid: string, colOrRow: Children): Item {
+  for (let n = 0; n < colOrRow.children.length; n++) {
+    if (colOrRow.children[n].uid == uid)
+      return colOrRow.children[n] as Item;
+    
+    if (colOrRow.children[n].type == 'item')
+      continue;
+      
+    const item = find(uid, colOrRow.children[n] as Children);
+    if (item)
+      return item;
+  }
+}
+
+export function item(uid: string, grow?: number, show?: boolean): Item {
   const res: Item =  {
     type: 'item',
-    id,
+    uid,
     grow: 1,
     title: false,
-    show: true
+    show: show == null ? true : show
   };
 
   if (grow != null)

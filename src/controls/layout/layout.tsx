@@ -7,16 +7,22 @@ import {className} from 'common/common';
 import {Timer} from 'common/timer';
 import * as Scheme from './scheme';
 
+interface Holder {
+  obj: Scheme.Children | Scheme.Item;
+  parent: Holder;
+  element: HTMLElement;
+  width: number;
+  height: number;
+}
+
 interface Props extends React.HTMLProps<any> {
-  scheme: Scheme.Scheme;
+  scheme: {root: Scheme.Scheme};
+  onChanged?: (scheme: Scheme.Scheme) => void;
 }
 
 interface State {
+  holderMap?: {[id: string]: Holder};
   scheme?: Scheme.Scheme;
-  hover?: string;
-  tgt?: Scheme.Children | Scheme.Item;
-  hoverElement?: HTMLElement;
-  side?: string;
   width?: number;
   height?: number;
 }
@@ -53,23 +59,52 @@ function updateGrows(sizeArr: Array<Array<number>>) {
 
 const globTimer = new Timer();
 
-export class Layout extends React.Component<Props, State> {
-  private itemsMap: {[uid: string]: Scheme.Children | Scheme.Item} = {};
+const Error = {
+  ITEM_UID_NOT_UNIQUE: 'Item uid not unique'
+};
 
+export class Layout extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      scheme: cloneDeep(props.scheme)
+      holderMap: {},
+      scheme: cloneDeep(props.scheme.root)
     };
 
-    this.updateUUIDs();
+    this.updateHolderMap(this.state.holderMap, this.state.scheme);
+  }
+
+  private updateHolderMap(holderMap: {[id: string]: Holder}, scheme: Scheme.Scheme) {
+    let ids: {[id: string]: number} = {};
+
+    let uidNum = 0;
+    const update = (item: Scheme.Children | Scheme.Item, parent: Scheme.Children) => {
+      if (item.uid == null)
+        item.uid = 'uid-' + (uidNum++);
+      if (ids[item.uid] != null)
+        throw Error.ITEM_UID_NOT_UNIQUE;
+
+      ids[item.uid] = 1;
+      let holder: Holder = holderMap[item.uid] || (holderMap[item.uid] = {} as any);
+      holder.obj = item;
+      
+      if (parent)
+        holder.parent = holderMap[parent.uid];
+      
+      if (item.type != 'item') {
+        (item as Scheme.Children).children.forEach(child => {
+          update(child, item);
+        });
+      }
+    }
+
+    update(scheme, null);
   }
 
   private checkSize = () => {
     const root = this.refs['root'] as HTMLElement;
 
-    if (this.updateSizes())
-      this.forceUpdate();
+    this.updateSizes(false);
   };
 
   componentDidMount() {
@@ -85,124 +120,16 @@ export class Layout extends React.Component<Props, State> {
       globTimer.stop();
   }
 
-  private updateUUIDs() {
-    this.itemsMap = {};
+  componentWillReceiveProps(props: Props) {
+    if (props.scheme == this.props.scheme)
+      return;
+    
+    const scheme = cloneDeep(props.scheme.root);
+    this.updateHolderMap(this.state.holderMap, scheme);
 
-    var uid = 0;
-    const updateUID = (item: Scheme.Children | Scheme.Item, parent: Scheme.Children) => {
-      item.uid = 'u-' + (uid++);
-      item['parent'] = parent;
-      this.itemsMap[item.uid] = item;
-      if (item.type != 'item')
-        (item as Scheme.Children).children.forEach(child => updateUID(child, item));
-    }
-
-    updateUID(this.state.scheme, null);
-  }
-
-  /*componentWillReceiveProps(props: Props) {
-    this.setState({scheme: cloneDeep(props.scheme)}, () => {
-      this.updateUUIDs();
-      this.updateSizes();
+    this.setState({scheme}, () => {
+      this.updateSizes(true);
     });
-  }*/
-
-  private findContainer(el: HTMLElement) {
-    while (el && el.getAttribute('data-uid') == null ) {
-      el = el.parentElement;
-    }
-
-    return el;
-  }
-
-  private startMove(event, tgt) {
-    var root = this.refs['root'] as HTMLElement;
-    var curr: HTMLElement;
-    var prev: HTMLElement;
-    startDragging({
-      x: 0, y: 0
-    }, {
-      onDragging: (event) => {
-        const side = this.getSide({x: event.event.pageX, y: event.event.pageY}, this.state.hoverElement);
-        
-        if (side != this.state.side)
-          this.setState({side});
-
-        if (prev == event.event.toElement)
-          return;
-
-        prev = event.event.toElement as HTMLElement;
-        if (this.refs['cursor'] && prev == this.refs['cursor'])
-          return;
-
-        if (!findParentNode(prev, root))
-          return;
-
-        var el = this.findContainer(prev as HTMLElement);
-        if (el == curr)
-          return;
-        curr = el;
-        if (curr) {
-          const uuid = curr.getAttribute('data-uid');
-          el = this.itemsMap[uuid]['element'];
-          this.setState({tgt, hover: uuid, hoverElement: el, side: this.getSide({x: event.event.pageX, y: event.event.pageY}, el)});
-        } else {
-          this.setState({hover: null, hoverElement: null, side: null});
-        }
-      },
-      onDragEnd: () => {
-        this.dropTo();
-        this.setState({tgt: null, hover: null, hoverElement: null, side: null});
-      }
-    })(event);
-  }
-
-  private dropTo() {
-    if (this.state.hover == null)
-      return;
-
-    const {tgt, side} = this.state;
-    const hover = this.itemsMap[this.state.hover];
-    const tgtParent = tgt['parent'] as Scheme.Children;
-    const hoverParent = hover['parent'] as Scheme.Children;
-
-    if (hover == tgt)
-      return;
-
-    if (tgtParent)
-        tgtParent.children.splice(tgtParent.children.indexOf(tgt), 1);
-
-    if (hover.type == 'item') {
-      if (hoverParent && hoverParent.type == 'row') {
-        if (side == 'right') {
-          const idx = hoverParent.children.indexOf(hover);
-          hoverParent.children.splice(idx, 1, hover, tgt);
-        } else if (side == 'left') {
-          const idx = hoverParent.children.indexOf(hover);
-          hoverParent.children.splice(idx, 1, tgt, hover);
-        } else if (side == 'top' || side == 'bottom') {
-          const newItem = side == 'top' ? Scheme.column(tgt, hover).get() : Scheme.column(hover, tgt).get();
-          hoverParent.children.splice(hoverParent.children.indexOf(hover), 1, newItem);
-        }
-      } else if (hoverParent && hoverParent.type == 'column') {
-        if (side == 'bottom') {
-          const idx = hoverParent.children.indexOf(hover);
-          hoverParent.children.splice(idx, 1, hover, tgt);
-        } else if (side == 'top') {
-          const idx = hoverParent.children.indexOf(hover);
-          hoverParent.children.splice(idx, 1, tgt, hover);
-        } else if (side == 'left' || side == 'right') {
-          const newItem = side == 'left' ? Scheme.row(tgt, hover).get() : Scheme.row(hover, tgt).get();
-          hoverParent.children.splice(hoverParent.children.indexOf(hover), 1, newItem);
-        }
-      } else if (hoverParent && hoverParent.type == 'row') {
-        if (side == 'top' || side == 'bottom') {
-          const newItem = side == 'top' ? Scheme.column(tgt, hover).get() : Scheme.column(hover, tgt).get();
-          hoverParent.children.splice(hoverParent.children.indexOf(hover), 1, newItem);
-        }
-      }
-    }
-    this.updateUUIDs();
   }
 
   private renderTitle(parent: Scheme.Children | Scheme.Item) {
@@ -210,7 +137,6 @@ export class Layout extends React.Component<Props, State> {
       <div
         data-uid={parent.uid}
         className={classes.title}
-        onMouseDown={e => this.startMove(e, parent)}
       >
         title
         <i
@@ -223,127 +149,150 @@ export class Layout extends React.Component<Props, State> {
     );
   }
   
-  private updateSizes() {
+  private updateSizes(forceUpdate: boolean) {
     let counter = 0;
+    const {holderMap} = this.state;
     const updateSizes = (item?: Scheme.Children | Scheme.Item) => {
       const children = (item as Scheme.Children).children;
       if (children) {
         children.forEach(child => updateSizes(child));
       } else {
-        const el = item['element'] as HTMLElement;
-        const rect = el.getBoundingClientRect();
+        const holder = holderMap[item.uid];
+        if (holder.element == null)
+          return;
+
+        const rect = holder.element.getBoundingClientRect();
         
-        if (item['width'] != rect.width) {
-          item['width'] = rect.width;
+        if (holder.width != rect.width) {
+          holder.width = rect.width;
           counter++;
         }
         
-        if (item['height'] != rect.height) {
-          item['height'] = rect.height;
+        if (holder.height != rect.height) {
+          holder.height = rect.height;
           counter++;
         }
       }
     };
 
     updateSizes(this.state.scheme);
-    return counter > 0;
+    if (forceUpdate || counter > 0)
+      this.forceUpdate();
   }
 
   private createWrap() {
-    var idMap: {[id: string]: React.ReactChild} = {};
-    React.Children.forEach(this.props.children, (child: React.ReactElement<any>, idx) => {
-      idMap[child.key] = child;
+    var childMap: {[id: string]: React.ReactChild} = {};
+    React.Children.forEach(this.props.children, (child: React.ReactElement<any>) => {
+      childMap[child.key] = child;
     });
 
-    let cnt = 0;
-    const createWrap = (parent: Scheme.Children | Scheme.Item, clearWidth: boolean, clearHeight: boolean) => {
-      if (parent.show == false)
+    const createWrap = (item: Scheme.Children | Scheme.Item, clearWidth: boolean, clearHeight: boolean, unshowGrow: number = 0) => {
+      if (item.show == false)
         return;
+      
+      const holder = this.state.holderMap[item.uid];
 
-      if (parent.type == 'item') {
-        const item = (
+      if (item.type == 'item') {
+        const itemElement = (
           <div
-            ref={e => parent['element'] = e}
-            data-uid={parent.uid}
+            ref={e => holder.element = e}
+            data-uid={item.uid}
             className={classes.item}
-            key={'holder-' + (cnt++)}
+            key={'item-' + item.uid}
             style={{
               width: clearWidth ? 0 : undefined,
               height: clearHeight ? 0 : undefined,
-              flexGrow: parent.grow != null ? parent.grow : undefined
+              flexGrow: item.grow != null ? item.grow + unshowGrow : undefined
             }}>
-              {React.cloneElement(idMap[parent.id] as React.DOMElement<any>, {
-                  width: parent['width'],
-                  height: parent['height']
+              {React.cloneElement(childMap[item.uid] as React.DOMElement<any>, {
+                  width: holder.width,
+                  height: holder.height
                 })}
           </div>
         );
-        if (parent.title) {
+        if (item.title) {
           return (
             <div
               className={classes.column}
-              key={'column-' + (cnt++)}
-              style={{flexGrow: parent.grow != null ? parent.grow : undefined}}>
-                {parent.title ? this.renderTitle(parent) : null}
-                {item}
+              key={'title-' + item.uid}
+              style={{flexGrow: item.grow != null ? item.grow : undefined}}>
+                {item.title ? this.renderTitle(item) : null}
+                {itemElement}
             </div>
           );
         } else {
-          return item;
+          return itemElement;
         }
-      } else if (parent.type == 'column') {
+      } else if (item.type == 'column') {
+        const col: Scheme.Children = item;
+        const colChildren = col.children.filter(item => item.show != false) as Array<Scheme.Item>;
+        
+        let unshowGrow = 0;
+        col.children.forEach(child => {
+          if (child.show == false)
+            unshowGrow += child.grow;
+        });
+
         return (
           <div
-            ref={e => parent['element'] = e}
-            data-uid={parent.uid}
+            ref={e => holder.element = e}
+            data-uid={col.uid}
             className={classes.column}
-            key={'column-' + (cnt++)}
+            key={'column-' + col.uid}
             style={{
               width: clearWidth ? 0 : undefined,
               height: clearHeight ? 0 : undefined,
-              flexGrow: parent.grow != null ? parent.grow : undefined
+              flexGrow: col.grow != null ? col.grow : undefined
             }}>
-                {parent.title ? this.renderTitle(parent) : null}
-                {parent.children.map((item, i) => {
-                  const wrap = createWrap(item, false, item.grow != 0);
+                {col.title ? this.renderTitle(col) : null}
+                {colChildren.map((item, i) => {
+                  const wrap = createWrap(item, false, item.grow != 0, item.grow != 0 ? unshowGrow : 0);
                   if (i == 0)
                     return wrap;
-                  const first = parent.children[i - 1] as Scheme.Item;
-                  const second = parent.children[i] as Scheme.Item;
+                  const first = colChildren[i - 1] as Scheme.Item;
+                  const second = colChildren[i] as Scheme.Item;
                   if (first.grow == 0 || second.grow == 0)
                     return wrap;
 
                   return [
-                    this.renderColumnSplit('split-'+ (cnt++), first, second),
+                    this.renderColumnSplit('split-'+ first.uid, colChildren, first, second),
                     wrap
                   ];
                 })}
           </div>
         );
-      } else if (parent.type == 'row') {
+      } else if (item.type == 'row') {
+        const row: Scheme.Children = item;
+        const rowChildren = row.children.filter(item => item.show != false) as Array<Scheme.Item>;
+
+        let unshowGrow = 0;
+        row.children.forEach(child => {
+          if (child.show == false)
+            unshowGrow += child.grow;
+        });
         return (
           <div
-            ref={e => parent['element'] = e}
-            data-uid={parent.uid}
+            ref={e => holder.element = e}
+            data-uid={row.uid}
             className={classes.row}
-            key={'row-' + (cnt++)}
+            key={'row-' + row.uid}
             style={{
               width: clearWidth ? 0 : undefined,
               height: clearHeight ? 0 : undefined,
-              flexGrow: parent.grow != null ? parent.grow : undefined
+              flexGrow: row.grow != null ? row.grow : undefined
             }}>
-                {parent.children.map((item, i) => {
-                  const wrap = createWrap(item, item.grow != 0, false);
+                {rowChildren.map((item, i) => {
+                  const wrap = createWrap(item, item.grow != 0, false, item.grow != 0 ? unshowGrow : 0);
                   if (i == 0)
                     return wrap;
                   
-                  const first = parent.children[i - 1] as Scheme.Item;
-                  const second = parent.children[i] as Scheme.Item;
+                  const first = rowChildren[i - 1] as Scheme.Item;
+                  const second = rowChildren[i] as Scheme.Item;
                   if (first.grow == 0 || second.grow == 0)
                     return wrap;
 
                   return [
-                      this.renderRowSplit('split-'+ (cnt++), first, second),
+                      this.renderRowSplit('split-'+ first.uid, rowChildren, first, second),
                       wrap
                     ];
                 })}
@@ -355,21 +304,20 @@ export class Layout extends React.Component<Props, State> {
     return createWrap(this.state.scheme, false, false);
   }
 
-  private renderColumnSplit(key: string, left: Scheme.Item, right: Scheme.Item) {
-    return (<div key={key} className={classes.columnSplit} onMouseDown={e => this.resizeColumnItems(e, left, right)}/>);
+  private renderColumnSplit(key: string, children: Array<Scheme.Item>, left: Scheme.Item, right: Scheme.Item) {
+    return (<div key={key} className={classes.columnSplit} onMouseDown={e => this.resizeColumnItems(e, children, left, right)}/>);
   }
 
-  private renderRowSplit(key: string, left: Scheme.Item, right: Scheme.Item) {
-    return (<div key={key} className={classes.rowSplit} onMouseDown={e => this.resizeItems(e, left, right)}/>);
+  private renderRowSplit(key: string, children: Array<Scheme.Item>, left: Scheme.Item, right: Scheme.Item) {
+    return (<div key={key} className={classes.rowSplit} onMouseDown={e => this.resizeItems(e, children, left, right)}/>);
   }
 
-  private resizeItems(event, left: Scheme.Item, right: Scheme.Item) {
-    const parent = left['parent'] as Scheme.Children;
-    const sizes = parent.children.map(item => {
-      return [(item['element'] as HTMLElement).clientWidth, item.grow];
+  private resizeItems(event, children: Array<Scheme.Item>, left: Scheme.Item, right: Scheme.Item) {
+    const sizes = children.map(item => {
+      return [(this.state.holderMap[item.uid].element as HTMLElement).clientWidth, item.grow];
     });
 
-    const idx = parent.children.indexOf(left);
+    const idx = children.indexOf(left);
     const leftSize = sizes[idx][0];
     const rightSize = sizes[idx + 1][0];
     startDragging({x: 0, y: 0}, {
@@ -377,20 +325,21 @@ export class Layout extends React.Component<Props, State> {
         sizes[idx][0] = leftSize + e.x;
         sizes[idx + 1][0] = rightSize - e.x;
         updateGrows(sizes);
-        parent.children.forEach((item, i) => item.grow = sizes[i][1]);
-        this.updateSizes();
-        this.forceUpdate();
+        children.forEach((item, i) => item.grow = sizes[i][1]);
+        this.updateSizes(true);
+      },
+      onDragEnd: () => {
+        this.props.onChanged && this.props.onChanged(cloneDeep(this.state.scheme));
       }
     })(event);
   }
 
-  private resizeColumnItems(event, left: Scheme.Item, right: Scheme.Item) {
-    const parent = left['parent'] as Scheme.Children;
-    const sizes = parent.children.map(item => {
-      return [(item['element'] as HTMLElement).clientHeight, item.grow];
+  private resizeColumnItems(event, children: Array<Scheme.Item>, left: Scheme.Item, right: Scheme.Item) {
+    const sizes = children.map(item => {
+      return [(this.state.holderMap[item.uid].element as HTMLElement).clientHeight, item.grow];
     });
 
-    const idx = parent.children.indexOf(left);
+    const idx = children.indexOf(left);
     const leftSize = sizes[idx][0];
     const rightSize = sizes[idx + 1][0];
     startDragging({x: 0, y: 0}, {
@@ -398,73 +347,19 @@ export class Layout extends React.Component<Props, State> {
         sizes[idx][0] = leftSize + e.y;
         sizes[idx + 1][0] = rightSize - e.y;
         updateGrows(sizes);
-        parent.children.forEach((item, i) => item.grow = sizes[i][1]);
-        this.updateSizes();
-        this.forceUpdate();
+        children.forEach((item, i) => item.grow = sizes[i][1]);
+        this.updateSizes(true);
+      },
+      onDragEnd: () => {
+        this.props.onChanged && this.props.onChanged(cloneDeep(this.state.scheme));
       }
     })(event);
-  }
-
-  private getSide(point: Point, hoverElement: HTMLElement) {
-    if (!hoverElement)
-      return '';
-    const bbox = hoverElement.getBoundingClientRect();
-    const x = Math.max(0, point.x - bbox.left) / bbox.width;
-    const y = Math.max(0, point.y - bbox.top) / bbox.height;
-    const bbox2 = (this.refs['root'] as HTMLElement).getBoundingClientRect();
-    const rect = {
-      left: bbox.left - bbox2.left,
-      top: bbox.top - bbox2.top,
-      width: bbox.width,
-      height: bbox.height
-    };
-
-    const block = 1/3;
-    if (x <= block && y >= block && y <= 1 - block) {
-      return 'left';
-    } else if (x >= 1 - block && y >= block && y <= 1 - block) {
-      return 'right';
-    } else if (y < 0.5) {
-      return 'top';
-    }
-    
-    return 'bottom';
-  }
-
-  private renderCursor() {
-    const {hoverElement, side} = this.state;
-    
-    if (!hoverElement)
-      return;
-
-    const bbox = hoverElement.getBoundingClientRect();
-    const bbox2 = (this.refs['root'] as HTMLElement).getBoundingClientRect();
-    const rect = {
-      left: bbox.left - bbox2.left,
-      top: bbox.top - bbox2.top,
-      width: bbox.width,
-      height: bbox.height
-    };
-
-    if (side == 'left') {
-      rect.width = rect.width / 2;
-    } else if (side == 'right') {
-      rect.width = rect.width / 2;
-      rect.left += rect.width;
-    } else if (side == 'top') {
-      rect.height = rect.height / 2;
-    } else if (side == 'bottom') {
-      rect.height = rect.height / 2;
-      rect.top += rect.height;
-    }
-    return <div ref='cursor' className={classes.cursor} style={rect}/>; 
   }
 
   render() {
     return (
       <div ref='root' className={classes.layout}>
         {this.createWrap()}
-        {this.renderCursor()}
       </div>
     );
   }
