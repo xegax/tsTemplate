@@ -25,11 +25,14 @@ import {KeyCode} from 'common/keycode';
 import {CompoundCondition} from 'model/filter-condition';
 import {Layout} from 'controls/layout/layout';
 import * as Scheme from 'controls/layout/Scheme';
+import {Details} from 'examples/details';
 
 interface State {
   listItem?: number;
   view?: GridModel;
   model?: TableSourceModel;
+  details?: TableSourceModel;
+  detailsRow?: number;
   columns?: ColumnsModel;
   appr?: Appearance;
   hoverColumn?: string;
@@ -38,7 +41,6 @@ interface State {
   columnsSource?: TableSourceModel;
   textFilterColumn?: string;
   textFilter?: string;
-  cell?: string;
   scheme?: {root: Scheme.Scheme};
 }
 
@@ -68,12 +70,14 @@ class DataSelector extends React.Component<Props, State> {
       listItem: 5,
       view: new GridModel(),
       filter: new FilterModel(),
-      scheme: {root: this.getScheme(true)}
+      scheme: {root: this.getScheme(true)},
+      detailsRow: -1
     };
 
     this.state.appr = this.createAppearance(this.state.listItem);
     this.state.columns = this.createColumnsModel(this.state.appr, this.state.listItem);
-    this.state.model = this.createModel(this.state.appr, this.state.listItem);
+    this.state.model = this.createModel(this.state.listItem);
+    this.state.details = this.state.model.makeClone();
     
     this.state.model.getPublisher().addSubscriber((mask) => {
       if (!(mask & TableModelEvent.TOTAL))
@@ -99,11 +103,8 @@ class DataSelector extends React.Component<Props, State> {
       if (mask & GridModelEvent.ROWS_RENDER_RANGE && !this.updateStatus.isRunning())
         this.updateStatus.run(1000);
       if (mask & (GridModelEvent.COLUMN_SELECT | GridModelEvent.ROW_SELECT)) {
-        const col = this.state.view.getSelectColumn();
-        const row = this.state.view.getSelectRow();
-        this.setState({
-          cell: this.state.model.getCell(col, row).value
-        });
+        const detailsRow = this.state.view.getSelectRow();
+        this.setState({detailsRow});
       }
     });
 
@@ -142,12 +143,13 @@ class DataSelector extends React.Component<Props, State> {
     });
   }
 
-  createModel(appr: Appearance, item: number): TableSourceModel {
+  createModel(item: number): TableSourceModel {
     let model: TableSourceModel;
 
     const source = this.props.list[item];
     if (source.indexOf('server-') == 0) {
-      model = new JSONServerSourceModel('/handler', 'books');
+      model = new JSONServerSourceModel({srcHandler: '/handler', srcName: 'books'});
+      model.setColumnsAndOrder(['title', 'genre', 'author']);
     } else if (source.indexOf('test-') == 0) {
       const delay = 0;
       let dim = source.split('-')[1].split('x').map(n => +n);
@@ -156,7 +158,7 @@ class DataSelector extends React.Component<Props, State> {
       model = new JSONPartialSourceModel('../data/' + source);
     } else {
       model = JSONSourceModel.loadJSON('../data/' + source);
-      model.setColumnsAndOrder(appr.getArray('columns'));
+      //model.setColumnsAndOrder(appr.getArray('columns'));
     }
 
     return model;
@@ -172,7 +174,7 @@ class DataSelector extends React.Component<Props, State> {
     this.setState({
       appr,
       columns: this.createColumnsModel(appr, this.state.listItem),
-      model: this.createModel(appr, this.state.listItem),
+      model: this.createModel(this.state.listItem),
       scheme: JSON.parse(appr.getString('scheme'))
     });
   };
@@ -370,14 +372,6 @@ class DataSelector extends React.Component<Props, State> {
     );
   }
 
-  renderCell(id: string) {
-    return (
-      <div key={id} style={{flexGrow: 1, overflow: 'auto'}}>
-        {this.state.cell}
-      </div>
-    );
-  }
-
   renderTable(id: string) {
     if (!this.state.model)
       return (<div key={id}>No data to display</div>);
@@ -402,8 +396,10 @@ class DataSelector extends React.Component<Props, State> {
         Scheme.item('reload', 0)
       ).grow(0),
       Scheme.item('status', 0),
-      Scheme.item('cell', 1, textPanel),
-      Scheme.item('table', 10)
+      Scheme.row(
+        Scheme.item('table', 10),
+        Scheme.item('details')
+      )
     ).get();
   }
 
@@ -419,7 +415,7 @@ class DataSelector extends React.Component<Props, State> {
         <button key='reload' onClick={() => this.state.model.reload()}>reload</button>
         {this.renderTable('table')}
         {this.renderStatus('status')}
-        {this.renderCell('cell')}
+        {<Details row={this.state.detailsRow} key='details' model={this.state.details}/>}
       </Layout>
     );
   }

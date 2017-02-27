@@ -91,6 +91,9 @@ export class Table extends React.Component<Props, State> {
       newProps.sourceModel.getPublisher().moveSubscribersFrom(this.props.sourceModel.getPublisher());
     }
 
+    if (newProps.width == this.props.width && newProps.height == this.props.height)
+      return;
+
     viewModel.setWidth(newProps.width);
     viewModel.setHeight(newProps.height);
   }

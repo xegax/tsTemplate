@@ -38,7 +38,9 @@ export const enum TableModelEvent {
   ROWS_SELECTED = 1 << 1,
   TOTAL = 1 << 2,
   SORTING = 1 << 3,
-  FILTERING = 1 << 4
+  FILTERING = 1 << 4,
+  SORTING_FINISHED = 1 << 5,
+  FILTERING_FINISHED = 1 << 6
 }
 
 export interface Cell {
@@ -67,7 +69,7 @@ export interface TableSourceModel {
   // load data
   loadData(range: DataRange): IThenable<any>;
 
-  reload();
+  reload(mask?: number);
 
   // return total rows number and total columns number
   getTotal(): Total;
@@ -95,6 +97,7 @@ export interface TableSourceModel {
   getUniqueValues(col: number): TableSourceModel;
 
   getPublisher(): Publisher;
+  makeClone(): TableSourceModel;
 }
 
 export interface Dimension {
@@ -184,8 +187,8 @@ export class TableSourceModelImpl implements TableSourceModel {
 
   constructor() {
     this.publisher.addSubscriber((mask: number) => {
-      if (mask & (TableModelEvent.SORTING))
-        this.reload();
+      if (mask & (TableModelEvent.SORTING|TableModelEvent.FILTERING))
+        this.reload(mask);
     });
   }
 
@@ -213,24 +216,26 @@ export class TableSourceModelImpl implements TableSourceModel {
     const colsChanged = this.updateDimension(this.columns, range.cols);
     const rowsChanged = this.updateDimension(this.rows, range.rows);
     
-    if (!colsChanged && !rowsChanged)
-      return;
-
     const notify = () => {
       this.publisher.updateVersion(TableModelEvent.ROWS_SELECTED|TableModelEvent.COLUMNS_SELECTED, 1);
     }
 
-    const promise = this._updateCacheImpl(this.columns.buffer, this.rows.buffer);
-    if (promise) {
-      return promise.then(notify);
-    } else {
-      return new Promise(resolve => {
-        notify();
-      });
+    if (!colsChanged && !rowsChanged) {
+      return new Promise((resolve, reject) => {
+        resolve(null);
+      }).then(notify);
     }
+
+    const promise = this._updateCacheImpl(this.columns.buffer, this.rows.buffer);
+    if (promise)
+      return promise.then(notify);
+    
+    return new Promise((resolve, reject) => {
+        resolve(null);
+      }).then(notify);
   }
 
-  reload() {
+  reload(mask: number = 0) {
     this.cache = [];
     //this.columnsCache = [];
     this.rows.buffer = [];
@@ -459,5 +464,9 @@ export class TableSourceModelImpl implements TableSourceModel {
 
   getFiltering(): Filterable {
     return this.filtering;
+  }
+
+  makeClone() {
+    return null;
   }
 }

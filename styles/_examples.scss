@@ -3,6 +3,7 @@
   flex-direction: column;
   
   @include fit-to-parent();
+  overflow: hidden;
 
   &__header {
     flex-grow: 0;

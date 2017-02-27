@@ -17,10 +17,6 @@ let conn = createConnection({host: 'localhost', port: 3306, user: 'root', databa
 conn.connect((err) => {
   if (err) {
     console.log(err);
-  } else {
-    conn.query('select * from books limit 1', (err, rows) => {
-      console.log(Object.keys(rows[0]));
-    });
   }
 });
 
@@ -41,6 +37,17 @@ function getSqlCondition(condition: FilterCondition): string {
     return '(' + catCond.catValues.map(value => (catCond.inverse ? 'not ': '') + `${catCond.column}="${value}"`).join(catCond.inverse ? ' and ' : ' or ') + ')';
   }).join(` ${comp.op} `);
 }
+
+srv.addJsonHandler<{id: string}, Params>('/handler/columns', (params, resolve) => {
+  conn.query(`show columns from ${params.get.id}`, (err, rows: Array<Object>) => {
+    if (!err) {
+      resolve(rows.map(row => [row['Field'], row['Type']]));
+    } else {
+      console.log(err);
+      resolve(err);
+    }
+  });
+});
 
 srv.addJsonHandler<{name: string}, Params>('/handler/table-info', (params, resolve) => {
   let tableId = 'tmpT1';
@@ -68,7 +75,7 @@ srv.addJsonHandler<{name: string}, Params>('/handler/table-info', (params, resol
 
   conn.query(`drop table if exists ${tableId}`, (err) => {
     if (!err) {
-      conn.query(`create table ${tableId} as select * from ${params.get.name} ${where} ${sorting}`, (err) => {
+      conn.query(`create TEMPORARY table ${tableId} as select * from ${params.get.name} ${where} ${sorting}`, (err) => {
         if (!err) {
           conn.query(`select count(*) from ${tableId}`, (err, rows) => {
             if (!err) {
@@ -110,7 +117,12 @@ srv.addJsonHandler<{id: string, start: number, count: number}, Params>('/handler
       limit = 'limit ' + params.get.count;
     }
 
-    let select = `select * from ${params.get.id} ${limit} ${offset}`;
+    let columns = '*';
+    if (params.post.columns && params.post.columns.length) {
+      columns = params.post.columns.join(', ');
+    }
+
+    let select = `select ${columns} from ${params.get.id} ${limit} ${offset}`;
 
     console.log(select);
     conn.query(select, (err, rows) => {
