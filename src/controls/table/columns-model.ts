@@ -1,6 +1,5 @@
 import {Publisher} from 'common/publisher';
 import {assign, isEqual} from 'lodash';
-import {ColumnType} from 'model/table-source-model';
 import {Appearance} from 'common/appearance';
 
 export interface Column {
@@ -9,7 +8,6 @@ export interface Column {
   width?: number;
   label?: string;
   tooltip?: string;
-  type?: ColumnType;
 }
 
 interface ColumnHolder {

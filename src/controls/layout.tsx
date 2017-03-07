@@ -38,7 +38,7 @@ export function RowGroup(props: RowGroupProps) {
 
   const count = React.Children.count(props.children);
   return (
-    <div className={className(classes.rowGroup, align, props.grow && classes.rowGroupGrow)}>
+    <div className={className(classes.rowGroup, align, props.grow && classes.rowGroupGrow)} {...props}>
       {React.Children.map(props.children, (child, n) => {
         return <div style={(n < count - 1) ? style : {}} className={classes.itemWrapper}>{child}</div>;
       })}
@@ -61,10 +61,13 @@ export function ColumnGroup(props: ColumnGroupProps) {
 
   const count = React.Children.count(props.children);
   return (
-    <div className={className(classes.columnGroup, props.grow && classes.columnGroupGrow)}>
-      {React.Children.map(props.children, (child, n) => {
-        return <div style={(n < count - 1) ? style : {}} className={classes.columnItemWrapper}>{child}</div>;
-      })}
+    <div
+      className={className(classes.columnGroup, props.grow && classes.columnGroupGrow)}
+      {...props}
+      style={{marginTop: margin, marginBottom: margin}}>
+        {React.Children.map(props.children, (child, n) => {
+          return <div style={(n < count - 1) ? style : {}} className={classes.columnItemWrapper}>{child}</div>;
+        })}
     </div>
   );
 }

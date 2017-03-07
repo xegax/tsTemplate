@@ -2,13 +2,6 @@
   box-sizing: border-box;
   border: 1px solid gray;
 
-  &__textbox {
-    border: none;
-    outline: none;
-    flex-grow: 1;
-    padding: 4px;
-  }
-
   &.combobox__focus {
     border: 1px solid silver;
   }
@@ -21,6 +14,12 @@
     box-sizing: border-box;
     background-color: white;
   }
+}
+
+.control__textbox.combobox__textbox {
+  flex-grow: 1;
+  border: none;
+  height: $control-height - 2;
 }
 
 .combobox__list.grid_control .grid_render {

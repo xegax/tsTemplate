@@ -57,13 +57,14 @@ class Scrollbar extends React.Component<Props, State> {
   protected onMouseDownButton = (button, e) => {
     let stepVector = (button == 0) ? -1 : 1;
     this.setState({stepVector});
-    startDragging({x: 0, y: 0}, {
+    if (startDragging({x: 0, y: 0}, {
       onDragEnd: () => {
         this.timer.stop();
       }
-    })(e);
-    this.timer.run(500);
-    this.nextStep(stepVector);
+    })(e)) {
+      this.timer.run(500);
+      this.nextStep(stepVector);
+    }
   }
 
   protected nextStep(stepVector?: number) {

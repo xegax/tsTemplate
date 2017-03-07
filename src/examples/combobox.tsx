@@ -2,8 +2,7 @@ import * as ReactDOM from 'react-dom';
 import * as React from 'react'; 
 import {ComboBox} from 'controls/combobox';
 import {getContainer} from 'examples-main/helpers';
-import {JSONPartialSourceModel} from 'model/json-partial-source-model';
-import {JSONSourceModel} from 'model/json-source-model';
+import {JSONTableData} from 'table/json-table-data';
 import {ColumnGroup, RowGroup} from 'controls/layout';
 
 interface Props {
@@ -13,7 +12,19 @@ interface State {
   
 }
 
-let source1 = new JSONPartialSourceModel('../data/part-header.json');
+let source1 = new JSONTableData([
+  ['111'],
+  ['222'],
+  ['333'],
+  ['444'],
+  ['555']
+], ['?']);
+
+let source2 = new JSONTableData([
+  ['item 1'],
+  ['item 2'],
+  ['item 3']
+], ['?']);
 
 class Example extends React.Component<Props, State> {
   comboVals = Array<{value: string, row: number}>();
@@ -25,9 +36,9 @@ class Example extends React.Component<Props, State> {
           <ColumnGroup>
             <div>{JSON.stringify(this.comboVals[0] || '')}</div>
             <ComboBox
-              sourceModel={source1}
+              tableData={source1}
               maxItems={20}
-              sourceRow={3000}
+              sourceRow={3}
               onSelect={(value, row) => {
                 this.comboVals[0] = {value, row};
                 this.forceUpdate();
@@ -37,26 +48,22 @@ class Example extends React.Component<Props, State> {
           <ColumnGroup>
             <div>{JSON.stringify(this.comboVals[1] || '')}</div>
             <ComboBox
-              sourceRow={1000}
-              sourceModel={source1}
+              sourceRow={2}
+              tableData={source1}
               onSelect={(value, row) => {
                 this.comboVals[1] = {value, row};
                 this.forceUpdate();
               }}
             />
             <ComboBox
-              sourceModel={source1}
+              tableData={source1}
             />
-            <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
-              ['item 1'],
-              ['item 2'],
-              ['item 3']
-            ], ['value'])}/>
-            <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
+            <ComboBox style={{display: 'inline-block', width: 100}} tableData={source2}/>
+            <ComboBox style={{display: 'inline-block', width: 100}} tableData={new JSONTableData([
               ['item 1'],
               ['item 2']
             ], ['value'])}/>
-            <ComboBox style={{display: 'inline-block', width: 100}} sourceModel={new JSONSourceModel([
+            <ComboBox style={{display: 'inline-block', width: 100}} tableData={new JSONTableData([
               ['item 1']
             ], ['value'])}/>
           </ColumnGroup>

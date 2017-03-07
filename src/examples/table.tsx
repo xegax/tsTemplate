@@ -3,13 +3,8 @@ import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
 import {GridControl} from 'controls/grid/grid-control';
 import * as d3 from 'd3';
-import {FitToParent} from 'common/fittoparent';
+import {SortDir} from 'common/table';
 import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
-import {DataRange, SortDir, TableSourceModel, TableModelEvent} from 'model/table-source-model';
-import {JSONPartialSourceModel} from 'model/json-partial-source-model';
-import {JSONServerSourceModel} from 'model/json-server-source-model';
-import {JSONSourceModel} from 'model/json-source-model';
-import {TestTableSourceModel,} from 'model/test-table-source-model';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {assign, cloneDeep} from 'lodash';
@@ -18,34 +13,36 @@ import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
 import {Menu} from 'controls/menu';
 import {Timer} from 'common/timer';
 import {Dialog} from 'controls/dialog';
-import {FilterPanel} from 'controls/filter/filter-panel';
 import {FilterModel} from 'controls/filter/filter-model';
 import {ComboBox} from 'controls/combobox';
 import {KeyCode} from 'common/keycode';
-import {CompoundCondition} from 'model/filter-condition';
+import {CompoundCondition, FilterCondition} from 'table/filter-condition';
 import {Layout} from 'controls/layout/layout';
 import * as Scheme from 'controls/layout/Scheme';
 import {Details} from 'examples/details';
+import {TableData} from 'table/table-data';
+import {loadTable} from 'table/server-table-data';
+import {IThenable} from 'promise';
+import {TextBox} from 'controls/textbox';
+import {RowGroup, ColumnGroup} from 'controls/layout';
 
 interface State {
-  listItem?: number;
   view?: GridModel;
-  model?: TableSourceModel;
-  details?: TableSourceModel;
+  table?: TableData;
+  details?: TableData;
   detailsRow?: number;
   columns?: ColumnsModel;
   appr?: Appearance;
   hoverColumn?: string;
   status?: string;
   filter?: FilterModel;
-  columnsSource?: TableSourceModel;
+  columnsSource?: TableData;
   textFilterColumn?: string;
   textFilter?: string;
   scheme?: {root: Scheme.Scheme};
 }
 
 interface Props {
-  list: Array<string>;
 }
 
 const classes = {
@@ -55,11 +52,11 @@ const classes = {
   sorted: 'sorted'
 };
 
-class DataSelector extends React.Component<Props, State> {
+class ExtendedTable extends React.Component<Props, State> {
   private updateStatus = new Timer(() => {
-    let total = this.state.model.getTotal();
+    let total = this.state.table.getInfo();
     let range = this.state.view.getRowsRange();
-    let status = `total rows: ${total.rows}, start row: ${range[0]}`;
+    let status = `total rows: ${total.rowNum}, start row: ${range[0]}`;
     if (this.state.status != status)
       this.setState({status});
   });
@@ -67,36 +64,23 @@ class DataSelector extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      listItem: 5,
       view: new GridModel(),
       filter: new FilterModel(),
-      scheme: {root: this.getScheme(true)},
       detailsRow: -1
     };
 
-    this.state.appr = this.createAppearance(this.state.listItem);
-    this.state.columns = this.createColumnsModel(this.state.appr, this.state.listItem);
-    this.state.model = this.createModel(this.state.listItem);
-    this.state.details = this.state.model.makeClone();
-    
-    this.state.model.getPublisher().addSubscriber((mask) => {
-      if (!(mask & TableModelEvent.TOTAL))
-        return;
+    this.state.appr = new AppearanceFromLocalStorage('table-example/books', {
+      sizes: {},
+      columns: [],
+      scheme: JSON.stringify(this.getScheme())
+    });
+    this.state.columns = new ColumnsModel(null, this.state.appr);
+    this.state.scheme = {root: JSON.parse(this.state.appr.getString('scheme'))};
 
-      if (!this.updateStatus.isRunning())
-        this.updateStatus.run(1000);
-      
-      let total = this.state.model.getTotal();
-      let columns = [];
-      for (let n = 0; n < total.columns; n++) {
-        columns.push(this.state.model.getColumn(n));
-      }
-
-      let json = new JSONSourceModel(columns.map(col => [col.id]), ['name']);
-      if (this.state.columnsSource)
-        json.getPublisher().moveSubscribersFrom(this.state.columnsSource.getPublisher());
-
-      this.setState({columnsSource: json});
+    loadTable('books', null, ['id', 'title', 'genre', 'author']).then(table => {
+      table.getSubtable({columns: []}).then(details => {
+        this.setState({table: table, details, columnsSource: details.getColumns()});
+      });
     });
 
     this.state.view.addSubscriber((mask) => {
@@ -109,15 +93,24 @@ class DataSelector extends React.Component<Props, State> {
     });
 
     this.state.filter.addSubscriber(mask => {
-      this.updateFilter();
+      this.applyFilter();
     });
   }
 
-  updateFilter() {
-    let {textFilter, textFilterColumn, model, filter} = this.state;
-    let filterCond = filter.makeCondition();
+  private applyFilter() {
+    this.state.table.getSubtable({filter: this.getFilterCondition()})
+      .then(table => {
+        table.getSubtable({columns: []}).then(details => {
+          this.setState({table, details});
+        });
+      });
+  }
+
+  getFilterCondition() {
+    let {textFilter, textFilterColumn, table, filter} = this.state;
+    let cond: FilterCondition = filter.makeCondition();
     if (textFilter) {
-      let cond: CompoundCondition = {
+      let compCond: CompoundCondition = {
         condition: [
           {
             textValue: textFilter,
@@ -126,116 +119,42 @@ class DataSelector extends React.Component<Props, State> {
         ],
         op: 'and'
       };
-      if (filterCond)
-        cond.condition.push(filterCond);
-      model.getFiltering().setConditions(cond);
-    } else {
-      model.getFiltering().setConditions(filterCond);
+      if (cond)
+        compCond.condition.push(cond);
+      cond = compCond;
     }
+    return cond;
   }
 
-  createAppearance(item: number): Appearance {
-    const source = this.props.list[item];
-    return new AppearanceFromLocalStorage('table-example/' + source, {
-      sizes: {},
-      columns: [],
-      scheme: JSON.stringify(this.getScheme(true))
+  setSorting(column: string, dir: SortDir) {
+    this.state.table.getSubtable({
+      sort: [{column, dir}],
+      filter: this.getFilterCondition()
+    }).then(table => {
+      table.getSubtable({columns: []}).then(details => {
+        this.setState({table, details});
+      });
     });
-  }
-
-  createModel(item: number): TableSourceModel {
-    let model: TableSourceModel;
-
-    const source = this.props.list[item];
-    if (source.indexOf('server-') == 0) {
-      model = new JSONServerSourceModel({srcHandler: '/handler', srcName: 'books'});
-      model.setColumnsAndOrder(['title', 'genre', 'author']);
-    } else if (source.indexOf('test-') == 0) {
-      const delay = 0;
-      let dim = source.split('-')[1].split('x').map(n => +n);
-      model = new TestTableSourceModel(dim[1], dim[0], delay);
-    } else if (source.indexOf('-header.json') != -1) {
-      model = new JSONPartialSourceModel('../data/' + source);
-    } else {
-      model = JSONSourceModel.loadJSON('../data/' + source);
-      //model.setColumnsAndOrder(appr.getArray('columns'));
-    }
-
-    return model;
-  }
-
-  createColumnsModel(appr: Appearance, item: number): ColumnsModel {
-    const source = this.props.list[item];
-    return new ColumnsModel(null, appr);
-  }
-
-  onDataSelected = () => {
-    const appr = this.createAppearance(this.state.listItem);
-    this.setState({
-      appr,
-      columns: this.createColumnsModel(appr, this.state.listItem),
-      model: this.createModel(this.state.listItem),
-      scheme: JSON.parse(appr.getString('scheme'))
-    });
-  };
-
-  setDataSelect() {
-    let listItem = +(this.refs['select'] as HTMLInputElement).value;
-    this.setState({listItem}, this.onDataSelected);
-  }
-
-  renderDataList(id: string) {
-    return (
-      <select key={id} ref={'select'} onChange={e => this.setDataSelect()} value={'' + this.state.listItem}>
-        {this.props.list.map((item, i) => {
-          return <option key={i} value={'' + i}>{item}</option>;
-        })}
-      </select>
-    );
-  }
-
-  hideColumn(colId: string) {
-    const {model} = this.state;
-    let total = model.getTotal();
-    let order = model.getColumnsAndOrder();
-    if (order.length == 0) {
-      for (let n = 0; n < total.columns; n++) {
-        order.push(model.getColumn(n).id);
-      }
-    }
-    order = order.filter(col => colId != col);
-    model.setColumnsAndOrder(order);
-    this.state.appr.setArray('columns', order);
   }
 
   wrapHeader = (e: JSX.Element, colId: string, colIdx: number) => {
     const column = this.state.columns.getColumn(colId);
     const items = [
       {
-        label: 'hide column',
-        command: () => {
-          this.hideColumn(colId);
-        }
-      }, {
         label: 'show all',
         command: () => {
           this.state.appr.setArray('columns', []);
-          this.state.model.setColumnsAndOrder([]);
+          this.state.table.getSubtable({columns: []}).then(table => this.setState({table: table}));
         }
       }, {
         label: 'sort asc',
         command: () => {
-          this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.asc}]);
+          this.setSorting(colId, SortDir.asc);
         }
       }, {
         label: 'sort desc',
         command: () => {
-          this.state.model.getSorting().setColumns([{column: colId, dir: SortDir.desc}]);
-        }
-      }, {
-        label: 'filter',
-        command: () => {
-          Dialog.showModal(<FilterPanel dataSource={this.state.model} model={this.state.filter}/>);
+          this.setSorting(colId, SortDir.desc);
         }
       }
     ];
@@ -264,7 +183,7 @@ class DataSelector extends React.Component<Props, State> {
       />);
     let iconSort;
 
-    let sort = this.state.model.getSorting();
+    /*let sort = this.state.model.getSorting();
     if (sort) {
       let arr = sort.getColumns().filter(item => item.column == colId);
       if (arr.length && arr[0].dir == SortDir.asc) {
@@ -272,7 +191,7 @@ class DataSelector extends React.Component<Props, State> {
       } else if (arr.length && arr[0].dir == SortDir.desc) {
         iconSort = <i className='fa fa-sort-amount-desc' onMouseDown={onClickBy}/>;
       }
-    }
+    }*/
 
     return (
       <div
@@ -290,13 +209,15 @@ class DataSelector extends React.Component<Props, State> {
   
   showCellContextMenu(x: number, y: number) {
     let columnIdx = this.state.view.getSelectColumn();
-    let cell = this.state.model.getCell(columnIdx, this.state.view.getSelectRow());
-    let column = this.state.model.getColumn(columnIdx);
+    let table = this.state.table;
+    let columns = table.getColumns();
+    let cell = table.getCell(this.state.view.getSelectRow(), columnIdx);
+    let column = columns.getCell(columnIdx, 0);
     const items = [
       {
-        label: `include "${cell.value}"`,
+        label: `include "${cell.text}"`,
         command: () => {
-          this.state.filter.getInclude().addItem(column.id, cell.value);
+          this.state.filter.getInclude().addItem(column.text, cell.text);
         }
       }, {
         label: `include all`,
@@ -305,18 +226,9 @@ class DataSelector extends React.Component<Props, State> {
           this.state.filter.getExclude().clear();
         }
       }, {
-        label: `exclude "${cell.value}"`,
+        label: `exclude "${cell.text}"`,
         command: () => {
-          this.state.filter.getExclude().addItem(column.id, cell.value);
-        }
-      }, {
-        label: 'show/hide text panel',
-        command: () => {
-          const {root} = this.state.scheme;
-          const item = Scheme.find('cell', root as Scheme.Children);
-          item.show = !item.show;
-          
-          this.setState({scheme: {root}});
+          this.state.filter.getExclude().addItem(column.text, cell.text);
         }
       }
     ];
@@ -345,35 +257,37 @@ class DataSelector extends React.Component<Props, State> {
       return;
 
     return (
-        <div>
+        <RowGroup>
           <ComboBox
             style={{display: 'inline-block', width: 100}}
-            sourceModel={this.state.columnsSource}
+            tableData={this.state.columnsSource}
             onSelect={(value, row) => {
               this.setState({textFilterColumn: value});
             }}/>
-            <input defaultValue={this.state.textFilter} onKeyDown={(e) => {
-              if (e.keyCode == KeyCode.Enter) {
-                this.setState({textFilter: (e.target as any as HTMLInputElement).value}, () => {
-                  this.updateFilter();
-                });
-              }
-            }}/>
-        </div>
+            <TextBox defaultValue={this.state.textFilter}
+              onKeyDown={(e) => {
+                if (e.keyCode == KeyCode.Enter) {
+                  this.setState({textFilter: (e.target as any as HTMLInputElement).value}, () => {
+                    this.applyFilter();
+                  });
+                }
+              }}
+            />
+        </RowGroup>
       );
   }
 
   renderStatus(id: string) {
     return (
-      <div key={id}>
+      <ColumnGroup key={id}>
         {this.state.status}
         {this.renderTextFilter()}
-      </div>
+      </ColumnGroup>
     );
   }
 
   renderTable(id: string) {
-    if (!this.state.model)
+    if (!this.state.table)
       return (<div key={id}>No data to display</div>);
 
     return (
@@ -382,19 +296,15 @@ class DataSelector extends React.Component<Props, State> {
             defaultRowHeight={40}
             viewModel={this.state.view}
             columnsModel={this.state.columns}
-            sourceModel={this.state.model}
+            tableData={this.state.table}
             wrapHeader={this.wrapHeader}
             wrapCell={this.wrapCell}
           />
     );
   }
 
-  getScheme(textPanel: boolean) {
+  getScheme() {
     return Scheme.column(
-      Scheme.row(
-        Scheme.item('combobox', 0),
-        Scheme.item('reload', 0)
-      ).grow(0),
       Scheme.item('status', 0),
       Scheme.row(
         Scheme.item('table', 10),
@@ -404,6 +314,9 @@ class DataSelector extends React.Component<Props, State> {
   }
 
   render() {
+    if (!this.state.table || !this.state.details)
+      return <div>no data to display</div>;
+
     return (
       <Layout
         scheme={this.state.scheme}
@@ -411,8 +324,6 @@ class DataSelector extends React.Component<Props, State> {
           this.setState({scheme: {root}});
           this.state.appr.setString('scheme', JSON.stringify(root));
         }}>
-        {this.renderDataList('combobox')}
-        <button key='reload' onClick={() => this.state.model.reload()}>reload</button>
         {this.renderTable('table')}
         {this.renderStatus('status')}
         {<Details row={this.state.detailsRow} key='details' model={this.state.details}/>}
@@ -421,14 +332,4 @@ class DataSelector extends React.Component<Props, State> {
   }
 }
 
-document.body.style.overflow = 'hidden';
-getContainer().style.position = 'relative';
-let list = [
-  'ps-detailed.json',
-  'full.json',
-  'gens.json',
-  'part-header.json',
-  'test-900000x1000',
-  'server-morpho'
-];
-ReactDOM.render(<DataSelector list={list}/>, getContainer());
+ReactDOM.render(<ExtendedTable/>, getContainer());

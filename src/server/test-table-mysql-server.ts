@@ -1,8 +1,8 @@
 import * as http from 'http';
 import {createServer} from './server';
 import {createConnection} from 'mysql';
-import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../model/filter-condition';
-import {SortColumn, SortDir} from '../model/table-source-model';
+import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../table/filter-condition';
+import {SortColumn, SortDir} from '../common/table';
 
 var srv = createServer(8088);
 

@@ -8,8 +8,8 @@ interface Props {
   range?: Array<number>;
   vertical?: boolean;
 
-  onMouseDownThumb?: (e: React.MouseEvent) => void;
-  onMouseDownButton?: (button: number, e: React.MouseEvent) => void;
+  onMouseDownThumb?: (e: React.MouseEvent | React.TouchEvent) => void;
+  onMouseDownButton?: (button: number, e: React.MouseEvent | React.TouchEvent) => void;
 }
 
 interface State {
@@ -59,6 +59,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
     let buttonUp = this.props.buttons ? (
       <div
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
+        onTouchStart={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
         style={buttonStyles}
         className={className(classes.button, classes.up)}
       >
@@ -69,6 +70,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
     let buttonDown = this.props.buttons ? (
       <div
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
+        onTouchStart={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
         style={buttonStyles}
         className={className(classes.button, classes.down)}
       >
@@ -84,6 +86,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
           style={thumbStyles}
           className={classes.thumb}
           onMouseDown={this.props.onMouseDownThumb}
+          onTouchStart={this.props.onMouseDownThumb}
         />
       </div>
     );
@@ -115,6 +118,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         style={buttonStyles}
         className={className(classes.button, classes.left)}
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
+        onTouchStart={e => this.props.onMouseDownButton && this.props.onMouseDownButton(0, e)}
       >
         <i className='fa fa-caret-left' aria-hidden='true'/>
       </div>
@@ -125,6 +129,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
         style={buttonStyles}
         className={className(classes.button, classes.right)}
         onMouseDown={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
+        onTouchStart={e => this.props.onMouseDownButton && this.props.onMouseDownButton(1, e)}
       >
         <i className='fa fa-caret-right' aria-hidden='true'/>
       </div>
@@ -138,6 +143,7 @@ export class ScrollbarRenderer extends React.Component<Props, State> {
           style={thumbStyles}
           className={classes.thumb}
           onMouseDown={this.props.onMouseDownThumb}
+          onTouchStart={this.props.onMouseDownThumb}
         />
       </div>
     );

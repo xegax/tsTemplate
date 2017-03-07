@@ -129,7 +129,7 @@ export class GridControl extends React.Component<Props, State> {
     return {x: event.pageX - rect.left, y: event.pageY - rect.top};
   }
 
-  private onResizeColumn(column: number, event: React.MouseEvent) {
+  private onResizeColumn(column: number, event: React.MouseEvent | React.TouchEvent) {
     const feature = GridModelFeatures.ROWS_HIGHLIGHTABLE;
     const highlightable = this.props.model.hasFeatures(feature);
     let size = this.props.model.getColumnSize(column);
@@ -156,6 +156,7 @@ export class GridControl extends React.Component<Props, State> {
     let resizer = (
       <div
         className={classes.resizeHandle}
+        onTouchStart={e => this.onResizeColumn(column, e)}
         onMouseDown={e => this.onResizeColumn(column, e)}
       />
     );

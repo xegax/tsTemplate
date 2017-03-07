@@ -1,8 +1,8 @@
 import * as React from 'react';
-import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
+import {TableData} from 'table/table-data';
 
 interface Props {
-  model?: TableSourceModel
+  model?: TableData
   row?: number;
   width?: number;
 }
@@ -17,30 +17,24 @@ export class Details extends React.Component<Props, State> {
     this.state = {
       data: []
     };
-
-    props.model.getPublisher().addSubscriber((mask) => {
-      if (mask & TableModelEvent.ROWS_SELECTED) {
-        const data = [];
-
-        const total = this.props.model.getTotal();
-        const model = this.props.model;
-        for (let n = 0; n < total.columns; n++) {
-          const column = model.getColumn(n);
-          const cell = model.getCell(n, this.props.row);
-          data.push({name: column.id, value: cell.value});
-        }
-        this.setState({data});
-      }
-    });
   }
 
   componentWillReceiveProps(props: Props) {
-    if (props.model != this.props.model)
-      props.model.getPublisher().moveSubscribersFrom(this.props.model.getPublisher());
-    if (props.row != this.props.row) {
-      const total = props.model.getTotal();
-      props.model.loadData({rows: [props.row, props.row], cols: [0, total.columns - 1]});
-    }
+    let model = props.model;
+    if (props.row == this.props.row && model == this.props.model)
+      return;
+
+    const info = model.getInfo();
+    model.selectData([props.row, props.row]).then(() => {
+      const data = [];  
+      const columns = model.getColumns();
+      for (let n = 0; n < info.colNum; n++) {
+        const column = columns.getCell(n, 0);
+        const cell = model.getCell(props.row, n);
+        data.push({name: column.text, value: cell.text});
+      }
+      this.setState({data});
+    });
   }
 
   render() {

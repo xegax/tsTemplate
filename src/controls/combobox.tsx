@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {TableSourceModel, TableModelEvent} from 'model/table-source-model';
+import {TableData} from 'table/table-data';
 import {className} from 'common/common';
 import {Table} from 'controls/table/simple-table';
 import {FitToParent} from 'common/fittoparent';
@@ -8,6 +8,7 @@ import {findParentNode} from 'common/dom';
 import {assign} from 'lodash';
 import {GridModel, GridModelFeatures} from 'controls/grid/grid-model';
 import {KeyCode} from 'common/keycode';
+import {TextBox} from 'controls/textbox';
 
 const classes = {
   combobox: 'combobox',
@@ -18,7 +19,7 @@ const classes = {
 };
 
 interface Props {
-  sourceModel: TableSourceModel;
+  tableData: TableData;
   debug?: boolean;
   
   sourceRow?: number;
@@ -42,6 +43,7 @@ interface State {
   popup?: boolean;
   focus?: boolean;
   items?: number;
+  tableData?: TableData;
 }
 
 export class ComboBox extends React.Component<Props, State> {
@@ -56,34 +58,36 @@ export class ComboBox extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    let total = props.sourceModel.getTotal();
     this.state = {
       text: '',
       index: props.sourceRow != null ? props.sourceRow : -1,
       popup: false,
       focus: false,
-      items: total.rows
+      items: 0
     };
-    this.props.sourceModel.getPublisher().addSubscriber(this.watchTotal);
+
+    if (props.tableData) {
+      let info = props.tableData.getInfo();
+      this.state.items = info.rowNum;
+      this.state.tableData = props.tableData;
+      this.updateTable(props.tableData);
+    }
   }
 
-  protected watchTotal = (mask: number) => {
-    let total = this.props.sourceModel.getTotal();
-    if (mask & TableModelEvent.TOTAL && this.state.items != total.rows) {
-      this.setState({items: total.rows});
+  private updateTable(table: TableData) {
+    let info = table.getInfo();
+    if (info.rowNum != this.state.items) {
+      this.setState({items: info.rowNum});
     }
 
-    if (this.props.sourceRow == null)
-       return;
-
-    if (mask & TableModelEvent.TOTAL) {
-      this.props.sourceModel.loadData({
-        rows: [this.props.sourceRow, this.props.sourceRow + this.props.maxItems],
-        cols: [0, 1]
-      }).then(() => {
-        this.setState({text: this.props.sourceModel.getCell(0, this.props.sourceRow).value});
+    let startRow = 0;
+    if (this.props.sourceRow != null)
+      startRow = this.props.sourceRow;
+    
+    table.selectData([startRow, startRow + this.props.maxItems], [0, 0])
+      .then(() => {
+        this.setState({text: table.getCell(startRow, 0).text});
       });
-    }
   }
 
   componentDidMount() {
@@ -94,8 +98,12 @@ export class ComboBox extends React.Component<Props, State> {
       this.input.focus();
   }
 
-  /*componentWillReceiveProps(newProps: Props) {
-  }*/
+  componentWillReceiveProps(newProps: Props) {
+    if (this.state.tableData != newProps.tableData) {
+      this.setState({tableData: newProps.tableData});
+      this.updateTable(newProps.tableData);
+    }
+  }
 
   protected showPopup(show: boolean) {
     this.setState({popup: show});
@@ -105,21 +113,21 @@ export class ComboBox extends React.Component<Props, State> {
     let close = true;
     try {
       if (this.props.onSelect)
-        close = !(this.props.onSelect(this.props.sourceModel.getCell(0, row).value, row) === false);
+        close = !(this.props.onSelect(this.state.tableData.getCell(row, 0).text, row) === false);
     } catch(e) {
       console.log('ComboBox, onSelect', e);
     }
 
     this.showPopup(!close);
-    this.setState({index: row, text: this.props.sourceModel.getCell(0, row).value});
-    
+    this.setState({index: row, text: this.state.tableData.getCell(row, 0).text});
   }
 
   protected renderPopup() {
-    if (!this.state.popup || this.state.items == 0)
+    if (!this.state.tableData || !this.state.popup || this.state.items == 0)
       return null;
 
-    let height = 30 * Math.min(this.state.items, this.props.maxItems) + 2;
+    const rowH = this.node.offsetHeight;
+    let height = rowH * Math.min(this.state.items, this.props.maxItems) + 2;
     return (
       <div
         className={classes.popup}
@@ -139,9 +147,10 @@ export class ComboBox extends React.Component<Props, State> {
             onSelect={this.onSelect}
             className={classes.list}
             header={false}
+            defaultRowHeight={rowH}
             defaultSelectedRow={this.state.index}
             defaultFeatures={GridModelFeatures.ROWS_HIGHLIGHTABLE | GridModelFeatures.ROWS_SELECTABLE}
-            sourceModel={this.props.sourceModel}
+            tableData={this.state.tableData}
           />
         </FitToParent>
       </div>
@@ -197,10 +206,9 @@ export class ComboBox extends React.Component<Props, State> {
         onKeyDown={this.onKeyDown}
       >
         <div style={{display: 'flex'}}>
-          <input
+          <TextBox
             ref={ref => this.input = ref}
             className={classes.textbox}
-            type='text'
             value={this.state.text}
             onClick={e => this.showPopup(true)}
           />

@@ -1,5 +1,5 @@
 import {Publisher} from 'common/publisher';
-import {FilterCondition} from 'model/filter-condition';
+import {FilterCondition} from 'table/filter-condition';
 
 type FilterItemType = 'cat' | 'text';
 export interface FilterItem {

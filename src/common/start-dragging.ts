@@ -5,7 +5,6 @@ interface Params {
   x: number;
   y: number;
   minDist?: number;
-  touch?: boolean;
 }
 
 interface HandlerArgs {
@@ -30,7 +29,10 @@ function getPagePoint(event: MouseEvent | TouchEvent): Point {
   return {x: mouseEvent.pageX, y: mouseEvent.pageY};
 }
 
+let touchDevice = navigator.appVersion.toLocaleLowerCase().indexOf('mobile') != -1;
+let tgtElement: HTMLElement = null;
 export function startDragging(args: Params, handler: DragHandler) {
+  let touch = false;
   let onDragHandler = (event: MouseEvent | TouchEvent) => {
     let {x, y, minDist} = args;
     if (minDist === undefined)
@@ -54,47 +56,55 @@ export function startDragging(args: Params, handler: DragHandler) {
       dragValues.y = yOffs + y;
 
       if (started) {
-        if (!args.touch)
-          event.preventDefault();
+        event.preventDefault();
         handler.onDragging && handler.onDragging({x: dragValues.x, y: dragValues.y, event});
       }
     };
 
     let onMouseUp = (event: MouseEvent) => {
-      if (args.touch) {
-        window.removeEventListener('touchmove', onMouseMove);
-        window.removeEventListener('touchend', onMouseUp);
+      if (touch) {
+        tgtElement.removeEventListener('touchmove', onMouseMove);
+        tgtElement.removeEventListener('touchend', onMouseUp);
       } else {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
       }
+      tgtElement = null;
       
       if (!started)
         return;
 
       handler.onDragEnd && handler.onDragEnd({x: dragValues.x, y: dragValues.y, event});
-      if (!args.touch)
+      if (!touch)
         event.preventDefault();
     };
 
     if (minDist == 0)
       onMouseMove(event);
 
-    if (args.touch) {
-      window.addEventListener('touchmove', onMouseMove);
-      window.addEventListener('touchend', onMouseUp);
+    if (touch) {
+      tgtElement.addEventListener('touchmove', onMouseMove);
+      tgtElement.addEventListener('touchend', onMouseUp);
     } else {
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     }
     
-    if (!args.touch)
-      event.preventDefault();
+    event.preventDefault();
     event.stopPropagation();
   };
 
   return (e: MouseEvent | TouchEvent) => {
-    if (args.touch || isLeftDown(e as MouseEvent))
+    if (touchDevice && e.type == 'mousedown')
+      return false;
+
+    if (tgtElement)
+      return false;
+
+    tgtElement = e.target as HTMLElement;
+    touch = (e as TouchEvent).touches && (e as TouchEvent).touches.length > 0;
+    if (touch || isLeftDown(e as MouseEvent))
       onDragHandler(e);
+    return true;
   };
 }
