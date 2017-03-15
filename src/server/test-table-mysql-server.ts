@@ -3,6 +3,7 @@ import {createServer} from './server';
 import {createConnection} from 'mysql';
 import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../table/filter-condition';
 import {SortColumn, SortDir} from '../common/table';
+import {Table} from './table';
 
 var srv = createServer(8088);
 
@@ -13,12 +14,12 @@ interface Params {
   filter: FilterCondition;
 }
 
-let conn = createConnection({host: 'localhost', port: 3306, user: 'root', database: 'booksdb'});
+/*let conn = createConnection({host: 'localhost', port: 3306, user: 'root', database: 'booksdb'});
 conn.connect((err) => {
   if (err) {
     console.log(err);
   }
-});
+});*/
 
 function getSqlCondition(condition: FilterCondition): string {
   if (condition == null)
@@ -38,7 +39,7 @@ function getSqlCondition(condition: FilterCondition): string {
   }).join(` ${comp.op} `);
 }
 
-srv.addJsonHandler<{id: string}, Params>('/handler/columns', (params, resolve) => {
+/*srv.addJsonHandler<{id: string}, Params>('/handler/columns', (params, resolve) => {
   conn.query(`show columns from ${params.get.id}`, (err, rows: Array<Object>) => {
     if (!err) {
       resolve(rows.map(row => [row['Field'], row['Type']]));
@@ -47,90 +48,77 @@ srv.addJsonHandler<{id: string}, Params>('/handler/columns', (params, resolve) =
       resolve(err);
     }
   });
-});
+});*/
 
-srv.addJsonHandler<{name: string}, Params>('/handler/table-info', (params, resolve) => {
-  let tableId = 'tmpT1';
+// table -> 
+//   t1 -> sort, filter -> t1ready
+//   t2
+//
+
+/*srv.addJsonHandler<{}, {table: string, column: string}>('/handler/table-distinct', (params, resolve) => {
+  const col = params.post.column;
+  const tableId = 'tmpT2';
+  const table = params.post.table;
   const info = {
     rows: 0,
-    columns: [],
+    columns: [col, 'count'],
     id: tableId
   };
-  conn.query(`select * from ${params.get.name} limit 1`, (err, rows) => {
-    if (!err) {
-      info.columns = Object.keys(rows[0]);
-    } else {
-      console.log(err);
-      resolve(err);
-    }
-  });
-
-  let where = getSqlCondition(params.post.filter);
-  if (where != '')
-    where = 'where ' + where;
-
-  let sorting = '';
-  if (params.post.sorting && params.post.sorting.length)
-    sorting = 'order by ' + params.post.sorting.map(k => k.column + ' ' + sortDirToStr(k.dir)).join(', ');
-
   conn.query(`drop table if exists ${tableId}`, (err) => {
-    if (!err) {
-      conn.query(`create TEMPORARY table ${tableId} as select * from ${params.get.name} ${where} ${sorting}`, (err) => {
-        if (!err) {
-          conn.query(`select count(*) from ${tableId}`, (err, rows) => {
-            if (!err) {
-              let row = rows[0]['count(*)'];
-              if (row != null)
-                info.rows = +row;
-              resolve(info);
-            } else {
-              console.log(err);
-              resolve(err);
-            }
-          });
-        } else {
-          console.log(err);
-        }
-      });
-    } else {
-      console.log(err);
-    }
-  });
-});
-
-function sortDirToStr(dir: SortDir) {
-  if (dir == SortDir.asc)
-    return 'asc';
-  else if (dir == SortDir.desc)
-    return 'desc';
-  return '';
-}
-
-srv.addJsonHandler<{id: string, start: number, count: number}, Params>('/handler/table-data', (params, resolve) => {
-    let offset = '';
-    let limit = `limit 10`;
-    if (params.get.start != null) {
-      offset = 'offset ' + params.get.start;
-    }
-
-    if (params.get.count != null) {
-      limit = 'limit ' + params.get.count;
-    }
-
-    let columns = '*';
-    if (params.post.columns && params.post.columns.length) {
-      columns = params.post.columns.join(', ');
-    }
-
-    let select = `select ${columns} from ${params.get.id} ${limit} ${offset}`;
-
-    console.log(select);
-    conn.query(select, (err, rows) => {
+    conn.query(`create TEMPORARY table ${tableId} as select ${col}, count(${col}) as count from ${table} group by ${col} order by count desc`, (err, rows) => {
       if (!err) {
-        resolve(rows.map(row => Object.keys(row).map(key => row[key])));
+        conn.query(`select count(*) as rows from ${tableId}`, (err, rows) => {
+          if (!err) {
+            let rowNum = rows[0]['rows'];
+            if (rowNum != null)
+              info.rows = +rowNum;
+            resolve(info);
+          } else {
+            console.log(err);
+            resolve(err);
+          }
+        });
       } else {
         console.log(err);
         resolve(err);
       }
     });
+  });
+});*/
+
+
+let tableMap: {[name: string]: Table} = {};
+
+srv.addJsonHandler<{name: string, subtable: boolean}, Params>('/handler/table-info', (params, resolve) => {
+  let table = tableMap[params.get.name];
+  
+  if (!table || params.get.subtable) {
+    table = new Table(params.get.name);
+    table.getSubtable(params.post).then(subtable => {
+      tableMap[subtable.getName()] = subtable;
+      resolve({
+        id: subtable.getName(),
+        rows: subtable.getRows(),
+        columns: subtable.getColumns().map(col => col[0])
+      });
+    }).catch(resolve);
+  } else {
+    table.setParams(params.post).then(() => {
+      resolve({
+        id: table.getName(),
+        rows: table.getRows(),
+        columns: table.getColumns().map(col => col[0])
+      });
+    }).catch(resolve);
+  }
+});
+
+srv.addJsonHandler<{id: string, start: number, count: number}, Params>('/handler/table-data', (params, resolve) => {
+  const {id, start, count} = params.get;
+  let table = tableMap[id];
+  
+  table.getData(start, count, params.post.columns)
+    .then(data => {
+      resolve(data);
+    }).catch(resolve);
 });

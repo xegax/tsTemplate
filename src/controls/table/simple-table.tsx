@@ -96,8 +96,11 @@ export class Table extends React.Component<Props, State> {
       this.setState({tableData: newProps.tableData, columnsData: newProps.tableData.getColumns()});
     }
 
-    viewModel.setWidth(newProps.width);
-    viewModel.setHeight(newProps.height);
+    if (newProps.width != this.props.width)
+      viewModel.setWidth(newProps.width);
+    
+    if (newProps.height != this.props.height)
+      viewModel.setHeight(newProps.height);
   }
 
   private updateColumnSizes(tableData: TableData) {

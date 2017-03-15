@@ -65,7 +65,16 @@ class ServerTableData extends CachedTableData {
         }
       }
 
-      if ('sort' in params || 'filter' in params) {
+      if (params.type == 'distinct') {
+        this.requestor.sendData('/handler/table-distinct', {},
+          JSON.stringify({table: this.name, column: params.column})
+        ).then(data => {
+          let srvInfo: TableInfo = JSON.parse(data);
+          let table = new ServerTableData(srvInfo, this.requestor, this.name);
+          table.parent = this;
+          resolve(table);
+        });
+      } else if ('sort' in params || 'filter' in params) {
         this.requestor.sendData('/handler/table-info', {name: this.name}, 
           JSON.stringify({
             filter: params.filter,
@@ -95,7 +104,17 @@ class ServerTableData extends CachedTableData {
       }, JSON.stringify({columns: this.info.columns}))
       .then((data) => {
         data = JSON.parse(data);
-        fillCache(block, range, (row, col, relRow, relCol) => ({text: data[relRow][relCol] || '', raw: data[relRow][relCol]}));
+        fillCache(block, range, (row, col, relRow, relCol) => {
+          let cell = data[relRow][relCol];
+          const raw = cell;
+
+          if (cell == null) {
+            cell = 'null';
+          } else {
+            cell = cell.toString();
+          }
+          return {text: cell, raw}
+        });
       });
   }
 }

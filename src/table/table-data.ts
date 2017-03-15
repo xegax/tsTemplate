@@ -7,6 +7,7 @@ export interface SubtableParams {
   sort?: Array<SortColumn>;
   filter?: FilterCondition;
   type?: 'distinct';
+  column?: string;  // distinct column
 }
 
 export interface TableCell {

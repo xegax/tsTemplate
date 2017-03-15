@@ -31,6 +31,8 @@ export class Details extends React.Component<Props, State> {
       for (let n = 0; n < info.colNum; n++) {
         const column = columns.getCell(n, 0);
         const cell = model.getCell(props.row, n);
+        if (cell.raw == null)
+          continue;
         data.push({name: column.text, value: cell.text});
       }
       this.setState({data});

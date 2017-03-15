@@ -40,6 +40,8 @@ interface State {
   textFilterColumn?: string;
   textFilter?: string;
   scheme?: {root: Scheme.Scheme};
+  distCol?: string;
+  distinct?: TableData;
 }
 
 interface Props {
@@ -79,7 +81,7 @@ class ExtendedTable extends React.Component<Props, State> {
 
     loadTable('books', null, ['id', 'title', 'genre', 'author']).then(table => {
       table.getSubtable({columns: []}).then(details => {
-        this.setState({table: table, details, columnsSource: details.getColumns()});
+        this.setState({table, details, columnsSource: details.getColumns()});
       });
     });
 
@@ -282,6 +284,16 @@ class ExtendedTable extends React.Component<Props, State> {
       <ColumnGroup key={id}>
         {this.state.status}
         {this.renderTextFilter()}
+        <ComboBox
+          textValue={this.state.distCol}
+          tableData={this.state.columnsSource}
+          style={{width: 100}}
+          onSelect={(value, row) => {
+            this.setState({distCol: value});
+            this.state.table.getSubtable({type: 'distinct', column: value}).then(distinct => {
+              this.setState({distinct});
+            });
+        }}/>
       </ColumnGroup>
     );
   }
@@ -303,11 +315,26 @@ class ExtendedTable extends React.Component<Props, State> {
     );
   }
 
+  renderDistinct(id: string) {
+    if (!this.state.distinct)
+      return <div key={id}>No data to display</div>;
+    return (
+      <Table
+        key={id}
+        defaultRowHeight={40}
+        tableData={this.state.distinct}
+      />
+    );
+  }
+
   getScheme() {
     return Scheme.column(
       Scheme.item('status', 0),
       Scheme.row(
-        Scheme.item('table', 10),
+        Scheme.column(
+          Scheme.item('table', 10),
+          Scheme.item('distinct')
+        ).grow(10),
         Scheme.item('details')
       )
     ).get();
@@ -326,6 +353,7 @@ class ExtendedTable extends React.Component<Props, State> {
         }}>
         {this.renderTable('table')}
         {this.renderStatus('status')}
+        {this.renderDistinct('distinct')}
         {<Details row={this.state.detailsRow} key='details' model={this.state.details}/>}
       </Layout>
     );

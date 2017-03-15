@@ -64,6 +64,7 @@
       background-color: silver;
       border: 1px solid gray;
       padding: 5px;
+      overflow: hidden;
     }
     &-cursor {
       position: absolute;
@@ -102,17 +103,17 @@
     &-row-split {
       width: 5px;
       box-sizing: border-box;
-      border-left: 1px solid gray;
+      //border-left: 1px solid gray;
       border-right: 1px solid silver;
       cursor: e-resize;
-      background-color: white;
+      background-color: #e0e0e0;
     }
 
     &-column-split {
       height: 5px;
       box-sizing: border-box;
-      background-color: white;
-      border-top: 1px solid gray;
+      background-color: #e0e0e0;
+      //border-top: 1px solid gray;
       border-bottom: 1px solid silver;
       cursor: n-resize;
     }
