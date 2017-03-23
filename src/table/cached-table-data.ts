@@ -1,4 +1,4 @@
-import {TableData, TableCell, TableInfo, SubtableParams} from 'table/table-data';
+import {TableData, TableCell, TableInfo, TableParams} from 'table/table-data';
 import {clamp} from 'common/common';
 import {CacheBlock, Block} from 'common/cache-block';
 import {IThenable} from 'promise';
@@ -122,7 +122,13 @@ export class CachedTableData implements TableData {
     });
   }
 
-  getSubtable(params?: SubtableParams): IThenable<TableData> {
+  createSubtable(params?: TableParams): IThenable<TableData> {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(null), 1);
+    });
+  }
+
+  setParams(params?: TableParams): IThenable<TableData> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(null), 1);
     });

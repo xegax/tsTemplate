@@ -2,7 +2,7 @@ import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import {Table} from 'controls/table/simple-table';
 import {getContainer} from 'examples-main/helpers';
-import {TableData, TableInfo, TableCell, SubtableParams} from 'table/table-data';
+import {TableData, TableInfo, TableCell, TableParams} from 'table/table-data';
 import {IThenable} from 'promise';
 import {Layout} from 'controls/layout/layout';
 import * as Scheme from 'controls/layout/scheme';

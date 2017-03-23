@@ -26,3 +26,15 @@ export const enum Align {
   Middle,
   Right
 }
+
+let touchDevice: boolean;
+export function isTouchDevice() {
+  if (touchDevice != null)
+    return touchDevice;
+  try {
+    document.createEvent('TouchEvent');
+    touchDevice = true;
+  } catch (e) {
+    touchDevice = false;
+  }
+}

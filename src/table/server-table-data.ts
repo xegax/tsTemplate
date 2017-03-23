@@ -3,7 +3,7 @@ import {
   CachedTableData,
   fillCache
 } from 'table/cached-table-data';
-import {TableData, SubtableParams} from 'table/table-data';
+import {TableData, TableParams} from 'table/table-data';
 import {JSONTableData} from 'table/json-table-data';
 import {IThenable} from 'promise';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
@@ -15,21 +15,23 @@ interface TableInfo {
   id: string;
 }
 
-export function loadTable(table: string, requestor?: Requestor, columns?: Array<string>): IThenable<TableData> {
+interface LoadTableParams {
+  table: string;
+  requestor?: Requestor;
+  params?: TableParams;
+}
+
+export function loadTable(table: string, params?: TableParams, requestor?: Requestor): IThenable<TableData> {
   requestor = requestor || getGlobalRequestor();
   return requestor.sendData('/handler/table-info', {name: table},
     JSON.stringify({})
   ).then(data => {
     let info: TableInfo = JSON.parse(data);
     let origin = new ServerTableData(info, requestor, table);
-    if (!columns)
+    if (!params)
       return origin;
     
-    columns = columns.filter(name => info.columns.indexOf(name) != -1);
-    if (columns.length == 0)
-      return origin;
-
-    return origin.getSubtable({columns});
+    return origin.setParams(params);
   });
 }
 
@@ -48,7 +50,7 @@ class ServerTableData extends CachedTableData {
     this.columns = new JSONTableData(info.columns.map(name => [name]), ['name']);
   }
 
-  getSubtable(params?: SubtableParams): IThenable<TableData> {
+  requestTableData(subtable: boolean, params?: TableParams): IThenable<TableData> {
     return new Promise(resolve => {
       const info = assign({}, this.info);
       if (params.columns) {
@@ -65,17 +67,16 @@ class ServerTableData extends CachedTableData {
         }
       }
 
-      if (params.type == 'distinct') {
-        this.requestor.sendData('/handler/table-distinct', {},
-          JSON.stringify({table: this.name, column: params.column})
+      if (params.distinct) {
+        this.requestor.sendData('/handler/table-info', {name: this.info.id, subtable: subtable ? 1 : 0},
+          JSON.stringify({filter: params.filter, sorting: params.sort, distinct: params.distinct})
         ).then(data => {
           let srvInfo: TableInfo = JSON.parse(data);
           let table = new ServerTableData(srvInfo, this.requestor, this.name);
-          table.parent = this;
           resolve(table);
         });
       } else if ('sort' in params || 'filter' in params) {
-        this.requestor.sendData('/handler/table-info', {name: this.name}, 
+        this.requestor.sendData('/handler/table-info', {name: this.info.id, subtable: subtable ? 1 : 0}, 
           JSON.stringify({
             filter: params.filter,
             sorting: params.sort
@@ -92,6 +93,14 @@ class ServerTableData extends CachedTableData {
         setTimeout(() => resolve(table), 1);
       }
     });
+  }
+
+  createSubtable(params?: TableParams) {
+    return this.requestTableData(true, params);
+  }
+
+  setParams(params?: TableParams) {
+    return this.requestTableData(false, params);
   }
 
   getParent(): TableData {

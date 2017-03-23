@@ -2,12 +2,11 @@ import {SortColumn} from 'common/table';
 import {IThenable} from 'promise';
 import {FilterCondition} from 'table/filter-condition';
 
-export interface SubtableParams {
+export interface TableParams {
   columns?: Array<string>;
   sort?: Array<SortColumn>;
   filter?: FilterCondition;
-  type?: 'distinct';
-  column?: string;  // distinct column
+  distinct?: string;
 }
 
 export interface TableCell {
@@ -22,7 +21,10 @@ export interface TableInfo {
 
 export interface TableData {
   selectData(rows: Array<number>, cols?: Array<number>): IThenable<any>;
-  getSubtable(params?: SubtableParams): IThenable<TableData>;
+  
+  setParams(params?: TableParams): IThenable<TableData>;
+  createSubtable(params?: TableParams): IThenable<TableData>;
+  
   clearCache();
 
   getInfo(): TableInfo;

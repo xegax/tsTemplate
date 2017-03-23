@@ -21,7 +21,7 @@ function getNewId() {
 interface TableParams {
   filter?: FilterCondition;
   sorting?: Array<SortColumn>;
-  type?: 'distinct';
+  distinct?: string;
 }
 
 function getSqlCondition(condition: FilterCondition): string {
@@ -45,13 +45,18 @@ function getSqlCondition(condition: FilterCondition): string {
 type Row = Array<number | string>;
 
 function getSQL(table: string, params: TableParams) {
+  if (params.distinct) {
+    const column = params.distinct;
+    return `select ${column}, count(${column}) as count from ${table} group by ${column} order by count desc`;
+  }
+
   let where = '';
   let order = '';
       
   if (params.filter)
     where = 'where ' + getSqlCondition(params.filter);
 
-  if (params.sorting)
+  if (params.sorting && params.sorting.length)
     order = 'order by ' + params.sorting.map(k => k.column + ' ' + SortDir[k.dir]).join(', ');
   
   return `select * from ${table} ${where} ${order}`;
@@ -71,6 +76,10 @@ export class Table {
     return this.table;
   }
 
+  getParent() {
+    return this.parent;
+  }
+
   setParams(params: TableParams): IThenable<number> {
     if (this.parent == null)
       return new Promise((resolve, reject) => {
@@ -78,12 +87,15 @@ export class Table {
       });
     
     return new Promise((resolve, reject) => {
+      const sql = getSQL(this.parent.table, params);
+      console.log(`drop ${this.table}`);
+      console.log(sql);
       conn.query(`drop table if exists ${this.table}`, (err, rows) => {
         if (err) {
           console.log(err);
           reject(err);
         } else {
-          conn.query(`create temporary table ${this.table} as ` + getSQL(this.parent.table, params), (err) => {
+          conn.query(`create temporary table ${this.table} as ${sql}`, (err) => {
             if (err) {
               console.log(err);
             } else {
@@ -107,7 +119,8 @@ export class Table {
           reject(err);
         } else {
           let table = new Table(newTable);
-          table.parent = this;
+          if (!params.distinct)
+            table.parent = this;
           table.updateInfo().then(num => {
             resolve(table);
           });

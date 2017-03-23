@@ -12,6 +12,7 @@ interface Params {
   columns: Array<string>;
   sorting: Array<SortColumn>;
   filter: FilterCondition;
+  distinct: string;
 }
 
 /*let conn = createConnection({host: 'localhost', port: 3306, user: 'root', database: 'booksdb'});
@@ -86,13 +87,19 @@ function getSqlCondition(condition: FilterCondition): string {
   });
 });*/
 
-
 let tableMap: {[name: string]: Table} = {};
 
-srv.addJsonHandler<{name: string, subtable: boolean}, Params>('/handler/table-info', (params, resolve) => {
+// t1 -> sort -> t2, t3, t4, t5, t6
+// root -> sort -> t2
+// root -> sort -> root
+// books(nonparent) -> sort -> tmp1
+// tmp1 -> sort -> tmp1
+// tmp1 -> distinct -> tmp2(nonparent)
+
+srv.addJsonHandler<{name: string, subtable: number}, Params>('/handler/table-info', (params, resolve) => {
   let table = tableMap[params.get.name];
   
-  if (!table || params.get.subtable) {
+  if (!table || +params.get.subtable || !table.getParent()) {
     table = new Table(params.get.name);
     table.getSubtable(params.post).then(subtable => {
       tableMap[subtable.getName()] = subtable;

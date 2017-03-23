@@ -25,8 +25,10 @@ import {loadTable} from 'table/server-table-data';
 import {IThenable} from 'promise';
 import {TextBox} from 'controls/textbox';
 import {RowGroup, ColumnGroup} from 'controls/layout';
+import {ExtTable, ExtTableModel} from 'controls/table/ext-table';
 
 interface State {
+  model?: ExtTableModel;
   view?: GridModel;
   table?: TableData;
   details?: TableData;
@@ -56,9 +58,9 @@ const classes = {
 
 class ExtendedTable extends React.Component<Props, State> {
   private updateStatus = new Timer(() => {
-    let total = this.state.table.getInfo();
+    let total = this.state.view.getRows();
     let range = this.state.view.getRowsRange();
-    let status = `total rows: ${total.rowNum}, start row: ${range[0]}`;
+    let status = `total rows: ${total}, start row: ${range[0]}`;
     if (this.state.status != status)
       this.setState({status});
   });
@@ -68,7 +70,8 @@ class ExtendedTable extends React.Component<Props, State> {
     this.state = {
       view: new GridModel(),
       filter: new FilterModel(),
-      detailsRow: -1
+      detailsRow: -1,
+      model: new ExtTableModel()
     };
 
     this.state.appr = new AppearanceFromLocalStorage('table-example/books', {
@@ -79,8 +82,8 @@ class ExtendedTable extends React.Component<Props, State> {
     this.state.columns = new ColumnsModel(null, this.state.appr);
     this.state.scheme = {root: JSON.parse(this.state.appr.getString('scheme'))};
 
-    loadTable('books', null, ['id', 'title', 'genre', 'author']).then(table => {
-      table.getSubtable({columns: []}).then(details => {
+    loadTable('books', {columns: ['id', 'title', 'genre', 'author']}).then(table => {
+      table.setParams({columns: []}).then(details => {
         this.setState({table, details, columnsSource: details.getColumns()});
       });
     });
@@ -93,185 +96,25 @@ class ExtendedTable extends React.Component<Props, State> {
         this.setState({detailsRow});
       }
     });
-
-    this.state.filter.addSubscriber(mask => {
-      this.applyFilter();
-    });
-  }
-
-  private applyFilter() {
-    this.state.table.getSubtable({filter: this.getFilterCondition()})
-      .then(table => {
-        table.getSubtable({columns: []}).then(details => {
-          this.setState({table, details});
-        });
-      });
-  }
-
-  getFilterCondition() {
-    let {textFilter, textFilterColumn, table, filter} = this.state;
-    let cond: FilterCondition = filter.makeCondition();
-    if (textFilter) {
-      let compCond: CompoundCondition = {
-        condition: [
-          {
-            textValue: textFilter,
-            column: textFilterColumn
-          }
-        ],
-        op: 'and'
-      };
-      if (cond)
-        compCond.condition.push(cond);
-      cond = compCond;
-    }
-    return cond;
-  }
-
-  setSorting(column: string, dir: SortDir) {
-    this.state.table.getSubtable({
-      sort: [{column, dir}],
-      filter: this.getFilterCondition()
-    }).then(table => {
-      table.getSubtable({columns: []}).then(details => {
-        this.setState({table, details});
-      });
-    });
-  }
-
-  wrapHeader = (e: JSX.Element, colId: string, colIdx: number) => {
-    const column = this.state.columns.getColumn(colId);
-    const items = [
-      {
-        label: 'show all',
-        command: () => {
-          this.state.appr.setArray('columns', []);
-          this.state.table.getSubtable({columns: []}).then(table => this.setState({table: table}));
-        }
-      }, {
-        label: 'sort asc',
-        command: () => {
-          this.setSorting(colId, SortDir.asc);
-        }
-      }, {
-        label: 'sort desc',
-        command: () => {
-          this.setSorting(colId, SortDir.desc);
-        }
-      }
-    ];
-    const onContextMenu = (event: React.MouseEvent) => {
-      event.preventDefault();
-      Menu.showAt({x: event.pageX, y: event.pageY}, <Menu items={items} onShow={(show: boolean) => {
-        this.setState({hoverColumn: !show ? null : colId});
-      }}/>);
-    };
-
-    const onClickBy = (event: React.MouseEvent) => {
-      event.stopPropagation();
-      Menu.showUnder(event.currentTarget as HTMLElement, <Menu items={items} onShow={(show: boolean) => {
-        this.setState({hoverColumn: !show ? null : colId});
-      }}/>);
-    };
-
-    let icon = (
-      <i
-        className='fa fa-bars'
-        onMouseDown={onClickBy}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      />);
-    let iconSort;
-
-    /*let sort = this.state.model.getSorting();
-    if (sort) {
-      let arr = sort.getColumns().filter(item => item.column == colId);
-      if (arr.length && arr[0].dir == SortDir.asc) {
-        iconSort = <i className='fa fa-sort-amount-asc' onMouseDown={onClickBy}/>;
-      } else if (arr.length && arr[0].dir == SortDir.desc) {
-        iconSort = <i className='fa fa-sort-amount-desc' onMouseDown={onClickBy}/>;
-      }
-    }*/
-
-    return (
-      <div
-        className={className(
-          classes.headerWrapper,
-          this.state.hoverColumn == colId && classes.hover,
-          iconSort && classes.sorted)}
-        title={colId}
-        onContextMenu={onContextMenu}>
-          <div className={classes.headerLabel}>{e}</div>
-          {iconSort || icon}
-      </div>
-    );
-  }
-  
-  showCellContextMenu(x: number, y: number) {
-    let columnIdx = this.state.view.getSelectColumn();
-    let table = this.state.table;
-    let columns = table.getColumns();
-    let cell = table.getCell(this.state.view.getSelectRow(), columnIdx);
-    let column = columns.getCell(columnIdx, 0);
-    const items = [
-      {
-        label: `include "${cell.text}"`,
-        command: () => {
-          this.state.filter.getInclude().addItem(column.text, cell.text);
-        }
-      }, {
-        label: `include all`,
-        command: () => {
-          this.state.filter.getInclude().clear();
-          this.state.filter.getExclude().clear();
-        }
-      }, {
-        label: `exclude "${cell.text}"`,
-        command: () => {
-          this.state.filter.getExclude().addItem(column.text, cell.text);
-        }
-      }
-    ];
-    Menu.showAt({x, y}, <Menu items={items}/>);
-  }
-
-  onCellContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const pos = [e.pageX, e.pageY];
-    new Timer(() => this.showCellContextMenu(pos[0], pos[1])).run(1);
-  }
-
-  wrapCell = (e) => {
-    return (
-      <div
-        onContextMenu={this.onCellContextMenu}
-        style={{height: '100%'}}
-      >
-        {e}
-      </div>
-    );
   }
 
   renderTextFilter() {
     if (!this.state.columnsSource)
       return;
 
+    const textFilter = this.state.model.getTextFilter();
     return (
         <RowGroup>
           <ComboBox
             style={{display: 'inline-block', width: 100}}
             tableData={this.state.columnsSource}
             onSelect={(value, row) => {
-              this.setState({textFilterColumn: value});
+              this.state.model.setTextFilter({column: value});
             }}/>
-            <TextBox defaultValue={this.state.textFilter}
+            <TextBox defaultValue={textFilter.text}
               onKeyDown={(e) => {
                 if (e.keyCode == KeyCode.Enter) {
-                  this.setState({textFilter: (e.target as any as HTMLInputElement).value}, () => {
-                    this.applyFilter();
-                  });
+                  this.state.model.setTextFilter({text: (e.target as any as HTMLInputElement).value});
                 }
               }}
             />
@@ -288,29 +131,44 @@ class ExtendedTable extends React.Component<Props, State> {
           textValue={this.state.distCol}
           tableData={this.state.columnsSource}
           style={{width: 100}}
-          onSelect={(value, row) => {
-            this.setState({distCol: value});
-            this.state.table.getSubtable({type: 'distinct', column: value}).then(distinct => {
-              this.setState({distinct});
-            });
+          onSelect={(distinct, row) => {
+            this.setState({distCol: distinct});
+            this.state.table.createSubtable({distinct})
+              .then(distinct => {
+                this.setState({distinct});
+              });
         }}/>
       </ColumnGroup>
     );
   }
 
-  renderTable(id: string) {
-    if (!this.state.table)
-      return (<div key={id}>No data to display</div>);
+  onTableChanged(tableData: TableData) {
+    if (!this.updateStatus.isRunning())
+      this.updateStatus.run(1000);
+    
+    if (this.state.distinct && this.state.distCol) {
+      tableData.createSubtable({distinct: this.state.distCol})
+        .then(distinct => {
+          this.setState({distinct});
+        });
+    }
 
+    tableData.setParams({columns: []}).then(details => {
+      this.setState({details});
+    });
+  }
+
+  renderTable(id: string) {
     return (
-          <Table
+          <ExtTable
             key={id}
-            defaultRowHeight={40}
             viewModel={this.state.view}
-            columnsModel={this.state.columns}
+            columns={this.state.columns}
             tableData={this.state.table}
-            wrapHeader={this.wrapHeader}
-            wrapCell={this.wrapCell}
+            model={this.state.model}
+            onTableChanged={table => this.onTableChanged(table)}
+            //wrapHeader={this.wrapHeader}
+            //wrapCell={this.wrapCell}
           />
     );
   }
@@ -319,9 +177,8 @@ class ExtendedTable extends React.Component<Props, State> {
     if (!this.state.distinct)
       return <div key={id}>No data to display</div>;
     return (
-      <Table
+      <ExtTable
         key={id}
-        defaultRowHeight={40}
         tableData={this.state.distinct}
       />
     );
