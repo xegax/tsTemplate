@@ -1,4 +1,3 @@
-import * as http from 'http';
 import {createServer} from './server';
 import {Database} from 'sqlite3';
 import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../table/filter-condition';

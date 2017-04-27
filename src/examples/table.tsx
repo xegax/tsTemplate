@@ -35,12 +35,8 @@ interface State {
   detailsRow?: number;
   columns?: ColumnsModel;
   appr?: Appearance;
-  hoverColumn?: string;
   status?: string;
-  filter?: FilterModel;
   columnsSource?: TableData;
-  textFilterColumn?: string;
-  textFilter?: string;
   scheme?: {root: Scheme.Scheme};
   distCol?: string;
   distinct?: TableData;
@@ -69,7 +65,6 @@ class ExtendedTable extends React.Component<Props, State> {
     super(props);
     this.state = {
       view: new GridModel(),
-      filter: new FilterModel(),
       detailsRow: -1,
       model: new ExtTableModel()
     };
@@ -160,22 +155,21 @@ class ExtendedTable extends React.Component<Props, State> {
 
   renderTable(id: string) {
     return (
-          <ExtTable
-            key={id}
-            viewModel={this.state.view}
-            columns={this.state.columns}
-            tableData={this.state.table}
-            model={this.state.model}
-            onTableChanged={table => this.onTableChanged(table)}
-            //wrapHeader={this.wrapHeader}
-            //wrapCell={this.wrapCell}
-          />
+      <ExtTable
+        key={id}
+        viewModel={this.state.view}
+        columns={this.state.columns}
+        tableData={this.state.table}
+        model={this.state.model}
+        onTableChanged={table => this.onTableChanged(table)}
+      />
     );
   }
 
   renderDistinct(id: string) {
     if (!this.state.distinct)
       return <div key={id}>No data to display</div>;
+
     return (
       <ExtTable
         key={id}

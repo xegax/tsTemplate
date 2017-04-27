@@ -1,5 +1,7 @@
 import {CachedTableData, Block, fillCache, TableRange} from 'table/cached-table-data';
+import {TableData, TableCell, TableInfo, TableParams} from 'table/table-data';
 import {IThenable} from 'promise';
+import {assign} from 'lodash';
 
 export class JSONTableData extends CachedTableData {
   private data: Array<Array<string>>;
@@ -18,5 +20,67 @@ export class JSONTableData extends CachedTableData {
         resolve({});
       }, 1);
     });
+  }
+}
+
+export class JSONTableData2 implements TableData {
+  private info: TableInfo;
+  private getCellImpl: (row: number, col: number, table: TableData) => TableCell;
+  private columns: TableData;
+  private parent: TableData;
+  private colsArr: Array<string>;
+  private params: TableParams = {};
+
+  constructor(rows: number, cols: Array<string>, getCell: (row, col, table) => TableCell, parent: TableData) {
+    this.info = {
+      rowNum: rows,
+      colNum: cols.length
+    };
+    if (cols != null) {
+      this.colsArr = cols.slice();
+      this.columns = new JSONTableData([cols], null);
+      this.columns.selectData([0, cols.length - 1]);
+    }
+    this.getCellImpl = getCell;
+    this.parent = parent;
+  }
+
+  selectData(rows: Array<number>, cols?: Array<number>) {
+    return this.parent.selectData(rows, cols);
+  }
+  
+  setParams(params?: TableParams) {
+    return this.parent.setParams(params).then(table => {
+      return new JSONTableData2(this.info.rowNum, this.colsArr, this.getCellImpl, table);
+    });
+  }
+
+  createSubtable(params?: TableParams) {
+    return this.parent.createSubtable(params).then(table => {
+      return new JSONTableData2(this.info.rowNum, this.colsArr, this.getCellImpl, table);
+    });
+  }
+  
+  clearCache() {
+    return this.parent.clearCache();
+  }
+
+  getInfo() {
+    return assign({}, this.info);
+  }
+
+  getCell(row: number, col: number): TableCell {
+    return this.getCellImpl(row, col, this.parent);
+  }
+
+  getParent(): TableData {
+    return this.parent.getParent();
+  }
+
+  getColumns(): TableData {
+    return this.columns;
+  }
+
+  remove() {
   }
 }

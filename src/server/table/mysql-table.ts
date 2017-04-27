@@ -1,16 +1,20 @@
-import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../table/filter-condition';
 import {IThenable} from 'promise';
-import {createConnection} from 'mysql';
-import {SortColumn, SortDir} from '../common/table';
+import {createConnection, IConnection} from 'mysql';
+import {SortColumn, SortDir} from '../../common/table';
+import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../../table/filter-condition';
+import {Table} from './table';
 
-let conn = createConnection({host: 'localhost', port: 3306, user: 'root', database: 'booksdb'});
-conn.connect((err) => {
-  if (err) {
-    console.log(err);
-  } else {
-    console.log('connected');
-  }
-});
+let conn: IConnection;
+function connect() {
+  conn = createConnection({host: 'localhost', port: 3306, user: 'root', database: 'booksdb'});
+  conn.connect((err) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('connected');
+    }
+  });
+}
 
 let idCounter = 0;
 function getNewId() {
@@ -47,7 +51,13 @@ type Row = Array<number | string>;
 function getSQL(table: string, params: TableParams) {
   if (params.distinct) {
     const column = params.distinct;
-    return `select ${column}, count(${column}) as count from ${table} group by ${column} order by count desc`;
+    let order = 'count';
+    let dir = 'desc';
+    if (params.sorting && params.sorting.length) {
+      order = params.sorting[0].column;
+      dir = SortDir[params.sorting[0].dir];
+    }
+    return `select ${column}, count(${column}) as count from ${table} group by ${column} order by ${order} ${dir}`;
   }
 
   let where = '';
@@ -62,14 +72,17 @@ function getSQL(table: string, params: TableParams) {
   return `select * from ${table} ${where} ${order}`;
 }
 
-export class Table {
+export class MySQLTableImpl implements Table {
   private table: string;
-  private parent: Table;
+  private parent: MySQLTableImpl;
   private rows: number;
   private columns: Array<Array<string>>;
 
   constructor(table: string) {
     this.table = table;
+
+    if (!conn)
+      connect();
   }
 
   getName() {
@@ -118,7 +131,7 @@ export class Table {
           console.log(err);
           reject(err);
         } else {
-          let table = new Table(newTable);
+          let table = new MySQLTableImpl(newTable);
           if (!params.distinct)
             table.parent = this;
           table.updateInfo().then(num => {
@@ -188,7 +201,7 @@ export class Table {
     });
   }
 
-  updateInfo(): IThenable<any> {
+  private updateInfo(): IThenable<any> {
     return Promise.all([this.updateRows(), this.updateColumns()]);
   }
 

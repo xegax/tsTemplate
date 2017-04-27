@@ -38,3 +38,14 @@ export function isTouchDevice() {
     touchDevice = false;
   }
 }
+
+export function join(arr: Array<any>, separator: any): Array<any> {
+  let res = [];
+  arr.forEach((item, idx) => {
+    if (idx != arr.length - 1)
+      res.push(item, separator);
+    else
+      res.push(item);
+  });
+  return res;
+}
