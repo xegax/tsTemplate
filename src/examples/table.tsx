@@ -29,7 +29,7 @@ import {ExtTable, ExtTableModel} from 'controls/table/ext-table';
 import {
   DimensionMatrix,
   DimensionMatrixModel
-} from 'examples/dimension-matrix';
+} from 'controls/table/dimension-matrix';
 
 interface State {
   model?: ExtTableModel;
