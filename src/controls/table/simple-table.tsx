@@ -8,12 +8,20 @@ const classes = {
   cellWrapper: 'table--cell-wrapper'
 };
 
+export interface WrapCell {
+  element: JSX.Element;
+  column: string;
+  colIdx: number;
+  row: number;
+  table: TableData;
+}
+
 interface Props {
   tableData: TableData;
   viewModel?: GridModel;
   columnsModel?: ColumnsModel;
   wrapHeader?: (header: JSX.Element, colId: string, colIdx: number) => JSX.Element;
-  wrapCell?: (cell: JSX.Element, colId: string, colIdx: number, row: number) => JSX.Element;
+  wrapCell?: (params: WrapCell) => JSX.Element;
 
   header?: boolean;
   className?: string;
@@ -39,7 +47,7 @@ interface State {
 export class Table extends React.Component<Props, State> {
   static defaultProps = {
     wrapHeader: (e: JSX.Element) => e,
-    wrapCell: (e: JSX.Element, colId: string, colIdx: number, row: number) => e
+    wrapCell: (params: WrapCell) => params.element
   };
 
   constructor(props: Props) {
@@ -185,7 +193,13 @@ export class Table extends React.Component<Props, State> {
     }
 
     return {
-      element: this.props.wrapCell(element, column.text, columnIdx, rowIdx)
+      element: this.props.wrapCell({
+        element,
+        column: column.text,
+        colIdx: columnIdx,
+        row: rowIdx,
+        table: tableData
+      })
     };
   }
 

@@ -9,7 +9,7 @@
       "type": "node",
       "request": "launch",
       "name": "Запустить программу",
-      "program": "${workspaceRoot}\\src\\server\\test-table-mysql-server.js",
+      "program": "${workspaceRoot}\\src\\server\\test-table-server.js",
       "outFiles": []
     },
     {

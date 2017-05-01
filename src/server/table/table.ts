@@ -12,6 +12,7 @@ import {
 import {IThenable} from 'promise';
 import {MySQLTableImpl} from './mysql-table';
 import {SQLiteTableImpl} from './sqlite3-table';
+import {PGTableImpl} from './pg-table';
 
 export type Row = Array<number | string>;
 export interface TableParams {
@@ -32,7 +33,8 @@ export interface Table {
 
 const factory = {
   'sqlite': (table: string) => new SQLiteTableImpl(table),
-  'mysql': (table: string) => new MySQLTableImpl(table)
+  'mysql': (table: string) => new MySQLTableImpl(table),
+  'pg': (table: string) => new PGTableImpl(table)
 };
 
 export function getTableMaker(type: string): (table: string) => Table {

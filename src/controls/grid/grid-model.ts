@@ -23,7 +23,8 @@ export enum GridModelFeatures {
   ROWS_ALIGNED        = 1 << 0,
   ROWS_SELECTABLE     = 1 << 1,
   CELLS_SELECTABLE    = 1 << 2,
-  ROWS_HIGHLIGHTABLE  = 1 << 3
+  ROWS_HIGHLIGHTABLE  = 1 << 3,
+  ROWS_MULTI_SELECT   = 1 << 4
 }
 
 export class GridModel extends Publisher {
@@ -52,7 +53,7 @@ export class GridModel extends Publisher {
                                  GridModelFeatures.ROWS_SELECTABLE;
 
   private highlightRow: number = -1;
-  private selectRow: number = -1;
+  private selectRow = Array<number>();
   private selectColumn: number = 0;
 
   constructor(prevModel?: GridModel) {
@@ -344,17 +345,26 @@ export class GridModel extends Publisher {
     row = Math.max(0, row);
     row = Math.min(this.rows - 1, row);
 
-    if (force == false && this.selectRow == row)
+    if (this.selectRow.indexOf(row) == -1) {
+      this.selectRow.push(row);
+    } else if (!force) {
       return false;
+    }
 
-    this.selectRow = row;
     this.scrollToRow(row);
     return true;
   }
 
-  setSelectRow(row: number, force: boolean = false) {
+  setRowSelect(row: number, force: boolean = false) {
     if (this.setSelectRowSilent(row, force))
       this.updateVersion(GridModelEvent.ROW_SELECT, 1);
+  }
+
+  clearRowSelect() {
+    if (this.selectRow.length == 0)
+      return;
+    this.selectRow = [];
+    this.updateVersion(GridModelEvent.ROW_SELECT, 1);
   }
 
   setSelectColumn(column: number, force: boolean = false) {
@@ -393,15 +403,17 @@ export class GridModel extends Publisher {
   }
 
   getSelectRow(): number {
-    return this.selectRow;
+    if (this.selectRow.length == 0)
+      return -1;
+    return this.selectRow[this.selectRow.length - 1];
   }
 
   isRowSelect(row: number): boolean {
-    return this.hasFeatures(GridModelFeatures.ROWS_SELECTABLE | GridModelFeatures.CELLS_SELECTABLE) && row == this.selectRow;
+    return this.hasFeatures(GridModelFeatures.ROWS_SELECTABLE | GridModelFeatures.CELLS_SELECTABLE) && this.selectRow.indexOf(row) != -1;
   }
 
   isCellSelect(column: number, row: number): boolean {
-    return row == this.selectRow && this.selectColumn == column;
+    return this.selectColumn == column && this.selectRow.indexOf(row) != -1;
   }
 
   getSelectColumn(): number {

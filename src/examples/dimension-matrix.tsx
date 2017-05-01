@@ -6,7 +6,7 @@ import * as d3 from 'd3';
 import {SortDir, SortColumn} from 'common/table';
 import {GridModel, GridModelEvent, GridModelFeatures} from 'controls/grid/grid-model';
 import {className, join} from 'common/common';
-import {Table} from 'controls/table/simple-table';
+import {Table, WrapCell} from 'controls/table/simple-table';
 import {assign, cloneDeep} from 'lodash';
 import {ColumnsModel} from 'controls/table/columns-model';
 import {AppearanceFromLocalStorage, Appearance} from 'common/appearance';
@@ -28,7 +28,7 @@ import {RowGroup, ColumnGroup} from 'controls/layout';
 import {ExtTable, ExtTableModel} from 'controls/table/ext-table';
 import {Publisher} from 'common/publisher';
 import {JSONTableData2} from 'table/json-table-data';
-
+import {FitToParent} from 'common/fittoparent';
 
 interface Dimension {
   column: string;
@@ -38,12 +38,13 @@ interface Dimension {
   loading: boolean;
 }
 
-class DimensionMatrixModel extends Publisher {
+export class DimensionMatrixModel extends Publisher {
   static readonly Event = {
     DmTables: 1
   };
 
   private table: TableData;
+  private currTable: TableData;
   private dimensions: Array<Dimension>;
   private order = Array<number>();  // индексы колонок из columns
 
@@ -83,6 +84,10 @@ class DimensionMatrixModel extends Publisher {
     });
   }
 
+  getTable(): TableData {
+    return this.currTable || this.table;
+  }
+
   getColumns(): Array<TableData> {
     return this.dimensions.map(dm => dm.table);
   }
@@ -114,6 +119,7 @@ class DimensionMatrixModel extends Publisher {
           dmIdxs.push(i);
           return table.createSubtable({sort: [dm.sorting], distinct: dm.column})
         });
+        this.currTable = table;
         this.requestDimensions(dmTables, dmIdxs);
       });
     } else {
@@ -134,6 +140,7 @@ class DimensionMatrixModel extends Publisher {
             distinct: dm.column
           })
         });
+        this.currTable = table;
         this.requestDimensions(dmTables, dmIdxs);
       });
     }
@@ -202,13 +209,25 @@ interface Props {
 }
 
 interface State {
+  scheme: {root: Scheme.Scheme};
 }
 
-class DimensionMatrix extends React.Component<Props, State> {
+export class DimensionMatrix extends React.Component<Props, State> {
   constructor(props) {
     super(props);
 
     this.props.model.addSubscriber(this.modelSubscriber);
+    this.state = {
+      scheme: {
+        root: Scheme.column(
+          Scheme.row(
+            Scheme.item('columns', 1)
+          ), Scheme.row(
+            Scheme.item('path', 0)
+          ).grow(0)
+        ).get()
+      }
+    };
   }
 
   modelSubscriber = (mask: number) => {
@@ -224,6 +243,21 @@ class DimensionMatrix extends React.Component<Props, State> {
     if (this.props.model.isLoading(colIdx))
       return [column, ' (', <i style={{display: 'inline-block'}} className='fa fa-spinner fa-spin'/>, ')'];
     return `${column} (${count})`;
+  }
+
+  renderCell(params: WrapCell, colIdx: number) {
+    const {table, row} = params;
+    const selLst = this.props.model.getSelect(colIdx);
+    const select = selLst.indexOf(table.getCell(row, 0).raw) != -1;
+    return (
+      <div style={{height: '100%', backgroundColor: select ? 'lightblue' : null}}
+        onClick={e => {
+          const value = table.getCell(row, 0).raw;
+          const sel = e.ctrlKey ? selLst : [];
+          if (sel.indexOf(value) == -1)
+            this.props.model.setSelect(colIdx, sel.concat([value]));
+        }}>{params.element}</div>
+    );
   }
 
   getColumnMenu(column, idx, table: ExtTableModel) {
@@ -266,7 +300,7 @@ class DimensionMatrix extends React.Component<Props, State> {
     ];
   }
 
-  renderPath() {
+  renderPath(id: string) {
     const model = this.props.model;
     const select = model.getSelectColumnIdx();
     const labels = model.getLabels();
@@ -278,57 +312,72 @@ class DimensionMatrix extends React.Component<Props, State> {
     path = path.concat(
       select.map(idx => {
         let values = model.getColumnSelectValues(idx);
-        return <span onClick={() => model.setSelect(idx, model.getSelect(idx))}>{`${labels[idx]} (${values.length})`}</span>;
+        return (
+          <span onClick={() => model.setSelect(idx, model.getSelect(idx))}>
+            {`${labels[idx]} (${values.length})`}
+          </span>
+        );
       })
     );
 
     return (
-      <div>
+      <div key={id}>
         {join(path, <span> -> </span>)}
       </div>
     );
   }
 
-  render() {
+  renderColumn = (props: React.HTMLProps<any>) => {
+  }
+
+  renderColumns = (props: React.HTMLProps<any>) => {
+    const id = 'columns';
     const columns = this.props.model.getColumns();
     if (!columns || !columns.length)
-      return <div>No data to display</div>;
+      return <div key={id}>No data to display</div>;
 
-    const {width, height} = this.props;
+    const {width, height} = props;
     let left = 0;
     return (
-      <div>
-        <div style={{overflow: 'auto', position: 'relative', width, height}}>
-          {columns.map((column, colIdx) => {
-            let el = <div>?</div>;
+      <div key={id} style={{overflowX: 'auto', overflowY: 'hidden', position: 'relative', width, height}}>
+        {columns.map((column, colIdx) => {
+          let el = <div>?</div>;
 
-            if (column) {
-              const info = column.getInfo();
-              el = (
-                <div style={{left, width: 200, height: 500, position: 'absolute'}}>
+          if (column) {
+            const info = column.getInfo();
+            el = (
+              <div key={'dm-column' + colIdx} style={{left, width: 200, height: '100%', position: 'absolute'}}>
+                <FitToParent>
                   <ExtTable
+                    defaultFeatures={GridModelFeatures.ROWS_HIGHLIGHTABLE|GridModelFeatures.ROWS_ALIGNED}
                     width={200}
-                    height={500}
                     tableData={column}
                     wrapHeader={(header, column) => this.renderHeader(colIdx, column, info.rowNum)}
+                    wrapCell={params => this.renderCell(params, colIdx)}
                     getColumMenu={(column, idx, menu) => this.getColumnMenu(column, colIdx, menu)}
-                    onSelect={(row, table) => this.onSelect(row, colIdx, table)}
                   />
-                </div>
-              );
-            }
-            left += 200;
-            return el;
-          })}
-        </div>
-        {this.renderPath()}
+                </FitToParent>
+              </div>
+            );
+          }
+          left += 200;
+          return el;
+        })}
       </div>
+    );
+  }
+
+  render() {
+    return (
+      <Layout scheme={this.state.scheme}>
+        <this.renderColumns key='columns'/>
+        {this.renderPath('path')}
+      </Layout>
     );
   }
 }
 
-loadTable('books').then(table => {
+/*loadTable('books').then(table => {
   const model = new DimensionMatrixModel(table, ['genre', 'author', 'lang', 'srcLang']);
   ReactDOM.render(<DimensionMatrix width={1000} height={518} model={model}/>, getContainer());
-});
-
+});*/

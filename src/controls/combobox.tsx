@@ -180,7 +180,7 @@ export class ComboBox extends React.Component<Props, State> {
       if (this.state.popup == false) {
         this.showPopup(true);
       } else {
-        this.gridViewModel.setSelectRow(this.gridViewModel.getHighlightRow(), true);
+        this.gridViewModel.setRowSelect(this.gridViewModel.getHighlightRow(), true);
       }
     } else if (keyCode == KeyCode.Escape) {
       this.showPopup(false);

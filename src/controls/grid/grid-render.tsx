@@ -105,11 +105,15 @@ export class GridRender extends React.Component<Props, State> {
           style={style}
           className={cn}
           onClick={e => {
-            this.props.model.setSelectRow(rowIdx, true);
+            if (!e.ctrlKey || !this.props.model.hasFeatures(GridModelFeatures.ROWS_MULTI_SELECT))
+              this.props.model.clearRowSelect();
+            this.props.model.setRowSelect(rowIdx, true);
             this.props.model.setSelectColumn(column, true);
           }}
           onContextMenu={e => {
-            this.props.model.setSelectRow(rowIdx, true);
+            if (!e.ctrlKey || !this.props.model.hasFeatures(GridModelFeatures.ROWS_MULTI_SELECT))
+              this.props.model.clearRowSelect();
+            this.props.model.setRowSelect(rowIdx, true);
             this.props.model.setSelectColumn(column, true);
           }}
           onMouseEnter={e => e.buttons == 0 && this.props.model.setHighlightRow(rowIdx)}
@@ -196,7 +200,7 @@ export class GridRender extends React.Component<Props, State> {
       col++;
     }
     
-    this.props.model.setSelectRow(row);
+    this.props.model.setRowSelect(row);
     this.props.model.setSelectColumn(col);
   }
 

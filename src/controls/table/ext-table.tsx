@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Table} from './simple-table';
+import {Table, WrapCell} from './simple-table';
 import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {TableData, TableParams} from 'table/table-data';
 import {ColumnsModel} from './columns-model';
@@ -22,6 +22,7 @@ const classes = {
 interface Props {
   width?: number;
   height?: number;
+  defaultFeatures?: number;
 
   model?: ExtTableModel;
   tableData: TableData;
@@ -30,7 +31,7 @@ interface Props {
   appr?: Appearance;
   
   wrapHeader?(header: JSX.Element, column: string, colIdx: number);
-  wrapCell?(cell: JSX.Element, column: string, colIdx: number, row: number);
+  wrapCell?(params: WrapCell);
   getColumMenu?(column: string, colIdx: number, model: ExtTableModel): Array<MenuItem>;
   onTableChanged?: (tableData: TableData) => void;
   onSelect?: (row: number, table: TableData) => void;
@@ -159,7 +160,7 @@ export class ExtTableModel extends Publisher {
 export class ExtTable extends React.Component<Props, State> {
   static defaultProps = {
     wrapHeader: (header) => header,
-    wrapCell: (cell) => cell,
+    wrapCell: (params: WrapCell) => params.element,
     getColumMenu: () => null
   };
 
@@ -294,14 +295,14 @@ export class ExtTable extends React.Component<Props, State> {
     );
   }
 
-  protected wrapCell = (cell: JSX.Element, column: string, colIdx: number, row: number) => {
+  protected wrapCell = (params: WrapCell) => {
     const onCellContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
     }
 
     return (
       <div onContextMenu={onCellContextMenu} style={{height: '100%'}}>
-        {this.props.wrapCell(cell, column, colIdx, row)}
+        {this.props.wrapCell(params)}
       </div>
     );
   }
@@ -311,6 +312,7 @@ export class ExtTable extends React.Component<Props, State> {
       <Table
         width={this.props.width}
         height={this.props.height}
+        defaultFeatures={this.props.defaultFeatures}
 
         key={this.props.key}
         defaultRowHeight={40}
@@ -318,8 +320,8 @@ export class ExtTable extends React.Component<Props, State> {
         columnsModel={this.state.columns}
         tableData={this.state.tableData}
         wrapHeader={this.wrapHeader}
-        onSelect={row => this.props.onSelect(row, this.state.tableData)}
-        //wrapCell={this.wrapCell}
+        onSelect={row => this.props.onSelect && this.props.onSelect(row, this.state.tableData)}
+        wrapCell={this.wrapCell}
       />
     );
   }

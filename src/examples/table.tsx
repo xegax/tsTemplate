@@ -26,6 +26,10 @@ import {IThenable} from 'promise';
 import {TextBox} from 'controls/textbox';
 import {RowGroup, ColumnGroup} from 'controls/layout';
 import {ExtTable, ExtTableModel} from 'controls/table/ext-table';
+import {
+  DimensionMatrix,
+  DimensionMatrixModel
+} from 'examples/dimension-matrix';
 
 interface State {
   model?: ExtTableModel;
@@ -40,6 +44,7 @@ interface State {
   scheme?: {root: Scheme.Scheme};
   distCol?: string;
   distinct?: TableData;
+  dm?: DimensionMatrixModel;
 }
 
 interface Props {
@@ -79,7 +84,14 @@ class ExtendedTable extends React.Component<Props, State> {
 
     loadTable('books', {columns: ['id', 'title', 'genre', 'author']}).then(table => {
       table.setParams({columns: []}).then(details => {
-        this.setState({table, details, columnsSource: details.getColumns()});
+        const dm = new DimensionMatrixModel(table, ['genre', 'author', 'lang', 'srcLang']);
+        dm.addSubscriber(this.onDMChanged);
+        this.setState({
+          dm,
+          table,
+          details,
+          columnsSource: details.getColumns()
+        });
       });
     });
 
@@ -91,6 +103,13 @@ class ExtendedTable extends React.Component<Props, State> {
         this.setState({detailsRow});
       }
     });
+  }
+
+  onDMChanged = (mask: number) => {
+    if (mask & DimensionMatrixModel.Event.DmTables) {
+      this.setState({table: this.state.dm.getTable()});
+      this.onTableChanged(this.state.dm.getTable());
+    }
   }
 
   renderTextFilter() {
@@ -122,17 +141,6 @@ class ExtendedTable extends React.Component<Props, State> {
       <ColumnGroup key={id}>
         {this.state.status}
         {this.renderTextFilter()}
-        <ComboBox
-          textValue={this.state.distCol}
-          tableData={this.state.columnsSource}
-          style={{width: 100}}
-          onSelect={(distinct, row) => {
-            this.setState({distCol: distinct});
-            this.state.table.createSubtable({distinct})
-              .then(distinct => {
-                this.setState({distinct});
-              });
-        }}/>
       </ColumnGroup>
     );
   }
@@ -140,13 +148,6 @@ class ExtendedTable extends React.Component<Props, State> {
   onTableChanged(tableData: TableData) {
     if (!this.updateStatus.isRunning())
       this.updateStatus.run(1000);
-    
-    if (this.state.distinct && this.state.distCol) {
-      tableData.createSubtable({distinct: this.state.distCol})
-        .then(distinct => {
-          this.setState({distinct});
-        });
-    }
 
     tableData.setParams({columns: []}).then(details => {
       this.setState({details});
@@ -166,14 +167,13 @@ class ExtendedTable extends React.Component<Props, State> {
     );
   }
 
-  renderDistinct(id: string) {
-    if (!this.state.distinct)
+  renderDM(id: string) {
+    if (!this.state.dm)
       return <div key={id}>No data to display</div>;
-
     return (
-      <ExtTable
+      <DimensionMatrix
         key={id}
-        tableData={this.state.distinct}
+        model={this.state.dm}
       />
     );
   }
@@ -184,7 +184,7 @@ class ExtendedTable extends React.Component<Props, State> {
       Scheme.row(
         Scheme.column(
           Scheme.item('table', 10),
-          Scheme.item('distinct')
+          Scheme.item('dm')
         ).grow(10),
         Scheme.item('details')
       )
@@ -204,8 +204,8 @@ class ExtendedTable extends React.Component<Props, State> {
         }}>
         {this.renderTable('table')}
         {this.renderStatus('status')}
-        {this.renderDistinct('distinct')}
-        {<Details row={this.state.detailsRow} key='details' model={this.state.details}/>}
+        {this.renderDM('dm')}
+        <Details row={this.state.detailsRow} key='details' model={this.state.details}/>
       </Layout>
     );
   }

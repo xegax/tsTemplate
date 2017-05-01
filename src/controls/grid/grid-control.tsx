@@ -206,6 +206,7 @@ export class GridControl extends React.Component<Props, State> {
   }
 
   render() {
+    const headerCellHeight = this.state.header.getCellHeight();
     let cellHeight = this.props.model.getCellHeight();
     let rows = this.props.model.getRows();
 
@@ -221,7 +222,7 @@ export class GridControl extends React.Component<Props, State> {
     const contentWidth = this.props.model.getSummOfSizes();
     let contentFullHeight = cellHeight * rows;
     
-    const panelHeight = (header == false) ? height : height - cellHeight;
+    const panelHeight = (header == false) ? height : height - headerCellHeight;
     if (contentFullHeight <= panelHeight)
       vScroll = false;
 
