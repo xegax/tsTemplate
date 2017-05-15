@@ -53,7 +53,7 @@ module.exports = function(grunt) {
     config.ts.single = {
       options: {
         target: 'es3',
-        module: 'amd',
+        module: 'umd',
         sourceMap: true,
         removeComments: false,
         jsx: 'react',

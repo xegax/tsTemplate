@@ -51,7 +51,7 @@ export class CachedTableData implements TableData {
     this.cache = new CacheBlock({totalRows: rowsNum, totalCols: colsNum});
   }
 
-  selectData(rows: Array<number>, cols?: Array<number>): IThenable<any> {
+  selectData(rows: Array<number>, cols?: Array<number>): Promise<any> {
     const range = {rows, cols: cols || [0, this.colsNum - 1]};
     clampRange(range, this.rowsNum, this.colsNum);
 
@@ -113,7 +113,7 @@ export class CachedTableData implements TableData {
     }
   }
 
-  protected loadCacheRange(block: Block, range: TableRange): IThenable<any> {
+  protected loadCacheRange(block: Block, range: TableRange): Promise<any> {
     return new Promise((resolve) => {
       setTimeout(() => {
         fillCache(block, range, (row, col) => ({text: [row, col].join(':'), raw: null}));
@@ -122,13 +122,13 @@ export class CachedTableData implements TableData {
     });
   }
 
-  createSubtable(params?: TableParams): IThenable<TableData> {
+  createSubtable(params?: TableParams): Promise<TableData> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(null), 1);
     });
   }
 
-  setParams(params?: TableParams): IThenable<TableData> {
+  setParams(params?: TableParams): Promise<TableData> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(null), 1);
     });

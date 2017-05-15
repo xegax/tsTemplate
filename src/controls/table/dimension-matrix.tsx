@@ -65,7 +65,7 @@ export class DimensionMatrixModel extends Publisher {
     this.requestData();
   }
 
-  private requestDimensions(dmTables: Array<IThenable<TableData>>, dmIdx: Array<number>) {
+  private requestDimensions(dmTables: Array<Promise<TableData>>, dmIdx: Array<number>) {
     Promise.all(dmTables).then(tables => {
       tables.forEach((table, idx) => {
         const info = table.getInfo();

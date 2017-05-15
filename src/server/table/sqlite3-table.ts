@@ -69,7 +69,7 @@ function getSQL(table: string, params: TableParams) {
   return `select * from ${table} ${where} ${order}`;
 }
 
-function serializePromise(callback: (resolve, reject) => void): IThenable<any> {
+function serializePromise(callback: (resolve, reject) => void): Promise<any> {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       callback(resolve, reject);
@@ -77,7 +77,7 @@ function serializePromise(callback: (resolve, reject) => void): IThenable<any> {
   });
 }
 
-function wrapPromise(callback: (resolve, reject) => void): IThenable<any> {
+function wrapPromise(callback: (resolve, reject) => void): Promise<any> {
   return new Promise((resolve, reject) => {
     callback(resolve, reject);
   });
@@ -103,7 +103,7 @@ export class SQLiteTableImpl implements Table {
     return this.parent;
   }
 
-  setParams(params: TableParams): IThenable<number> {
+  setParams(params: TableParams): Promise<number> {
     if (this.parent == null)
       return new Promise((resolve, reject) => {
         reject('setParams can be called only for child tables');
@@ -130,7 +130,7 @@ export class SQLiteTableImpl implements Table {
     });
   }
 
-  getSubtable(params: TableParams): IThenable<Table> {
+  getSubtable(params: TableParams): Promise<Table> {
     return new Promise((resolve, reject) => {
       const newTable = getNewId();
       const sql = `create temp table ${newTable} as ` + getSQL(this.table, params);
@@ -152,7 +152,7 @@ export class SQLiteTableImpl implements Table {
     });
   }
 
-  getData(start?: number, count?: number, columnsArr?: Array<string>): IThenable<Array<Row>> {
+  getData(start?: number, count?: number, columnsArr?: Array<string>): Promise<Array<Row>> {
     return serializePromise((resolve, reject) => {
       let offset = '';
       let limit = 'limit 10';
@@ -183,7 +183,7 @@ export class SQLiteTableImpl implements Table {
     });
   }
 
-  private updateRows(): IThenable<number> {
+  private updateRows(): Promise<number> {
     return serializePromise((resolve, reject) => {
       db.get(`select count(*) as count from ${this.table}`, (err, row) => {
         if (!err) {
@@ -199,7 +199,7 @@ export class SQLiteTableImpl implements Table {
     });
   }
 
-  private updateColumns(): IThenable<any> {
+  private updateColumns(): Promise<any> {
     return serializePromise((resolve, reject) => {
       db.all(`pragma table_info(${this.table})`, (err, rows: Array<Object>) => {
         if (!err) {
@@ -213,7 +213,7 @@ export class SQLiteTableImpl implements Table {
     });
   }
 
-  private updateInfo(): IThenable<any> {
+  private updateInfo(): Promise<any> {
     return Promise.all([this.updateRows(), this.updateColumns()]);
   }
 

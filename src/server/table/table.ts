@@ -23,9 +23,9 @@ export interface TableParams {
 
 export interface Table {
   getParent(): Table;
-  setParams(params: TableParams): IThenable<any>;
-  getSubtable(params: TableParams): IThenable<Table>;
-  getData(start?: number, count?: number, columnsArr?: Array<string>): IThenable<Array<Row>>;
+  setParams(params: TableParams): Promise<any>;
+  getSubtable(params: TableParams): Promise<Table>;
+  getData(start?: number, count?: number, columnsArr?: Array<string>): Promise<Array<Row>>;
   getRows(): number;
   getColumns(): Array<Array<string>>;
   getName(): string;

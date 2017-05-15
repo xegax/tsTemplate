@@ -20,10 +20,10 @@ export interface TableInfo {
 }
 
 export interface TableData {
-  selectData(rows: Array<number>, cols?: Array<number>): IThenable<any>;
+  selectData(rows: Array<number>, cols?: Array<number>): Promise<any>;
   
-  setParams(params?: TableParams): IThenable<TableData>;
-  createSubtable(params?: TableParams): IThenable<TableData>;
+  setParams(params?: TableParams): Promise<TableData>;
+  createSubtable(params?: TableParams): Promise<TableData>;
   
   clearCache();
 

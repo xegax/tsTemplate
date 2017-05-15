@@ -8,7 +8,18 @@
   "type": "node",
   "request": "launch",
   "name": "db-scheme",
-  "program": "${workspaceRoot}/src/examples/db-scheme.js"
+  "program": "${workspaceRoot}/src/examples/db-scheme.js",
+  "cwd": "${workspaceRoot}"
+},
+{
+  "type": "node",
+  "request": "launch",
+  "name": "jasmine",
+  "args": [
+    "--config=jasmine-node.json"
+  ],
+  "program": "${workspaceRoot}/node_modules/jasmine/bin/jasmine.js",
+  "cwd": "${workspaceRoot}"
 },
     {
       "type": "node",

@@ -172,6 +172,7 @@ declare module jasmine {
         addCustomEqualityTester(equalityTester: CustomEqualityTester): void;
         addMatchers(matchers: CustomMatcherFactories): void;
         specFilter(spec: Spec): boolean;
+        clearReporters();
     }
 
     interface FakeTimer {

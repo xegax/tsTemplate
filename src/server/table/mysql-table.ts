@@ -93,7 +93,7 @@ export class MySQLTableImpl implements Table {
     return this.parent;
   }
 
-  setParams(params: TableParams): IThenable<number> {
+  setParams(params: TableParams): Promise<number> {
     if (this.parent == null)
       return new Promise((resolve, reject) => {
         reject('setParams can be called only for child tables');
@@ -120,7 +120,7 @@ export class MySQLTableImpl implements Table {
     });
   }
 
-  getSubtable(params: TableParams): IThenable<Table> {
+  getSubtable(params: TableParams): Promise<Table> {
     return new Promise((resolve, reject) => {
       const newTable = getNewId();
       const sql = `create temporary table ${newTable} as ` + getSQL(this.table, params);
@@ -142,7 +142,7 @@ export class MySQLTableImpl implements Table {
     });
   }
 
-  getData(start?: number, count?: number, columnsArr?: Array<string>): IThenable<Array<Row>> {
+  getData(start?: number, count?: number, columnsArr?: Array<string>): Promise<Array<Row>> {
     return new Promise((resolve, reject) => {
       let offset = '';
       let limit = 'limit 10';
@@ -173,7 +173,7 @@ export class MySQLTableImpl implements Table {
     });
   }
 
-  private updateRows(): IThenable<number> {
+  private updateRows(): Promise<number> {
     return new Promise((resolve, reject) => {
       conn.query(`select count(*) as count from ${this.table}`, (err, rows) => {
         if (err) {
@@ -187,7 +187,7 @@ export class MySQLTableImpl implements Table {
     });
   }
 
-  private updateColumns(): IThenable<any> {
+  private updateColumns(): Promise<any> {
     return new Promise((resolve, reject) => {
       conn.query(`show columns from ${this.table}`, (err, rows: Array<Object>) => {
         if (!err) {
@@ -201,7 +201,7 @@ export class MySQLTableImpl implements Table {
     });
   }
 
-  private updateInfo(): IThenable<any> {
+  private updateInfo(): Promise<any> {
     return Promise.all([this.updateRows(), this.updateColumns()]);
   }
 
