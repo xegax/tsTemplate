@@ -1,9 +1,6 @@
 import {Type, ObjScheme} from '../examples/storage/obj-scheme';
 import {
   createScheme,
-  ListImpl,
-  ServerList,
-  ServerObj,
   StorageScheme,
   ObjId,
   ObjItem,
@@ -12,6 +9,7 @@ import {
 import * as fs from 'fs';
 import {Database} from 'sqlite3';
 import {Queue} from '../common/promise';
+import {assign} from 'lodash';
 
 const testScheme: ObjScheme = {
   'DocContainer': {
@@ -22,7 +20,14 @@ const testScheme: ObjScheme = {
   },
   'DocBase': {
     fields: {
-      flag: Type.integer
+      flags: Type.integer
+    }
+  },
+  'DocImage': {
+    extends: 'DocBase',
+    fields: {
+      width: Type.integer,
+      height: Type.integer
     }
   },
   'DocSlides': {
@@ -71,7 +76,6 @@ describe('db-scheme', () => {
   });
 
   describe('work with root ServerList', () => {
-    let root: ServerList;
     let objs = [
       ['DocSlides', {desc: 'title'}],
       ['DocText', {text: 'some text'}],
@@ -90,9 +94,9 @@ describe('db-scheme', () => {
       });
     });
 
-    describe('StorageScheme.createObject, moveObj', () => {
+    describe('StorageScheme.createObject, moveObject', () => {
       let textObj, contObj1, contObj2: number;
-      it('createObject, moveObj', done => {
+      it('createObject, moveObject', done => {
         Queue.all([
           () => scheme.createObject('DocText', {text: 'manual'}).then((obj: ObjItem) => textObj = obj.id),
           () => scheme.createObject('DocContainer', {name: 'cont1'}).then((obj: ObjItem) => contObj1 = obj.id),
@@ -160,12 +164,42 @@ describe('db-scheme', () => {
       });
     });
 
-    /*it('check with objects', done => {
-      const types = ['DocSlides', 'Doc', '', '', ''];
-      root.getObject(3).then(obj => {
-        expect(obj.getType()).toBe('DocSlides');
+    it('create different types of document', done => {
+      const json = [
+        {flags: 101, width: 320, height: 240},
+        {flags: 100, text: 'text document', lines: 88, author: 'xega'},
+        {flags: 200, desc: 'simple slide'}
+      ];
+      const ids = [];
+      Queue.all([
+        () => scheme.createObject('DocImage', json[ids.length]),
+        (obj: ObjItem) => ids.push(obj.id) && scheme.createObject('DocContainer', {name: 'doc img 1', doc: obj.id}),
+        () => scheme.createObject('DocText', json[ids.length]),
+        (obj: ObjItem) => ids.push(obj.id) && scheme.createObject('DocContainer', {name: 'doc text 1', doc: obj.id}),
+        () => scheme.createObject('DocSlides', json[ids.length]),
+        (obj: ObjItem) => ids.push(obj.id) && scheme.createObject('DocContainer', {name: 'slides doc', doc: obj.id}),
+        () => {
+          expect(ids.length).toBe(3);
+          return scheme.getObjects(ids);
+        },
+        (objs: Array<ObjItem>) => {
+          done();
+          expect(objs).toEqual(json.map((obj, i) => assign({id: ids[i]}, obj)));
+        }
+      ]).catch(err => {
+        done();
+        expect(err).toBeNull();
       });
-    });*/
+    });
+
+    it('createObject with invalid json', done => {
+      Queue.all([
+        () => scheme.createObject('DocImage', {x: 5, y: 100})
+      ]).catch(err => {
+        done();
+        expect(err).toEqual('key=x is not defined');
+      });
+    });
   });
 
   afterAll(() => {
