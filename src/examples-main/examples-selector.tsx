@@ -19,7 +19,14 @@ document.body.appendChild(cont);
 let container = document.createElement('div');
 container.className = 'examples__container';
 container.id = 'container';
-cont.appendChild(container);
+
+let padding = document.createElement('div');
+padding.style.padding = '10px';
+padding.style.flexGrow = '1';
+padding.style.display = 'flex';
+padding.appendChild(container);
+
+cont.appendChild(padding);
 
 function getFolders(examples: string[]) {
   let pathsMap = {};

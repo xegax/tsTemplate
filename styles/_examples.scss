@@ -28,8 +28,8 @@
   }
 
   &__container {
+    box-sizing: border-box !important;
     flex-grow: 1;
     display: flex;
-    padding: 10px;
   }
 }

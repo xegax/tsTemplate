@@ -206,7 +206,7 @@ export class GridControl extends React.Component<Props, State> {
   }
 
   render() {
-    const headerCellHeight = this.state.header.getCellHeight();
+    const headerCellHeight = this.state.header ? this.state.header.getCellHeight() : 0;
     let cellHeight = this.props.model.getCellHeight();
     let rows = this.props.model.getRows();
 

@@ -102,7 +102,7 @@ xdescribe('sqlite3', () => {
 
     it('get 3 rows one by one', done => {
       let count = 0;
-      db.addToQueue(() => Queue.all([
+      db.addToQueue(() => Queue.all(
         () => {
           count++;
           return db.get(OBJ_TABLE, {keys: ['id'], cond: {id: 500}});
@@ -117,7 +117,7 @@ xdescribe('sqlite3', () => {
           expect(row.id).toBe(500 - 50);
           return null;
         }
-      ]));
+      ));
       db.addToQueue(() => done());
     });
 

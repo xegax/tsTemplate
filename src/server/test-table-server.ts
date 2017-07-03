@@ -1,11 +1,10 @@
-import * as http from 'http';
 import {createServer} from './server';
 import {FilterCondition} from '../table/filter-condition';
 import {SortColumn} from '../common/table';
 import {getTableMaker, Table} from './table/table';
 
 var srv = createServer(8088);
-const makeTable = getTableMaker('sqlite');
+const makeTable = getTableMaker('mysql');
 
 interface Params {
   columns: Array<string>;

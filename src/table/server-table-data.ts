@@ -5,7 +5,6 @@ import {
 } from 'table/cached-table-data';
 import {TableData, TableParams} from 'table/table-data';
 import {JSONTableData} from 'table/json-table-data';
-import {IThenable} from 'promise';
 import {Requestor, getGlobalRequestor} from 'requestor/requestor';
 import {assign} from 'lodash';
 
@@ -21,7 +20,7 @@ interface LoadTableParams {
   params?: TableParams;
 }
 
-export function loadTable(table: string, params?: TableParams, requestor?: Requestor): IThenable<TableData> {
+export function loadTable(table: string, params?: TableParams, requestor?: Requestor): Promise<TableData> {
   requestor = requestor || getGlobalRequestor();
   return requestor.sendData('/handler/table-info', {name: table},
     JSON.stringify({})
@@ -50,7 +49,7 @@ class ServerTableData extends CachedTableData {
     this.columns = new JSONTableData(info.columns.map(name => [name]), ['name']);
   }
 
-  requestTableData(subtable: boolean, params?: TableParams): IThenable<TableData> {
+  requestTableData(subtable: boolean, params?: TableParams): Promise<TableData> {
     return new Promise(resolve => {
       const info = assign({}, this.info);
       if (params.columns) {
@@ -107,7 +106,7 @@ class ServerTableData extends CachedTableData {
     return this.parent;
   }
 
-  protected loadCacheRange(block, range: TableRange): IThenable<any> {
+  protected loadCacheRange(block, range: TableRange): Promise<any> {
     return this.requestor.sendData('/handler/table-data', {
         id: this.info.id, start: range.rows[0], count: (range.rows[1] - range.rows[0]) + 1
       }, JSON.stringify({columns: this.info.columns}))

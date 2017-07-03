@@ -14,7 +14,8 @@ requirejs.config({
       'lodash': '../vendor/lodash/lodash',
       'react': '../vendor/react/react',
       'react-dom': '../vendor/react/react-dom',
-      'react-dom/server': '../vendor/react/react-dom-server'
+      'react-dom/server': '../vendor/react/react-dom-server',
+      'promise': '../vendor/bluebird.min'
     },
 
     // ask Require.js to load these files (all our tests)

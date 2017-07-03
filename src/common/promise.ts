@@ -4,15 +4,32 @@ export class Queue {
   private task: Promise<any>;
   private size: number = 0;
 
-  static all(arr: Array<(data?) => any>): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let queue: Promise<any> = arr[0]();
+  static lastResult<T>(...arr: Array<(data?) => any>): Promise<T> {
+    return Queue.all(...arr).then(arr => arr[arr.length - 1]);
+  }
 
+  static all(...arr: Array<(data?) => any>): Promise<Array<any>> {
+    arr = arr.filter(item => item != null);
+    if (!arr.length)
+      return Promise.resolve(arr);
+
+    return new Promise((resolve, reject) => {
+      let queue: Promise<any> = new Promise((resolve, reject) => resolve(arr[0]()));
+
+      let dataArr = [];
       for (let n = 1; n < arr.length; n++) {
-        queue = queue.then(arr[n]);
+        queue = queue.then((data) => {
+          dataArr.push(data);
+          return arr[n](data);
+        });
       }
 
-      queue.then(resolve).catch(reject);
+      queue.then((data) => {
+        dataArr.push(data);
+        resolve(dataArr);
+      }).catch(data => {
+        reject(data);
+      });
     });
   }
 
@@ -52,4 +69,10 @@ export class Queue {
   getSize() {
     return this.size;
   }
+}
+
+export function timeout(msTime: number): Promise<any> {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, msTime);
+  });
 }
