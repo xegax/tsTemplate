@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {DocText, DocList} from 'serialize/document';
+import {DocText, DocList, DocImage, DocBase, register} from 'serialize/document';
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
@@ -15,7 +15,7 @@ interface Props {
 }
 
 interface State {
-  editItem?: DocText;
+  editItem?: DocBase;
   editText?: string;
 }
 
@@ -25,7 +25,23 @@ class DocListView extends React.Component<Props, State> {
     this.state = {};
   }
 
-  private renderItem(item: DocText) {
+  private renderDocText(item: DocText) {
+    return 'doc text';
+  }
+
+  private renderDocImage(item: DocImage) {
+    return 'doc image';
+  }
+
+  private renderDoc(item: DocBase) {
+    if (item instanceof DocText)
+      return this.renderDocText(item);
+    else if (item instanceof DocImage)
+      return this.renderDocImage(item);
+    return 'unknown doc'; 
+  }
+
+  private renderItem(item: DocBase) {
     return (
       <div key={'doc-'+item.getId()} style={{border: '1px solid gray', margin: 2}}>
         <div style={{backgroundColor: 'silver', padding: 2, display: 'flex'}}>
@@ -41,6 +57,7 @@ class DocListView extends React.Component<Props, State> {
         </div>
         {this.renderField(item, 'name', item.setName, item.getName)}
         {this.renderField(item, 'desc', item.setDescr, item.getDescr)}
+        {this.renderDoc(item)}
       </div>
     );
   }
@@ -48,7 +65,7 @@ class DocListView extends React.Component<Props, State> {
   private editor: HTMLInputElement;
   private onInputRef = (e: HTMLInputElement) => this.editor = e;
 
-  private renderField(item: DocText, type: string, set: (text: string) => void, get: () => string): JSX.Element {
+  private renderField(item: DocBase, type: string, set: (text: string) => void, get: () => string): JSX.Element {
     const onEnter = (e: React.FocusEvent | React.KeyboardEvent) => {
       set.call(item, (e.currentTarget as HTMLInputElement).value);
       this.setState({editText: null});
@@ -79,8 +96,8 @@ class DocListView extends React.Component<Props, State> {
     );
   }
 
-  private createDoc = () => {
-    db.makeObject<DocText>('DocText').then(doc => {
+  private createDoc = (type: string) => {
+    db.makeObject<DocBase>(type).then(doc => {
       this.props.model.getList().append(doc);
       this.setState({});
     });
@@ -92,10 +109,16 @@ class DocListView extends React.Component<Props, State> {
       <div style={{overflow: 'auto'}}>
         {items.map(item => this.renderItem(item))}
         <div
-          onClick={() => this.createDoc()}
-          style={{cursor: 'pointer'}}
+          onClick={() => this.createDoc('DocText')}
+          style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
         >
-          +doc
+          +text doc
+        </div>
+        <div
+          onClick={() => this.createDoc('DocImage')}
+          style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
+        >
+          +image doc
         </div>
       </div>
     );
@@ -103,9 +126,8 @@ class DocListView extends React.Component<Props, State> {
 }
 
 const factory = new ObjectFactory();
-factory.register(ListObj);
-factory.register(DocList);
-factory.register(DocText);
+register(factory);
+
 const req = createRequestor('/handler');
 const store = new RemoteObjectStore(req);
 const db = new Serializer(factory, store);

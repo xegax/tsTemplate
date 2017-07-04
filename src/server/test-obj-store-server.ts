@@ -3,15 +3,13 @@ import {ObjectStore} from '../serialize/object-store';
 import {SQLObjectStore} from '../serialize/sql-object-store';
 import {ObjectFactory} from '../serialize/object-factory';
 import {ListObj} from '../serialize/list-obj';
-import {DocText, DocList} from '../serialize/document';
+import {DocText, DocList, register} from '../serialize/document';
 import {Database} from 'sqlite3';
 
 const srv = createServer(8088);
 
 let factory = new ObjectFactory();
-factory.register(DocText);
-factory.register(DocList);
-factory.register(ListObj);
+register(factory);
 
 let store: ObjectStore;
 const db = new Database('data/obj-store.db', (err) => err && console.log(err));

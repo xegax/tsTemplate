@@ -25,12 +25,12 @@ class ObjContextImpl implements ObjContext {
     objs.forEach(obj => {
       const idx = this.dirtyObjsOrder.arr['findIndex'](item => item.id == obj.getId());
       const item = this.dirtyObjsOrder.arr[idx];
-      if (item && obj.getVersion() != item.version) {
+      if (item && obj.getImpl().getVersion() != item.version) {
         this.dirtyObjsOrder.arr.splice(idx, 1);
       } else if (item)
         return;
 
-      this.dirtyObjsOrder.arr.push({id: obj.getId(), version: obj.getVersion()});
+      this.dirtyObjsOrder.arr.push({id: obj.getId(), version: obj.getImpl().getVersion()});
     });
 
     if (this.dirtyObjsOrder.arr.length > MAX_DIRTY_OBJ_ORDER)
@@ -67,13 +67,13 @@ export class Serializer {
 
   private newObject(desc: ObjDesc, args?: Array<any>): ObjID {
     const obj = desc.make<ObjID>(...args);
-    obj.initObject({ctx: this.objCtxImpl});
+    obj.getImpl().initObject({ctx: this.objCtxImpl});
     return obj;
   }
 
   saveObjects(objs: Array<ObjID>) {
     objs.forEach(obj => {
-      const desc = obj.getObjDesc();
+      const desc = obj.getImpl().getObjDesc();
       if (desc.classId == this.listObjName) {
         const arr = ListObj.wrap(obj).getArray().map(item => item.getId());
         console.log('save array', obj.getId(), arr);
@@ -130,7 +130,7 @@ export class Serializer {
             }
           });
         }
-        obj.initObject({id});
+        obj.getImpl().initObject({id});
         return obj;
       };
       return load(id) as any;
@@ -147,9 +147,9 @@ export class Serializer {
     const fillMap = (obj: ObjID) => {
       const id = '' + (++idCounter);
       id2Obj[id] = obj;
-      id2Json[id] = {json: obj.getJSON(), type: obj.getClassName()};
+      id2Json[id] = {json: obj.getImpl().getJSON(), type: obj.getImpl().getClassName()};
 
-      const desc = obj.getObjDesc();
+      const desc = obj.getImpl().getObjDesc();
       Object.keys(desc.objects).forEach(key => {
         const type = desc.objects[key];
         if (['number', 'string'].indexOf(type) == -1) {
@@ -162,7 +162,7 @@ export class Serializer {
     fillMap(obj);
     return this.store.createObjects(id2Json).then(map => {
       Object.keys(map).forEach(id => {
-        id2Obj[id].initObject({id: map[id], ctx: this.objCtxImpl});
+        id2Obj[id].getImpl().initObject({id: map[id], ctx: this.objCtxImpl});
       });
     });
   }

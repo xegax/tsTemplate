@@ -14,7 +14,7 @@ export class ListObj<T extends ObjID> extends ObjID {
   }
 
   static wrap<T extends ObjID>(obj: ObjID): ListObj<T> {
-    if (obj.getClassName() != 'ListObj')
+    if (obj.getImpl().getClassName() != 'ListObj')
       throw `invalid ListObj`;
     return obj as ListObj<T>;
   }

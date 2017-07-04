@@ -10,32 +10,35 @@ interface ObjData {
   ctx?: ObjContext;
 }
 
-export class ObjID {
-  private __obj: ObjData = {
-    id: '',
-    version: 0,
-    ctx: null
-  };
+class ObjIDImpl {
+  private obj: ObjID;
+  private id: string = '';
+  private version = 0;
+  private ctx: ObjContext;
+
+  constructor(obj: ObjID) {
+    this.obj = obj;
+  }
 
   getId() {
-    return this.__obj.id;
+    return this.id;
   }
 
   getVersion() {
-    return this.__obj.version;
+    return this.version;
   }
 
   initObject(data: ObjData) {
-    this.__obj.id = this.__obj.id || data.id;
-    this.__obj.ctx = this.__obj.ctx || data.ctx;
+    this.id = this.id || data.id;
+    this.ctx = this.ctx || data.ctx;
   }
 
   getObjDesc(): ObjDesc {
-    return this['__proto__'].constructor['getDesc']();
+    return this.obj['__proto__'].constructor['getDesc']();
   }
 
   getClassName(): string {
-    return this['__proto__'].constructor['name'];
+    return this.obj['__proto__'].constructor['name'];
   }
 
   getJSON(): Object {
@@ -43,15 +46,31 @@ export class ObjID {
     const desc = this.getObjDesc();
     Object.keys(desc.objects).forEach(key => {
       if (['string', 'number'].indexOf(desc.objects[key]) != -1)
-        json[key] = this[key];
+        json[key] = this.obj[key];
     });
 
     return json;
   }
 
   modified() {
-    this.__obj.version++;
-    this.__obj.ctx && this.__obj.ctx.modified(this);
+    this.version++;
+    this.ctx && this.ctx.modified(this.obj);
+  }
+}
+
+export class ObjID {
+  private impl = new ObjIDImpl(this);
+
+  getId() {
+    return this.impl.getId();
+  }
+
+  modified() {
+    return this.impl.modified();
+  }
+
+  getImpl() {
+    return this.impl;
   }
 }
 
