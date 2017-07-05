@@ -41,7 +41,7 @@ class DocListView extends React.Component<Props, State> {
     return 'unknown doc'; 
   }
 
-  private renderItem(item: DocBase) {
+  private renderItem(item: DocBase, idx: number) {
     return (
       <div key={'doc-'+item.getId()} style={{border: '1px solid gray', margin: 2}}>
         <div style={{backgroundColor: 'silver', padding: 2, display: 'flex'}}>
@@ -50,8 +50,9 @@ class DocListView extends React.Component<Props, State> {
             style={{cursor: 'pointer'}}
             className={'fa fa-remove'}
             onClick={() => {
-              this.props.model.getList().remove(item);
-              this.setState({});
+              this.props.model.getList().remove(idx).then(()=> {
+                this.setState({});
+              });
             }}
           />
         </div>
@@ -98,8 +99,9 @@ class DocListView extends React.Component<Props, State> {
 
   private createDoc = (type: string) => {
     db.makeObject<DocBase>(type).then(doc => {
-      this.props.model.getList().append(doc);
-      this.setState({});
+      this.props.model.getList().append(doc).then(() => {
+        this.setState({});
+      });
     });
   }
 
@@ -107,7 +109,6 @@ class DocListView extends React.Component<Props, State> {
     const items = this.props.model.getList().getArray();
     return (
       <div style={{overflow: 'auto'}}>
-        {items.map(item => this.renderItem(item))}
         <div
           onClick={() => this.createDoc('DocText')}
           style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
@@ -120,6 +121,7 @@ class DocListView extends React.Component<Props, State> {
         >
           +image doc
         </div>
+        {items.map((item, idx) => this.renderItem(item, idx))}
       </div>
     );
   }

@@ -20,16 +20,15 @@ export class ListObj<T extends ObjID> extends ObjID {
   }
 
   append(item: T) {
-    this.arr.push(item);
-    this.modified();
+    return this.getImpl().appendToList(this.getId(), item.getId()).then(() => {
+      this.arr.push(item);
+    });
   }
 
-  remove(item: T) {
-    const i = this.arr.indexOf(item);
-    if (i != -1) {
-      this.arr.splice(i, 1);
-      this.modified();
-    }
+  remove(idx: number) {
+    return this.getImpl().removeFromList(this.getId(), idx).then(() => {
+      this.arr.splice(idx, 1);
+    });
   }
 
   getArray(): Array<T> {

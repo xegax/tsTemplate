@@ -8,7 +8,8 @@ interface GetParams {
   condOp?: 'OR' | 'AND';
 }
 
-function makeWhereCond(cond: Object, op: string) {
+function makeWhereCond(cond: Object, op: string, wrapFunc?: (val) => string) {
+  wrapFunc = wrapFunc || ((val) => {if (val == null) return 'null'; return `"${val}"`;});
   let condKeys = Object.keys(cond);
   if (!condKeys.length)
     return '';
@@ -16,9 +17,9 @@ function makeWhereCond(cond: Object, op: string) {
   return condKeys.map(key => {
     const condVal = cond[key];
     if (Array.isArray(condVal)) {
-      return '(' + (condVal as Array<string>).map(value => `${key} = "${value}"`).join(' OR ') + ')';
+      return '(' + (condVal as Array<string>).map(value => `${key} = ${wrapFunc(value)}`).join(' OR ') + ')';
     } else {
-      return `${key} = "${condVal}"`;
+      return `${key} = ${wrapFunc(condVal)}`;
     }
   }).join(` ${op} `);
 }
@@ -26,9 +27,22 @@ function makeWhereCond(cond: Object, op: string) {
 export class DBPromise {
   private db: Database;
   private queue = new Queue();
+  private log: boolean = false;
 
   constructor(db: Database) {
     this.db = db;
+  }
+
+  static noWrap = (val) => {
+    if (val == null)
+      return 'null';
+    return `${val}`;
+  };
+
+  static wrapFunc = (val) => {
+    if (val == null)
+      return 'null';
+    return `"${val}"`;
   }
 
   static openOrCreate(file: string): Promise<DBPromise> {
@@ -40,9 +54,19 @@ export class DBPromise {
     });
   }
 
+  private logIt(sql: string): string {
+    if (this.log)
+      console.log(sql);
+    return sql;
+  }
+
+  setLog(on: boolean) {
+    this.log = on;
+  }
+
   execSQL(sql: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.db.exec(sql, err => {
+      this.db.exec(this.logIt(sql), err => {
         err && reject(err);
         !err && resolve(null);
       });
@@ -51,7 +75,7 @@ export class DBPromise {
 
   getSQL<T>(sql: string): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      this.db.get(sql, (err, row) => {
+      this.db.get(this.logIt(sql), (err, row) => {
         err && reject(err);
         !err && resolve(row);
       });
@@ -60,7 +84,7 @@ export class DBPromise {
 
   getSQLAll<T>(sql: string): Promise<Array<T>> {
     return new Promise<Array<T>>((resolve, reject) => {
-      this.db.all(sql, (err, rows: Array<T>) => {
+      this.db.all(this.logIt(sql), (err, rows: Array<T>) => {
         err && reject(err);
         !err && resolve(rows);
       });
@@ -87,17 +111,16 @@ export class DBPromise {
   }
 
   update(values: Object, table: string, cond: Cond, wrapValue?): Promise<any> {
-    wrapValue = wrapValue || ((val) => `"${val}"`);
+    wrapValue = wrapValue || DBPromise.wrapFunc;
     return new Promise((resolve, reject) => {
-      const keysAndTerms = Object.keys(values).filter(key => key != null).map(k => `${k}=${wrapValue(values[k])}`).join(', ');
-      let where = makeWhereCond(cond, 'AND');
+      const keysAndTerms = Object.keys(values).map(k => `${k}=${wrapValue(values[k])}`).join(', ');
+      let where = makeWhereCond(cond, 'AND', wrapValue);
 
       if (where.length)
         where = 'WHERE ' + where;
 
       const sql = `UPDATE ${table} SET ${keysAndTerms} ${where}`;
-      console.log(sql);
-      this.db.exec(sql, err => {
+      this.db.exec(this.logIt(sql), err => {
         err && reject(err);
         !err && resolve(null);
       });
@@ -113,23 +136,25 @@ export class DBPromise {
     );
   }
 
-  insert(values: Object, table: string): Promise<any> {
+  insert(values: Object, table: string, wrapFunc?: (val) => string): Promise<any> {
+    wrapFunc = wrapFunc || DBPromise.wrapFunc;
     return new Promise((resolve, reject) => {
-      const keys = Object.keys(values).filter(key => key != null);
-      const sql = `INSERT INTO ${table}(${keys}) VALUES(${keys.map(k => '"' + values[k] + '"').join(', ')})`;
-      this.db.exec(sql, err => {
+      const keys = Object.keys(values);
+      const sql = `INSERT INTO ${table}(${keys}) VALUES(${keys.map(k => wrapFunc(values[k])).join(', ')})`;
+      this.db.exec(this.logIt(sql), err => {
         err && reject(err);
         !err && resolve(null);
       });
     });
   }
 
-  insertAll(values: Array<Object>, table: string): Promise<any> {
+  insertAll(values: Array<Object>, table: string, wrapFunc?: (val) => string): Promise<any> {
+    wrapFunc = wrapFunc || DBPromise.wrapFunc;
     return new Promise((resolve, reject) => {
       const keys = Object.keys(values[0]).filter(key => key != null);
       const valuesArr = values.map(vals => '(' + keys.map(k => `"${vals[k]}"`).join(', ') + ')').join(', ');
       const sql = `INSERT INTO ${table}(${keys}) VALUES ${valuesArr}`;
-      this.db.exec(sql, err => {
+      this.db.exec(this.logIt(sql), err => {
         err && reject(err);
         !err && resolve(null);
       });

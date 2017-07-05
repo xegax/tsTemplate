@@ -11,7 +11,7 @@ const srv = createServer(8088);
 let factory = new ObjectFactory();
 register(factory);
 
-let store: ObjectStore;
+let store: SQLObjectStore;
 const db = new Database('data/obj-store.db', (err) => err && console.log(err));
 SQLObjectStore.create(factory, db).then(s => store = s);
 
@@ -41,6 +41,14 @@ srv.addJsonHandler<GetID, {}>('/handler/write', (params, done, error) => {
 
 srv.addJsonHandler<GetID, Array<any>>('/handler/writeArray', (params, done, error) => {
   handler(store.writeArray(params.get.id, params.post), done, error);
+});
+
+srv.addJsonHandler<{listId: string, objId: string},any>('/handler/appendToList', (params, done, error) => {
+  handler(store.appendToList(params.get.listId, params.get.objId), done, error);
+});
+
+srv.addJsonHandler<{listId: string, idx: number},any>('/handler/removeFromList', (params, done, error) => {
+  handler(store.removeFromList(params.get.listId, params.get.idx), done, error);
 });
 
 srv.addJsonHandler<GetID, {}>('/handler/getObjectsFromList', (params, done, error) => {

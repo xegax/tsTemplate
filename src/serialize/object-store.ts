@@ -30,8 +30,12 @@ export interface ObjectStoreAbstract {
   findObject(id: string): Promise<Object & {_: ObjTable}>;
   createObject(subtype: string): Promise<ObjTable>;
   createObjects(objsMap: {[id: string]: {json: Object, type: string}}): Promise<{[id: string]: string}>;
+  
   write(id: string, json: Object): Promise<Object>;
   writeArray(id: string, arr: Array<any>): Promise<Array<string>>;
+  appendToList(listId: string, objId: string): Promise<any>;
+  removeFromList(listId: string, idx: number): Promise<any>;
+
   getObjectsFromList(id: string): Promise<Array<string>>;
   createList(): Promise<ObjTable>;
   loadObjects(id: string): Promise<{obj: Id2Object, list: Id2Array}>;
@@ -137,6 +141,32 @@ export class ObjectStore implements ObjectStoreAbstract {
 
       this.list[id] = arr.map(id => ({id}));
       return this.list[id].map(item => item.id);
+    });
+  }
+
+  appendToList(listId: string, objId: string): Promise<any> {
+    return timerPromise(1, () => {
+      const item = this.objStore[listId];
+      if (!item || !this.list[listId])
+        throw `list with id=${listId} not found`;
+
+      if (item.type != 'array')
+        throw `id must be referrer to array`;
+
+      this.list[listId].push({id: objId});
+    });
+  }
+
+  removeFromList(listId: string, idx: number): Promise<any> {
+    return timerPromise(1, () => {
+      const item = this.objStore[listId];
+      if (!item || !this.list[listId])
+        throw `list with id=${listId} not found`;
+
+      if (item.type != 'array')
+        throw `id must be referrer to array`;
+
+      this.list[listId].splice(idx, 1);
     });
   }
 

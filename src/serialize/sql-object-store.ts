@@ -20,7 +20,7 @@ function createSpecTables() {
   const objLists = [
     `CREATE TABLE IF NOT EXISTS ${OBJ_LISTS}(`,
     '  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,',
-    '  removed INTEGER,',
+    '  orderIdx INTEGER,',
     '  idx INTEGER,',
     '  listId INTEGER NOT NULL,',
     '  itemId INTEGER',
@@ -67,9 +67,9 @@ export class SQLObjectStore extends ObjectStore {
     });
     
     const dbImpl = new DBPromise(db);
+    dbImpl.setLog(true);
     return Queue.all(
       ...tables.map(s => () => {
-        console.log(s);
         return dbImpl.execSQL(s);
       }))
       .then(r => new SQLObjectStore(factory, dbImpl))
@@ -128,15 +128,34 @@ export class SQLObjectStore extends ObjectStore {
     );
   }
 
-  getObjectsFromList(id: string): Promise<Array<string>> {
+  appendToList(listId: string, objId: string) {
+    const maxOrder = `(SELECT MAX(orderIdx) FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is not null)`;
+    const count = `(SELECT COUNT(*) FROM ${OBJ_LISTS} WHERE listId=${listId})`;
     return Queue.lastResult(
-      () => this.db.getAll(OBJ_LISTS, {cond: {listId: id, removed: "0"}, condOp: 'AND'}),
+      () => this.db.getSQL(`SELECT idx FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is null LIMIT 1`),
+      (data: {idx: number}) => {
+        if (data) {
+          return this.db.update({itemId: objId, orderIdx: `${maxOrder}+1`}, OBJ_LISTS, {idx: data.idx}, DBPromise.noWrap);
+        } else {
+          return this.db.insert({listId, itemId: objId, orderIdx: `${maxOrder}+1`, idx: `${count}+1`}, OBJ_LISTS, DBPromise.noWrap);
+        }
+      }
+    );
+  }
+
+  removeFromList(listId: string, idx: number) {
+    const selectIdx = `(SELECT idx FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId not null ORDER BY orderIdx LIMIT 1 OFFSET ${idx})`;
+    return this.db.update({itemId: null}, OBJ_LISTS, {listId, idx: selectIdx}, DBPromise.noWrap);
+  }
+
+  getObjectsFromList(listId: string): Promise<Array<string>> {
+    return Queue.lastResult(
+      () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is not null ORDER BY orderIdx ASC`),
       (items: Array<{itemId: string}>) => items.map(item => '' + item.itemId)
     );
   }
 
   createList(): Promise<ObjTable> {
-    let objType: ObjTable;
     return this.db.insertAndGet({type: 'object', subtype: 'ListObj'}, OBJ_TABLE);
   }
 }

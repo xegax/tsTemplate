@@ -1,7 +1,8 @@
-import {ObjectStore} from './object-store';
+import {ObjectStoreAbstract} from './object-store';
 
 export interface ObjContext {
   modified(obj: ObjID);
+  getStore(): ObjectStoreAbstract;
 }
 
 interface ObjData {
@@ -55,6 +56,16 @@ class ObjIDImpl {
   modified() {
     this.version++;
     this.ctx && this.ctx.modified(this.obj);
+  }
+
+  appendToList(listId: string, objId: string) {
+    this.modified();
+    return this.ctx && this.ctx.getStore().appendToList(listId, objId);
+  }
+
+  removeFromList(listId: string, idx: number) {
+    this.modified();
+    return this.ctx && this.ctx.getStore().removeFromList(listId, idx);
   }
 }
 

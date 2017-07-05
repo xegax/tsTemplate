@@ -51,6 +51,10 @@ class ObjContextImpl implements ObjContext {
     if (!this.timer.isRunning())
       this.timer.run(5);
   }
+
+  getStore() {
+    return this.serializer.getStore();
+  }
 }
 
 export class Serializer {
@@ -71,13 +75,17 @@ export class Serializer {
     return obj;
   }
 
+  getStore() {
+    return this.store;
+  }
+
   saveObjects(objs: Array<ObjID>) {
     objs.forEach(obj => {
       const desc = obj.getImpl().getObjDesc();
       if (desc.classId == this.listObjName) {
         const arr = ListObj.wrap(obj).getArray().map(item => item.getId());
-        console.log('save array', obj.getId(), arr);
-        return this.store.writeArray(obj.getId(), arr);
+        return console.log('save array', obj.getId(), arr);
+        //return this.store.writeArray(obj.getId(), arr);
       }
 
       const json = {};
