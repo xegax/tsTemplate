@@ -55,6 +55,10 @@ class ObjContextImpl implements ObjContext {
   getStore() {
     return this.serializer.getStore();
   }
+
+  loadObjects(id: string) {
+    return this.serializer.loadObject(id);
+  }
 }
 
 export class Serializer {

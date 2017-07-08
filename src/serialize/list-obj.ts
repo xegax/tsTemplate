@@ -1,4 +1,5 @@
 import {ObjID, ObjDesc} from './object-factory';
+import {Queue} from '../common/promise';
 
 export class ListObj<T extends ObjID> extends ObjID {
   private length: number = 0;
@@ -19,16 +20,29 @@ export class ListObj<T extends ObjID> extends ObjID {
     return obj as ListObj<T>;
   }
 
-  append(item: T) {
-    return this.getImpl().appendToList(this.getId(), item.getId()).then(() => {
-      this.arr.push(item);
-    });
+  append(item: T, idx?: number) {
+    idx = idx || 0;
+    return Queue.all(
+      () => this.getImpl().appendToList(this.getId(), item.getId(), idx),
+      () => this.getImpl().loadObject(this.getId()),
+      (list: ListObj<T>) => {
+        this.arr = list.arr;
+      }
+    );
   }
 
   remove(idx: number) {
-    return this.getImpl().removeFromList(this.getId(), idx).then(() => {
-      this.arr.splice(idx, 1);
-    });
+    return Queue.all(
+      () => this.getImpl().removeFromList(this.getId(), idx),
+      () => this.getImpl().loadObject(this.getId()),
+      (list: ListObj<T>) => {
+        this.arr = list.arr;
+      }
+    );
+  }
+
+  getLength(): number {
+    return Math.max(this.arr.length, this.length);
   }
 
   getArray(): Array<T> {

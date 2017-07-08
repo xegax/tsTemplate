@@ -5,6 +5,10 @@ import {DBPromise} from '../common/db-promise';
 import {Database} from 'sqlite3';
 import {Queue} from '../common/promise';
 
+export {
+  ObjTable
+};
+
 const OBJ_TABLE = 'ObjTable';
 const OBJ_LISTS = 'ObjLists';
 function createSpecTables() {
@@ -19,13 +23,12 @@ function createSpecTables() {
 
   const objLists = [
     `CREATE TABLE IF NOT EXISTS ${OBJ_LISTS}(`,
-    '  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,',
-    '  orderIdx INTEGER,',
     '  idx INTEGER,',
     '  listId INTEGER NOT NULL,',
     '  itemId INTEGER',
     ')'
   ].join('\n');
+
   return [objTable, objLists];
 }
 
@@ -54,26 +57,35 @@ function createTable(desc: ObjDesc) {
 export class SQLObjectStore extends ObjectStore {
   private db: DBPromise;
 
-  private constructor(factory: ObjectFactory, db: DBPromise) {
+  private constructor(factory: ObjectFactory, db: Database) {
     super(factory);
-    this.db = db;
+    this.db = new DBPromise(db);
   }
 
-  static create(factory: ObjectFactory, db: Database): Promise<SQLObjectStore> {
+  setLog(ok: boolean) {
+    this.db.setLog(ok);
+  }
+
+  static create(factory: ObjectFactory, file: string): Promise<SQLObjectStore> {
     const tables = createSpecTables();
     factory.getClasses().forEach(name => {
       const desc = factory.get(name);
       tables.push(createTable(desc));
     });
     
-    const dbImpl = new DBPromise(db);
-    dbImpl.setLog(true);
+    let store: SQLObjectStore;
     return Queue.all(
+      () => new Promise((resolve, reject) => {
+        const db = new Database(file, (err) => {
+          !err && resolve(db);
+          err && reject(err);
+        });
+      }),
+      db => store = new SQLObjectStore(factory, db),
       ...tables.map(s => () => {
-        return dbImpl.execSQL(s);
-      }))
-      .then(r => new SQLObjectStore(factory, dbImpl))
-      .catch(err => console.log(err));
+        return store.db.execSQL(s);
+      })
+    ).then(() => store).catch(err => console.log(err));
   }
 
   findObject(id: string) {
@@ -98,6 +110,7 @@ export class SQLObjectStore extends ObjectStore {
       () => this.db.insertAndGet({type: 'object', subtype}, OBJ_TABLE),
       (obj: ObjTable) => {
         objType = obj;
+        objType.id = '' + objType.id;
         return this.db.insertAndGet({id: obj.id}, subtype);
       },
       () => objType
@@ -128,29 +141,40 @@ export class SQLObjectStore extends ObjectStore {
     );
   }
 
-  appendToList(listId: string, objId: string) {
-    const maxOrder = `(SELECT MAX(orderIdx) FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is not null)`;
-    const count = `(SELECT COUNT(*) FROM ${OBJ_LISTS} WHERE listId=${listId})`;
+  appendToList(listId: string, objId: string, idx?: number) {
+    let count = 0;
     return Queue.lastResult(
-      () => this.db.getSQL(`SELECT idx FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is null LIMIT 1`),
-      (data: {idx: number}) => {
-        if (data) {
-          return this.db.update({itemId: objId, orderIdx: `${maxOrder}+1`}, OBJ_LISTS, {idx: data.idx}, DBPromise.noWrap);
-        } else {
-          return this.db.insert({listId, itemId: objId, orderIdx: `${maxOrder}+1`, idx: `${count}+1`}, OBJ_LISTS, DBPromise.noWrap);
-        }
-      }
+      () => this.db.getSQL(`SELECT COUNT(*) as count FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull`),
+      (res: {count: number}) => {
+        count = res.count;
+        if (idx == null)
+          idx = count;
+        else
+          idx = Math.min(Math.max(0, idx), count);
+        return this.db.execSQL(`UPDATE ${OBJ_LISTS} SET idx=idx+1 WHERE listId=${listId} AND itemId notnull AND idx >= ${idx}`);
+      },
+      () => this.db.getSQL(`SELECT rowid FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId isnull`),
+      (data: {rowid: number}) => {
+        if (data)
+          return this.db.update({idx, itemId: objId}, OBJ_LISTS, {rowid: data.rowid});
+        else
+          return this.db.insert({listId, itemId: objId, idx}, OBJ_LISTS);
+      },
+      () => this.getObjectsFromList(listId)
     );
   }
 
   removeFromList(listId: string, idx: number) {
-    const selectIdx = `(SELECT idx FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId not null ORDER BY orderIdx LIMIT 1 OFFSET ${idx})`;
-    return this.db.update({itemId: null}, OBJ_LISTS, {listId, idx: selectIdx}, DBPromise.noWrap);
+    return Queue.lastResult(
+      () => this.db.execSQL(`UPDATE ${OBJ_LISTS} SET idx=null, itemId=null WHERE listId=${listId} AND idx=${idx}`),
+      () => this.db.execSQL(`UPDATE ${OBJ_LISTS} SET idx=idx-1 WHERE listId=${listId} AND itemId notnull AND idx > ${idx}`),
+      () => this.getObjectsFromList(listId)
+    );
   }
 
   getObjectsFromList(listId: string): Promise<Array<string>> {
     return Queue.lastResult(
-      () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId is not null ORDER BY orderIdx ASC`),
+      () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull ORDER BY idx ASC`),
       (items: Array<{itemId: string}>) => items.map(item => '' + item.itemId)
     );
   }

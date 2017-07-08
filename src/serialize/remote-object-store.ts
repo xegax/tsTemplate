@@ -25,8 +25,8 @@ export class RemoteObjectStore implements ObjectStoreAbstract {
     return this.requestor.sendData('/writeArray', {id}, JSON.stringify(arr)).then(data => []);
   }
 
-  appendToList(listId: string, objId: string) {
-    return this.requestor.getJSON('/appendToList', {listId, objId});
+  appendToList(listId: string, objId: string, idx: number) {
+    return this.requestor.getJSON('/appendToList', {listId, objId, idx});
   }
 
   removeFromList(listId: string, idx: number) {

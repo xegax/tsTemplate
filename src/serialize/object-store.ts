@@ -33,7 +33,7 @@ export interface ObjectStoreAbstract {
   
   write(id: string, json: Object): Promise<Object>;
   writeArray(id: string, arr: Array<any>): Promise<Array<string>>;
-  appendToList(listId: string, objId: string): Promise<any>;
+  appendToList(listId: string, objId: string, idx?: number): Promise<any>;
   removeFromList(listId: string, idx: number): Promise<any>;
 
   getObjectsFromList(id: string): Promise<Array<string>>;
@@ -144,7 +144,8 @@ export class ObjectStore implements ObjectStoreAbstract {
     });
   }
 
-  appendToList(listId: string, objId: string): Promise<any> {
+  appendToList(listId: string, objId: string, idx?: number): Promise<any> {
+    idx = idx || 0;
     return timerPromise(1, () => {
       const item = this.objStore[listId];
       if (!item || !this.list[listId])
@@ -153,7 +154,7 @@ export class ObjectStore implements ObjectStoreAbstract {
       if (item.type != 'array')
         throw `id must be referrer to array`;
 
-      this.list[listId].push({id: objId});
+      this.list[listId].splice(idx, 0, {id: objId});
     });
   }
 

@@ -6,4 +6,5 @@ src/**/*.js
 src/examples-main/examples-list.ts
 data/files/**/*
 data/obj-store.db
+data/test-store.db
 librus/**/*

@@ -9,6 +9,8 @@ import {ObjectStore} from 'serialize/object-store';
 import {KeyCode} from 'common/keycode';
 import {RemoteObjectStore} from 'serialize/remote-object-store';
 import {createRequestor} from 'requestor/requestor';
+import {startDragging} from 'common/start-dragging';
+import {Queue} from 'common/promise';
 
 interface Props {
   model: DocList;
@@ -17,6 +19,8 @@ interface Props {
 interface State {
   editItem?: DocBase;
   editText?: string;
+  drag?: DocBase;
+  moveIdx?: number;
 }
 
 class DocListView extends React.Component<Props, State> {
@@ -41,9 +45,52 @@ class DocListView extends React.Component<Props, State> {
     return 'unknown doc'; 
   }
 
+  private getDocIndex(el: HTMLElement) {
+    while (el) {
+      const dataIdx = el.getAttribute('data-idx');
+      if (dataIdx != null)
+        return +dataIdx;
+      el = el.parentElement;
+    }
+    return -1;
+  }
+
+  private onDragStart = (e, doc: DocBase, idx: number) => {
+    let tgt: HTMLElement;
+    startDragging({x: 0, y: 0, minDist: 5}, {
+      onDragStart: () => {
+        this.setState({drag: doc});
+      },
+      onDragging: (e) => {
+        if (tgt == e.event.target)
+          return;
+        tgt = e.event.target as HTMLElement;
+        let moveIdx = this.getDocIndex(tgt);
+        if (moveIdx != this.state.moveIdx)
+          this.setState({moveIdx});
+      },
+      onDragEnd: () => {
+        let moveIdx = this.state.moveIdx;
+        if (moveIdx != idx) {
+          Queue.all(
+            () => this.props.model.getList().remove(idx),
+            () => this.props.model.getList().append(doc, moveIdx),
+            () => this.setState({})
+          );
+        }
+        this.setState({drag: null, moveIdx: -1});
+      }
+    })(e);
+  }
+
   private renderItem(item: DocBase, idx: number) {
     return (
-      <div key={'doc-'+item.getId()} style={{border: '1px solid gray', margin: 2}}>
+      <div
+        key={'doc-'+item.getId()}
+        data-idx={'' + idx}
+        style={{border: '1px solid gray', margin: 2, opacity: this.state.drag == item ? 0.5 : 1}}
+        onMouseDown={e => this.onDragStart(e, item, idx)}
+      >
         <div style={{backgroundColor: 'silver', padding: 2, display: 'flex'}}>
           <div style={{flexGrow: 1}}>{`doc id=${item.getId()}`}</div>
           <i
@@ -98,11 +145,12 @@ class DocListView extends React.Component<Props, State> {
   }
 
   private createDoc = (type: string) => {
-    db.makeObject<DocBase>(type).then(doc => {
-      this.props.model.getList().append(doc).then(() => {
-        this.setState({});
-      });
-    });
+    const lst = this.props.model.getList();
+    Queue.all(
+      () => db.makeObject<DocBase>(type),
+      (doc: DocBase) => lst.append(doc, lst.getArray().length),
+      () => this.setState({})
+    );
   }
 
   render() {

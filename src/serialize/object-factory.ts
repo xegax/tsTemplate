@@ -3,6 +3,7 @@ import {ObjectStoreAbstract} from './object-store';
 export interface ObjContext {
   modified(obj: ObjID);
   getStore(): ObjectStoreAbstract;
+  loadObjects(id: string);
 }
 
 interface ObjData {
@@ -58,14 +59,18 @@ class ObjIDImpl {
     this.ctx && this.ctx.modified(this.obj);
   }
 
-  appendToList(listId: string, objId: string) {
+  appendToList(listId: string, objId: string, idx: number) {
     this.modified();
-    return this.ctx && this.ctx.getStore().appendToList(listId, objId);
+    return this.ctx && this.ctx.getStore().appendToList(listId, objId, idx);
   }
 
   removeFromList(listId: string, idx: number) {
     this.modified();
     return this.ctx && this.ctx.getStore().removeFromList(listId, idx);
+  }
+
+  loadObject(id: string) {
+    return this.ctx && this.ctx.loadObjects(id);
   }
 }
 
