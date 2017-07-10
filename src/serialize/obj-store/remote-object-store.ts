@@ -1,8 +1,8 @@
 import {Requestor} from 'requestor/requestor';
-import {ObjectStoreAbstract, ObjTable} from './object-store';
-import {ObjectFactory} from './object-factory';
+import {ObjectStoreInterface, ObjTable} from './object-store';
+import {ObjectFactory} from '../object-factory';
 
-export class RemoteObjectStore implements ObjectStoreAbstract {
+export class RemoteObjectStore implements ObjectStoreInterface {
   private requestor: Requestor;
 
   constructor(requestor: Requestor) {
@@ -47,5 +47,9 @@ export class RemoteObjectStore implements ObjectStoreAbstract {
 
   createObjects(objsMap: {[id: string]: {json: Object, type: string}}) {
     return this.requestor.sendData('/createObjects', {}, JSON.stringify(objsMap)).then(data => JSON.parse(data));
+  }
+
+  getListSize(listId: string) {
+    return this.requestor.getJSON('/getListSize', {id: listId});
   }
 }

@@ -1,4 +1,4 @@
-import {SQLObjectStore, ObjTable} from '../serialize/sql-object-store';
+import {SQLObjectStore, ObjTable} from '../serialize/obj-store/sql-object-store';
 import {ObjectFactory, ObjID, ObjDesc} from '../serialize/object-factory';
 import {DBPromise} from '../common/db-promise';
 import {Database} from 'sqlite3';

@@ -1,9 +1,9 @@
 import {Requestor} from 'requestor/requestor';
-import {ObjectStore, ObjTable} from './object-store';
-import {ObjectFactory, ObjDesc} from './object-factory';
-import {DBPromise} from '../common/db-promise';
+import {ObjectStoreAbstract, ObjTable, GetItemsParams} from './object-store';
+import {ObjectFactory, ObjDesc, ValueType, isObjectType} from '../object-factory';
+import {DBPromise} from '../../common/db-promise';
 import {Database} from 'sqlite3';
-import {Queue} from '../common/promise';
+import {Queue} from '../../common/promise';
 
 export {
   ObjTable
@@ -34,16 +34,17 @@ function createSpecTables() {
 
 function createTable(desc: ObjDesc) {
   const typeTrans = {
-    'string': 'TEXT',
-    'number': 'REAL'
+    [ValueType.string]: 'TEXT',
+    [ValueType.number]: 'REAL',
+    [ValueType.integer]: 'INTEGER'
   };
 
   const columns = Object.keys(desc.objects).map(key => {
     const type = desc.objects[key];
-    if (['string', 'number'].indexOf(type) != -1) {
-      return `   ${key} ${typeTrans[type]}`;
-    } else {
+    if (isObjectType(type)) {
       return `   ${key} INTEGER`;
+    } else {
+      return `   ${key} ${typeTrans[type]}`;
     }
   });
 
@@ -54,7 +55,7 @@ function createTable(desc: ObjDesc) {
   ].join('\n');
 }
 
-export class SQLObjectStore extends ObjectStore {
+export class SQLObjectStore extends ObjectStoreAbstract {
   private db: DBPromise;
 
   private constructor(factory: ObjectFactory, db: Database) {
@@ -172,10 +173,23 @@ export class SQLObjectStore extends ObjectStore {
     );
   }
 
-  getObjectsFromList(listId: string): Promise<Array<string>> {
+  getObjectsFromList(listId: string, params?: GetItemsParams): Promise<Array<string>> {
+    let offsLimit = '';
+    if (params && params.from)
+      offsLimit = 'OFFSET ' + params.from;
+    if (params && params.count)
+      offsLimit += ' LIMIT ' + params.count;
+
     return Queue.lastResult(
-      () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull ORDER BY idx ASC`),
+      () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull ORDER BY idx ASC ${offsLimit}`),
       (items: Array<{itemId: string}>) => items.map(item => '' + item.itemId)
+    );
+  }
+
+  getListSize(listId: string): Promise<number> {
+    return Queue.lastResult(
+      () => this.db.getSQL(`SELECT COUNT(*) as count FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull`),
+      (res: {count: number}) => res.count
     );
   }
 

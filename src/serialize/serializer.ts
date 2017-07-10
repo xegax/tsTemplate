@@ -1,5 +1,12 @@
-import {ObjectFactory, TypeDesc, ObjID, ObjContext, ObjDesc} from './object-factory';
-import {ObjectStoreAbstract} from './object-store';
+import {
+  ObjectFactory,
+  TypeDesc,
+  ObjID,
+  ObjContext,
+  ObjDesc,
+  isObjectType
+} from './object-factory';
+import {ObjectStoreInterface} from './obj-store/obj-store-interface';
 import {Queue} from '../common/promise';
 import {ListObj} from './list-obj';
 import {Timer} from '../common/timer';
@@ -63,11 +70,11 @@ class ObjContextImpl implements ObjContext {
 
 export class Serializer {
   private factory: ObjectFactory;
-  private store: ObjectStoreAbstract;
+  private store: ObjectStoreInterface;
   private readonly listObjName: string = ListObj.getDesc().classId;
   private objCtxImpl: ObjContextImpl;
 
-  constructor(factory: ObjectFactory, store: ObjectStoreAbstract) {
+  constructor(factory: ObjectFactory, store: ObjectStoreInterface) {
     this.factory = factory;
     this.store = store;
     this.objCtxImpl = new ObjContextImpl(this);
@@ -94,10 +101,10 @@ export class Serializer {
 
       const json = {};
       Object.keys(desc.objects).forEach(k => {
-        if (['string', 'number'].indexOf(desc.objects[k]) != -1)
-          json[k] = obj[k];
-        else
+        if (isObjectType(desc.objects[k]))
           json[k] = (obj[k] as ObjID).getId();
+        else
+          json[k] = obj[k];
       });
       this.store.write(obj.getId(), json);
       console.log('save', obj.getId(), json);
@@ -125,7 +132,8 @@ export class Serializer {
         let obj: ObjID;
         if (deps.list[id]) {
           obj = this.newObject(ListObj.getDesc());
-          deps.list[id].forEach(id => {
+          obj['length'] = deps.list[id].count;
+          deps.list[id].items.forEach(id => {
             obj['arr'].push(load(id));
           });
         } else {
@@ -134,7 +142,7 @@ export class Serializer {
           obj = this.newObject(desc);
           Object.keys(desc.objects).forEach(key => {
             const type = desc.objects[key];
-            if (['number', 'string'].indexOf(type) == -1) {
+            if (isObjectType(type)) {
               const id = item[key];
               obj[key] = load(id);
             } else {
@@ -159,12 +167,15 @@ export class Serializer {
     const fillMap = (obj: ObjID) => {
       const id = '' + (++idCounter);
       id2Obj[id] = obj;
-      id2Json[id] = {json: obj.getImpl().getJSON(), type: obj.getImpl().getClassName()};
+      id2Json[id] = {
+        json: obj.getImpl().getJSON(),
+        type: obj.getImpl().getClassName()
+      };
 
       const desc = obj.getImpl().getObjDesc();
       Object.keys(desc.objects).forEach(key => {
         const type = desc.objects[key];
-        if (['number', 'string'].indexOf(type) == -1) {
+        if (isObjectType(type)) {
           id2Json[id].json[key] = fillMap(obj[key]);
         }
       });

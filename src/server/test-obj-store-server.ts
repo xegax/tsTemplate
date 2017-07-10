@@ -1,6 +1,5 @@
 import {createServer} from './server';
-import {ObjectStore} from '../serialize/object-store';
-import {SQLObjectStore} from '../serialize/sql-object-store';
+import {SQLObjectStore} from '../serialize/obj-store/sql-object-store';
 import {ObjectFactory} from '../serialize/object-factory';
 import {ListObj} from '../serialize/list-obj';
 import {DocText, DocList, register} from '../serialize/document';
@@ -64,4 +63,8 @@ srv.addJsonHandler<GetID, {}>('/handler/loadObjects', (params, done, error) => {
 
 srv.addJsonHandler<{}, {}>('/handler/createObjects', (params, done, error) => {
   handler(store.createObjects(params.post), done, error);
+});
+
+srv.addJsonHandler<GetID, {}>('/handler/getListSize', (params, done, error) => {
+  handler(store.getListSize(params.get.id), done, error);
 });

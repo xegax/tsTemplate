@@ -5,6 +5,7 @@ export class ListObj<T extends ObjID> extends ObjID {
   private length: number = 0;
   private arr = Array<T>();
 
+  static MAX_LOAD_ITEMS = 1000;
   static getDesc(): ObjDesc {
     return {
       classId: 'ListObj',
@@ -15,9 +16,9 @@ export class ListObj<T extends ObjID> extends ObjID {
   }
 
   static wrap<T extends ObjID>(obj: ObjID): ListObj<T> {
-    if (obj.getImpl().getClassName() != 'ListObj')
-      throw `invalid ListObj`;
-    return obj as ListObj<T>;
+    if (obj instanceof ListObj)
+      return obj as ListObj<T>;
+    throw `invalid ListObj`;
   }
 
   append(item: T, idx?: number) {

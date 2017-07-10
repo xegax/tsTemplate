@@ -1,8 +1,8 @@
-import {ObjectStoreAbstract} from './object-store';
+import {ObjectStoreInterface} from './obj-store/obj-store-interface';
 
 export interface ObjContext {
   modified(obj: ObjID);
-  getStore(): ObjectStoreAbstract;
+  getStore(): ObjectStoreInterface;
   loadObjects(id: string);
 }
 
@@ -88,6 +88,20 @@ export class ObjID {
   getImpl() {
     return this.impl;
   }
+}
+
+export const ValueType = {
+  string: 'string',
+  number: 'number',
+  integer: 'integer'
+};
+
+export function isObjectType(type: string) {
+  return [
+    ValueType.integer,
+    ValueType.number,
+    ValueType.string
+  ].indexOf(type) == -1;
 }
 
 export interface ObjDesc {

@@ -5,9 +5,8 @@ import {DocText, DocList, DocImage, DocBase, register} from 'serialize/document'
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
-import {ObjectStore} from 'serialize/object-store';
 import {KeyCode} from 'common/keycode';
-import {RemoteObjectStore} from 'serialize/remote-object-store';
+import {RemoteObjectStore} from 'serialize/obj-store/remote-object-store';
 import {createRequestor} from 'requestor/requestor';
 import {startDragging} from 'common/start-dragging';
 import {Queue} from 'common/promise';
