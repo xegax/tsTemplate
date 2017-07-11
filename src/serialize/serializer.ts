@@ -66,6 +66,13 @@ class ObjContextImpl implements ObjContext {
   loadObjects(id: string) {
     return this.serializer.loadObject(id);
   }
+
+  loadFromList(id: string, from: number, count: number) {
+    return Queue.lastResult(
+      () => this.serializer.loadObject(id, from, count),
+      (list: ListObj<ObjID>) => list.getItems(from, count)
+    );
+  }
 }
 
 export class Serializer {
@@ -94,9 +101,7 @@ export class Serializer {
     objs.forEach(obj => {
       const desc = obj.getImpl().getObjDesc();
       if (desc.classId == this.listObjName) {
-        const arr = ListObj.wrap(obj).getArray().map(item => item.getId());
-        return console.log('save array', obj.getId(), arr);
-        //return this.store.writeArray(obj.getId(), arr);
+        return;
       }
 
       const json = {};
@@ -122,20 +127,21 @@ export class Serializer {
     return ok;
   }
 
-  loadObject<T>(id: string): Promise<T> {
-    return this.loadDeep<T>(id);
+  loadObject<T>(id: string, from?: number, count?: number): Promise<T> {
+    return this.loadDeep<T>(id, from, count);
   }
 
-  private loadDeep<T>(id: string): Promise<T> {
-    return this.store.loadObjects(id).then(deps => {
+  private loadDeep<T>(id: string, from?: number, count?: number): Promise<T> {
+    return this.store.loadObjects(id, from, count).then(deps => {
       const load = (id: string) => {
         let obj: ObjID;
         if (deps.list[id]) {
-          obj = this.newObject(ListObj.getDesc());
-          obj['length'] = deps.list[id].count;
-          deps.list[id].items.forEach(id => {
-            obj['arr'].push(load(id));
-          });
+          let objs = [];
+          obj = this.newObject(ListObj.getDesc(), [{
+            total: deps.list[id].count,
+            from: from || 0,
+            items: deps.list[id].items.map(id => load(id))
+          }]);
         } else {
           const item = deps.obj[id];
           const desc = this.factory.get(item._.subtype);

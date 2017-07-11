@@ -55,10 +55,10 @@ export abstract class ObjectStoreAbstract implements ObjectStoreInterface {
     const arr = Object.keys(objsMap).map(id => {
       const pushObjID = (obj: ObjTable) => res[id] = obj.id;
       const type = objsMap[id].type;
-      if (type != 'ListObj') {
-        return () => this.createObject(type).then(pushObjID);
-      } else {
+      if (type == 'ListObj') {
         return () => this.createList().then(pushObjID);
+      } else {
+        return () => this.createObject(type).then(pushObjID);
       }
     });
     
@@ -79,7 +79,7 @@ export abstract class ObjectStoreAbstract implements ObjectStoreInterface {
     });
   }
 
-  loadObjects(id: string) {
+  loadObjects(id: string, from?: number, count?: number) {
     const map: {obj: Id2Object, list: Id2Array} = {
       obj: {},
       list: {}
@@ -109,7 +109,7 @@ export abstract class ObjectStoreAbstract implements ObjectStoreInterface {
     const buildObjList = (id: string) => {
       return Queue.lastResult(
         () => this.getListSize(id),
-        (count: number) => this.getObjectsFromList(id, {from: 0, count: ListObj.MAX_LOAD_ITEMS}).then(ids => {
+        (count: number) => this.getObjectsFromList(id, {from: from || 0, count: ListObj.ITEMS_PER_CACHE}).then(ids => {
           map.list[id] = {items: ids, count};
           return Queue.all( ...ids.map(id => () =>
             buildImpl(id)

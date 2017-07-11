@@ -25,5 +25,5 @@ export interface ObjectStoreInterface {
   getListSize(id: string): Promise<number>;
   getObjectsFromList(id: string, params?: GetItemsParams): Promise<Array<string>>;
   createList(): Promise<ObjTable>;
-  loadObjects(id: string): Promise<{obj: Id2Object, list: Id2Array}>;
+  loadObjects(id: string, from?: number, count?: number): Promise<{obj: Id2Object, list: Id2Array}>;
 }

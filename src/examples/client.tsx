@@ -147,13 +147,21 @@ class DocListView extends React.Component<Props, State> {
     const lst = this.props.model.getList();
     Queue.all(
       () => db.makeObject<DocBase>(type),
-      (doc: DocBase) => lst.append(doc, lst.getArray().length),
+      (doc: DocBase) => lst.append(doc, lst.getLength()),
       () => this.setState({})
     );
   }
 
   render() {
-    const items = this.props.model.getList().getArray();
+    const list = this.props.model.getList();
+    let items = new Array<DocBase>();
+    for (let n = 0; n < list.getLength(); n++) {
+      let item = list.get(n);
+      if (!item)
+        break;
+      items.push(item);
+    }
+
     return (
       <div style={{overflow: 'auto'}}>
         <div
@@ -168,6 +176,7 @@ class DocListView extends React.Component<Props, State> {
         >
           +image doc
         </div>
+        <div>{'items: ' + list.getLength()}</div>
         {items.map((item, idx) => this.renderItem(item, idx))}
       </div>
     );

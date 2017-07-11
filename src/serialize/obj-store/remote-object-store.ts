@@ -41,8 +41,11 @@ export class RemoteObjectStore implements ObjectStoreInterface {
     return this.requestor.getJSON('/createList');
   }
 
-  loadObjects(id: string) {
-    return this.requestor.getJSON('/loadObjects', {id});
+  loadObjects(id: string, from?: number, count?: number) {
+    let params = {id};
+    from && (params['from'] = from);
+    count && (params['count'] = count);
+    return this.requestor.getJSON('/loadObjects', params);
   }
 
   createObjects(objsMap: {[id: string]: {json: Object, type: string}}) {

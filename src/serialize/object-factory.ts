@@ -4,6 +4,7 @@ export interface ObjContext {
   modified(obj: ObjID);
   getStore(): ObjectStoreInterface;
   loadObjects(id: string);
+  loadFromList(id: string, from: number, count: number);
 }
 
 interface ObjData {
@@ -71,6 +72,10 @@ class ObjIDImpl {
 
   loadObject(id: string) {
     return this.ctx && this.ctx.loadObjects(id);
+  }
+
+  loadFromList(id: string, from: number, count: number) {
+    return this.ctx && this.ctx.loadFromList(id, from, count);
   }
 }
 

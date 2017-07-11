@@ -11,7 +11,11 @@ let factory = new ObjectFactory();
 register(factory);
 
 let store: SQLObjectStore;
-SQLObjectStore.create(factory, 'data/obj-store.db').then(s => store = s);
+SQLObjectStore.create(factory, 'data/obj-store.db').then(s => {
+  store = s;
+  store.setLog(true);
+});
+
 
 interface GetID {
   id: string;
@@ -57,8 +61,8 @@ srv.addJsonHandler<{}, {}>('/handler/createList', (params, done, error) => {
   handler(store.createList(), done, error);
 });
 
-srv.addJsonHandler<GetID, {}>('/handler/loadObjects', (params, done, error) => {
-  handler(store.loadObjects(params.get.id), done, error);
+srv.addJsonHandler<{id: string, from: number, count: number}, {}>('/handler/loadObjects', (params, done, error) => {
+  handler(store.loadObjects(params.get.id, +params.get.from, +params.get.count), done, error);
 });
 
 srv.addJsonHandler<{}, {}>('/handler/createObjects', (params, done, error) => {

@@ -161,7 +161,7 @@ export class SQLObjectStore extends ObjectStoreAbstract {
         else
           return this.db.insert({listId, itemId: objId, idx}, OBJ_LISTS);
       },
-      () => this.getObjectsFromList(listId)
+      () => this.getListSize(listId)
     );
   }
 
@@ -169,16 +169,17 @@ export class SQLObjectStore extends ObjectStoreAbstract {
     return Queue.lastResult(
       () => this.db.execSQL(`UPDATE ${OBJ_LISTS} SET idx=null, itemId=null WHERE listId=${listId} AND idx=${idx}`),
       () => this.db.execSQL(`UPDATE ${OBJ_LISTS} SET idx=idx-1 WHERE listId=${listId} AND itemId notnull AND idx > ${idx}`),
-      () => this.getObjectsFromList(listId)
+      () => this.getListSize(listId)
     );
   }
 
   getObjectsFromList(listId: string, params?: GetItemsParams): Promise<Array<string>> {
     let offsLimit = '';
-    if (params && params.from)
-      offsLimit = 'OFFSET ' + params.from;
     if (params && params.count)
       offsLimit += ' LIMIT ' + params.count;
+  
+    if (params && params.from)
+      offsLimit += ' OFFSET ' + params.from;
 
     return Queue.lastResult(
       () => this.db.getSQLAll(`SELECT itemId FROM ${OBJ_LISTS} WHERE listId=${listId} AND itemId notnull ORDER BY idx ASC ${offsLimit}`),
