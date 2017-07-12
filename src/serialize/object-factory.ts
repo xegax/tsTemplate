@@ -48,7 +48,7 @@ class ObjIDImpl {
     const json = {};
     const desc = this.getObjDesc();
     Object.keys(desc.objects).forEach(key => {
-      if (['string', 'number'].indexOf(desc.objects[key]) != -1)
+      if (!isObjectType(desc.objects[key]))
         json[key] = this.obj[key];
     });
 
@@ -115,6 +115,7 @@ export interface ObjDesc {
     [key: string]: string;
   };
   make<T>(...args): T;
+  make(...args): ObjID;
 }
 
 export interface TypeDesc {

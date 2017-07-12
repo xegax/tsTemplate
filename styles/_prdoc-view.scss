@@ -1,0 +1,28 @@
+.prdoc-view {
+  display: flex;
+  flex-grow: 1;
+  background-color: silver;
+
+  &--frameitem {
+    cursor: pointer;
+    &:hover {
+      background-color: lightpink;
+    }
+  }
+
+  &--selected-frame {
+    color: white;
+    background-color: gray;
+  }
+
+  &--list {
+    box-sizing: border-box;
+    padding: 4px;
+    width: 100%;
+  }
+
+  &--canvas {
+    position: relative;
+    background-color: white;
+  }
+}

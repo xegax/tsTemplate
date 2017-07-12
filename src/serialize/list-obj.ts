@@ -69,7 +69,7 @@ export class ListObj<T extends ObjID> extends ObjID {
 
   append(item: T, idx?: number) {
     idx = idx || 0;
-    return Queue.all(
+    return Queue.lastResult(
       () => this.getImpl().appendToList(this.getId(), item.getId(), idx),
       (newLength: number) => {
         this.length = newLength;

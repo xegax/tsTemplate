@@ -2,7 +2,7 @@ import {createServer} from './server';
 import {SQLObjectStore} from '../serialize/obj-store/sql-object-store';
 import {ObjectFactory} from '../serialize/object-factory';
 import {ListObj} from '../serialize/list-obj';
-import {DocText, DocList, register} from '../serialize/document';
+import {DocText, DocList, register} from '../examples/docs/document';
 import {Database} from 'sqlite3';
 
 const srv = createServer(8088);

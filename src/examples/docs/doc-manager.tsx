@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {DocText, DocList, DocImage, DocBase, register} from 'serialize/document';
+import {DocText, DocList, DocImage, DocBase, PrDoc, register} from './document';
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
@@ -10,9 +10,10 @@ import {RemoteObjectStore} from 'serialize/obj-store/remote-object-store';
 import {createRequestor} from 'requestor/requestor';
 import {startDragging} from 'common/start-dragging';
 import {Queue} from 'common/promise';
+import {DocManagerModel} from './doc-manager-model';
 
 interface Props {
-  model: DocList;
+  model: DocManagerModel;
 }
 
 interface State {
@@ -22,7 +23,7 @@ interface State {
   moveIdx?: number;
 }
 
-class DocListView extends React.Component<Props, State> {
+export class DocManager extends React.Component<Props, State> {
   constructor(props) {
     super(props);
     this.state = {};
@@ -41,6 +42,8 @@ class DocListView extends React.Component<Props, State> {
       return this.renderDocText(item);
     else if (item instanceof DocImage)
       return this.renderDocImage(item);
+    else if (item instanceof PrDoc)
+      return 'presentation';
     return 'unknown doc'; 
   }
 
@@ -90,12 +93,17 @@ class DocListView extends React.Component<Props, State> {
         style={{border: '1px solid gray', margin: 2, opacity: this.state.drag == item ? 0.5 : 1}}
         onMouseDown={e => this.onDragStart(e, item, idx)}
       >
-        <div style={{backgroundColor: 'silver', padding: 2, display: 'flex'}}>
+        <div
+          onClick={e => window.location.assign(`docs.html?docId=${item.getId()}`)}
+          style={{cursor: 'pointer', backgroundColor: 'silver', padding: 2, display: 'flex'}}>
           <div style={{flexGrow: 1}}>{`doc id=${item.getId()}`}</div>
           <i
             style={{cursor: 'pointer'}}
             className={'fa fa-remove'}
-            onClick={() => {
+            onClick={e => {
+              e.stopPropagation();
+              e.preventDefault();
+
               this.props.model.getList().remove(idx).then(()=> {
                 this.setState({});
               });
@@ -143,16 +151,11 @@ class DocListView extends React.Component<Props, State> {
     );
   }
 
-  private createDoc = (type: string) => {
-    const lst = this.props.model.getList();
-    Queue.all(
-      () => db.makeObject<DocBase>(type),
-      (doc: DocBase) => lst.append(doc, lst.getLength()),
-      () => this.setState({})
-    );
-  }
+  private updateView = () => this.setState({});
+
 
   render() {
+    const model = this.props.model;
     const list = this.props.model.getList();
     let items = new Array<DocBase>();
     for (let n = 0; n < list.getLength(); n++) {
@@ -165,16 +168,22 @@ class DocListView extends React.Component<Props, State> {
     return (
       <div style={{overflow: 'auto'}}>
         <div
-          onClick={() => this.createDoc('DocText')}
+          onClick={() => model.createDoc('DocText').then(this.updateView)}
           style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
         >
           +text doc
         </div>
         <div
-          onClick={() => this.createDoc('DocImage')}
+          onClick={() => model.createDoc('DocImage').then(this.updateView)}
           style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
         >
           +image doc
+        </div>
+        <div
+          onClick={() => model.createDoc(PrDoc.getDesc().classId).then(this.updateView)}
+          style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
+        >
+          +presentation doc
         </div>
         <div>{'items: ' + list.getLength()}</div>
         {items.map((item, idx) => this.renderItem(item, idx))}
@@ -182,20 +191,3 @@ class DocListView extends React.Component<Props, State> {
     );
   }
 }
-
-const factory = new ObjectFactory();
-register(factory);
-
-const req = createRequestor('/handler');
-const store = new RemoteObjectStore(req);
-const db = new Serializer(factory, store);
-
-function render(model: DocList) {
-  ReactDOM.render(<DocListView model={model}/>, getContainer());
-}
-
-db.loadObject<DocList>('1')
-  .then(render)
-  .catch(e => {
-    db.makeObject<DocList>('DocList').then(render);
-  });

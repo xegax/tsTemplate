@@ -127,7 +127,7 @@ export class Serializer {
     return ok;
   }
 
-  loadObject<T>(id: string, from?: number, count?: number): Promise<T> {
+  loadObject<T extends ObjID>(id: string, from?: number, count?: number): Promise<T> {
     return this.loadDeep<T>(id, from, count);
   }
 
