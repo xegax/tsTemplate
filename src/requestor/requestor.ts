@@ -1,9 +1,22 @@
 import * as d3 from 'd3';
+import {Encryptor, EmptyEncryptor} from 'common/encryptor';
 
-export interface Requestor {
+interface RequestorCore {
   sendData(url: string, params?: Object, postData?: string): Promise<string>;
   getData(url: string, params?: Object): Promise<string>;
-  getJSON<T extends any>(url: string, params?: Object): Promise<T>;
+}
+
+export abstract class Requestor implements RequestorCore {
+  abstract sendData(url: string, params?: Object, postData?: string): Promise<string>;
+  abstract getData(url: string, params?: Object): Promise<string>;
+
+  getJSON<T extends any>(url: string, params?: Object): Promise<T> {
+    return this.getData(url, params).then(s => JSON.parse(s));
+  }
+
+  sendJSON<T extends any>(url: string, params?: Object, postData?: Object): Promise<T> {
+    return this.sendData(url, params, JSON.stringify(postData)).then(s => JSON.parse(s));
+  }
 }
 
 function getUrl(url: string, params: Object): string {
@@ -15,19 +28,38 @@ function getUrl(url: string, params: Object): string {
   }
 }
 
-export class BaseRequestor implements Requestor {
+interface RequestorParams {
+  requestor?: Requestor;
+  urlBase?: string;
+  params?: Object;
+  encrypor?: Encryptor;
+}
+
+export class BaseRequestor extends Requestor {
   private urlBase: string = '';
   private params: Object = {};
   private requestor: Requestor;
+  private encrypor: Encryptor;
 
-  constructor(requestor: Requestor, urlBase?: string, params?: Object) {
-    this.urlBase = urlBase || '';
-    this.params = params || {};
-    this.requestor = requestor;
+  constructor(params: RequestorParams) {
+    super();
+
+    this.urlBase = params.urlBase || '';
+    this.params = params.params || {};
+    this.requestor = params.requestor;
+    this.encrypor = params.encrypor || new EmptyEncryptor();
   }
 
   private getUrl(url: string) {
-    return this.urlBase + url;
+    return this.urlBase + '/' + this.encrypt(url);
+  }
+
+  private encrypt(s: string): string {
+    return this.encrypor.encrypt(s);
+  }
+
+  private decrypt(s: string): string {
+    return this.encrypor.decrypt(s);
   }
 
   private getParams(params?: Object) {
@@ -35,21 +67,25 @@ export class BaseRequestor implements Requestor {
   }
 
   sendData(url: string, params?: Object, postData?: string): Promise<string> {
-    return this.requestor.sendData(this.getUrl(url), this.getParams(params), postData);
+    return this.requestor.sendData(this.getUrl(url), this.getParams(params), this.encrypt(postData));
   }
 
   getData(url: string, params?: Object): Promise<string> {
-    return this.requestor.getData(this.getUrl(url), this.getParams(params));
+    return this.requestor.getData(this.getUrl(url), this.getParams(params)).then(data => this.decrypt(data));
   }
 
   getJSON<T extends any>(url: string, params?: Object): Promise<T> {
-    return this.requestor.getJSON(this.getUrl(url), this.getParams(params));
+    return this.getData(url, params).then(s => JSON.parse(this.decrypt(s)));
+  }
+
+  sendJSON<T extends any>(url: string, params?: Object, postData?: Object): Promise<T> {
+    return this.sendData(url, params, JSON.stringify(postData)).then(s => JSON.parse(this.decrypt(s)));
   }
 }
 
-class RequestorImpl implements Requestor {
+class RequestorImpl extends Requestor {
   sendData(url: string, params?: Object, postData?: string): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       d3.text(getUrl(url, params)).post(postData, (err, data: string) => {
         if (err) {
           reject(err);
@@ -62,19 +98,7 @@ class RequestorImpl implements Requestor {
 
   getData(url: string, params?: Object): Promise<string> {
     return new Promise((resolve, reject) => {
-      d3.text(getUrl(url, params)).get((err, data) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      });
-    });
-  }
-
-  getJSON(url: string, params?: Object): Promise<any> {
-    return new Promise((resolve, reject) => {
-      d3.json(getUrl(url, params)).get((err, data) => {
+      d3.text(getUrl(url, params)).get((err, data: string) => {
         if (err) {
           reject(err);
         } else {
@@ -85,12 +109,9 @@ class RequestorImpl implements Requestor {
   }
 }
 
-export function createRequestor(urlBase?: string, params?: string): Requestor {
-  if (!urlBase && !params) {
-    return new RequestorImpl();
-  } else {
-    return new BaseRequestor(new RequestorImpl(), urlBase, params);
-  }
+export function createRequestor(params: RequestorParams): Requestor {
+  params.requestor = params.requestor || new RequestorImpl();
+  return new BaseRequestor(params);
 }
 
 let globalRequestor: Requestor;

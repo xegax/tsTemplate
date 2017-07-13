@@ -3,7 +3,7 @@ import {FilterCondition} from '../table/filter-condition';
 import {SortColumn} from '../common/table';
 import {getTableMaker, Table} from './table/table';
 
-var srv = createServer(8088);
+var srv = createServer({port: 8088});
 const makeTable = getTableMaker('mysql');
 
 interface Params {

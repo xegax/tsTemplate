@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {createRequestor} from 'requestor/requestor';
+import {getGlobalRequestor} from 'requestor/requestor';
 
 interface Props {
 }
@@ -129,7 +129,7 @@ class Test extends React.Component<Props, State> {
 	}
 
   onStart = () => {
-    createRequestor().getJSON('../data/net.json').then(data => {
+    getGlobalRequestor().getJSON('../data/net.json').then(data => {
       this.train();
       for (let key in data) {
         this.perceptron.optimized.memory[+key] = data[key];

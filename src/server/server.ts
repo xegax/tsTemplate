@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as url from 'url';
+import {Encryptor, EmptyEncryptor} from '../common/encryptor';
 
 interface Params<GET, POST> {
   get: GET;
@@ -33,16 +34,40 @@ function parseUrl(str) {
   };
 }
 
+interface ServerParams {
+  encryptor?: Encryptor;
+  port: number;
+  baseUrl?: string;
+}
 
 export class ServerImpl implements Server  {
+  private encryptor: Encryptor;
   private handlerMap: {[url:string]: HandlerHolder} = {};
+  private baseUrl: string = '';
+
+  constructor(params: ServerParams) {
+    this.encryptor = params.encryptor || new EmptyEncryptor();
+    this.baseUrl = params.baseUrl || '';
+  }
+
+  private encrypt(s: string): string {
+    return this.encryptor.encrypt(s);
+  }
+
+  private decrypt(s: string): string {
+    return this.encryptor.decrypt(s);
+  }
 
   addJsonHandler<GET, POST>(url: string, handler: Handler<GET, POST>) {
     this.handlerMap[url] = {handler};
   }
 
   findHandler(url: string): HandlerHolder {
-    return this.handlerMap[url];
+    if (this.baseUrl.length)
+      if (url.substr(0, this.baseUrl.length) == this.baseUrl)
+        url = url.substr(this.baseUrl.length);
+
+    return this.handlerMap[this.decrypt(url)];
   }
 
   handleRequest(request: http.IncomingMessage, response: http.ServerResponse) {
@@ -58,7 +83,7 @@ export class ServerImpl implements Server  {
       //console.log(data);
       let res = typeof data == 'string' ? data : JSON.stringify(data);
       response.writeHead(200, {'Content-Type': 'application/json'});
-      response.write(res);
+      response.write(this.encrypt(res));
       response.end();
     };
 
@@ -72,6 +97,7 @@ export class ServerImpl implements Server  {
       let postData = '', postJSON;
       request.on('data', data => postData += data);
       request.on('end', () => {
+        postData = this.decrypt(postData);
         if (postData.length) {
           try {
             postJSON = JSON.parse(postData);
@@ -95,12 +121,12 @@ export class ServerImpl implements Server  {
   }
 }
 
-export function createServer(port: number): Server {
-  let impl = new ServerImpl();
+export function createServer(params: ServerParams): Server {
+  let impl = new ServerImpl(params);
   let server = http.createServer((request: http.IncomingMessage, response: http.ServerResponse) => {
     impl.handleRequest(request, response);
   });
-  server.listen(port);
+  server.listen(params.port);
 
   return impl;
 }

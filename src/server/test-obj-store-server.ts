@@ -4,8 +4,13 @@ import {ObjectFactory} from '../serialize/object-factory';
 import {ListObj} from '../serialize/list-obj';
 import {DocText, DocList, register} from '../examples/docs/document';
 import {Database} from 'sqlite3';
+import {Base64Encryptor} from '../common/encryptor';
 
-const srv = createServer(8088);
+const srv = createServer({
+  port: 8088,
+  encryptor: new Base64Encryptor(),
+  baseUrl: '/handler/'
+});
 
 let factory = new ObjectFactory();
 register(factory);
@@ -29,46 +34,46 @@ function handler(promise: Promise<any>, done, error) {
   });
 }
 
-srv.addJsonHandler<GetID, {}>('/handler/findObject', (params, done, error) => {
-  handler(store.findObject(params.get.id), done, error);
+srv.addJsonHandler<{}, GetID>('findObject', (params, done, error) => {
+  handler(store.findObject(params.post.id), done, error);
 });
 
-srv.addJsonHandler<{subtype: string}, {}>('/handler/createObject', (params, done, error) => {
-  handler(store.createObject(params.get.subtype), done, error);
+srv.addJsonHandler<{}, {subtype: string}>('createObject', (params, done, error) => {
+  handler(store.createObject(params.post.subtype), done, error);
 });
 
-srv.addJsonHandler<GetID, {}>('/handler/write', (params, done, error) => {
-  handler(store.write(params.get.id, params.post), done, error);
+srv.addJsonHandler<{}, GetID & {json: Object}>('write', (params, done, error) => {
+  handler(store.write(params.post.id, params.post.json), done, error);
 });
 
-srv.addJsonHandler<GetID, Array<any>>('/handler/writeArray', (params, done, error) => {
-  handler(store.writeArray(params.get.id, params.post), done, error);
+srv.addJsonHandler<{}, GetID & {json: Array<any>}>('writeArray', (params, done, error) => {
+  handler(store.writeArray(params.post.id, params.post.json), done, error);
 });
 
-srv.addJsonHandler<{listId: string, objId: string, idx: number},any>('/handler/appendToList', (params, done, error) => {
-  handler(store.appendToList(params.get.listId, params.get.objId, params.get.idx), done, error);
+srv.addJsonHandler<{}, {listId: string, objId: string, idx: number}>('appendToList', (params, done, error) => {
+  handler(store.appendToList(params.post.listId, params.post.objId, params.post.idx), done, error);
 });
 
-srv.addJsonHandler<{listId: string, idx: number},any>('/handler/removeFromList', (params, done, error) => {
-  handler(store.removeFromList(params.get.listId, params.get.idx), done, error);
+srv.addJsonHandler<{}, {listId: string, idx: number}>('removeFromList', (params, done, error) => {
+  handler(store.removeFromList(params.post.listId, params.post.idx), done, error);
 });
 
-srv.addJsonHandler<GetID, {}>('/handler/getObjectsFromList', (params, done, error) => {
-  handler(store.getObjectsFromList(params.get.id), done, error);
+srv.addJsonHandler<{}, GetID>('getObjectsFromList', (params, done, error) => {
+  handler(store.getObjectsFromList(params.post.id), done, error);
 });
 
-srv.addJsonHandler<{}, {}>('/handler/createList', (params, done, error) => {
+srv.addJsonHandler<{}, {}>('createList', (params, done, error) => {
   handler(store.createList(), done, error);
 });
 
-srv.addJsonHandler<{id: string, from: number, count: number}, {}>('/handler/loadObjects', (params, done, error) => {
-  handler(store.loadObjects(params.get.id, +params.get.from, +params.get.count), done, error);
+srv.addJsonHandler<{}, {id: string, from: number, count: number}>('loadObjects', (params, done, error) => {
+  handler(store.loadObjects(params.post.id, +params.post.from, +params.post.count), done, error);
 });
 
-srv.addJsonHandler<{}, {}>('/handler/createObjects', (params, done, error) => {
+srv.addJsonHandler<{}, {}>('createObjects', (params, done, error) => {
   handler(store.createObjects(params.post), done, error);
 });
 
-srv.addJsonHandler<GetID, {}>('/handler/getListSize', (params, done, error) => {
-  handler(store.getListSize(params.get.id), done, error);
+srv.addJsonHandler<{}, GetID>('getListSize', (params, done, error) => {
+  handler(store.getListSize(params.post.id), done, error);
 });

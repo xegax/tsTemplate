@@ -1,5 +1,3 @@
-import * as Promise from 'promise';
-
 export class Queue {
   private task: Promise<any>;
   private size: number = 0;

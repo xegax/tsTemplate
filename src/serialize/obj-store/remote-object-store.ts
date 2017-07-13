@@ -10,49 +10,52 @@ export class RemoteObjectStore implements ObjectStoreInterface {
   }
 
   findObject(id: string) {
-    return this.requestor.getJSON('/findObject', {id});
+    return this.requestor.sendJSON('findObject', {}, {id});
   }
 
   createObject(subtype: string): Promise<ObjTable> {
-    return this.requestor.getJSON<ObjTable>('/createObject', {subtype});
+    return this.requestor.sendJSON<ObjTable>('createObject', {}, {subtype});
   }
 
   write(id: string, json: Object): Promise<Object> {
-    return this.requestor.sendData('/write', {id}, JSON.stringify(json));
+    return this.requestor.sendJSON('write', {}, {id, json});
   }
 
   writeArray(id: string, arr: Array<string>): Promise<Array<string>> {
-    return this.requestor.sendData('/writeArray', {id}, JSON.stringify(arr)).then(data => []);
+    return this.requestor.sendJSON('writeArray', {}, {id, json: arr}).then(data => []);
   }
 
   appendToList(listId: string, objId: string, idx: number) {
-    return this.requestor.getJSON('/appendToList', {listId, objId, idx});
+    return this.requestor.sendJSON('appendToList', {}, {listId, objId, idx});
   }
 
   removeFromList(listId: string, idx: number) {
-    return this.requestor.getJSON('/removeFromList', {listId, idx});
+    return this.requestor.sendJSON('removeFromList', {}, {listId, idx});
   }
 
   getObjectsFromList(id: string): Promise<Array<string>> {
-    return this.requestor.getJSON('/getObjectsFromList', {id});
+    return this.requestor.sendJSON('getObjectsFromList', {}, {id});
   }
 
   createList(): Promise<ObjTable> {
-    return this.requestor.getJSON('/createList');
+    return this.requestor.sendJSON('createList');
   }
 
   loadObjects(id: string, from?: number, count?: number) {
     let params = {id};
-    from && (params['from'] = from);
-    count && (params['count'] = count);
-    return this.requestor.getJSON('/loadObjects', params);
+    if (from != null)
+        params['from'] = from;
+    if (count != null)
+        params['count'] = count;
+
+    return this.requestor.sendJSON('loadObjects', {}, {...params});
   }
 
   createObjects(objsMap: {[id: string]: {json: Object, type: string}}) {
-    return this.requestor.sendData('/createObjects', {}, JSON.stringify(objsMap)).then(data => JSON.parse(data));
+    return this.requestor.sendJSON('createObjects', {}, objsMap);
   }
 
   getListSize(listId: string) {
-    return this.requestor.getJSON('/getListSize', {id: listId});
+    return this.requestor.sendJSON('getListSize', {}, {id: listId});
   }
 }

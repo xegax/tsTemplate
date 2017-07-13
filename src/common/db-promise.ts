@@ -1,5 +1,6 @@
 import {Database} from 'sqlite3';
 import {Queue} from './promise';
+import * as Promise from 'promise';
 
 type Cond = {[key: string]: number | string | Array<string> | Array<number>};
 interface GetParams {

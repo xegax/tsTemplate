@@ -10,11 +10,12 @@ import {DocManagerModel} from './doc-manager-model';
 import {processRoute, ViewRef} from './routes';
 import {PrDocView} from './prdoc-view';
 import {PrDocModel} from './prdoc-model';
+import {Base64Encryptor} from 'common/encryptor';
 
 const factory = new ObjectFactory();
 register(factory);
 
-const req = createRequestor('/handler');
+const req = createRequestor({urlBase: '/handler', encrypor: new Base64Encryptor()});
 const store = new RemoteObjectStore(req);
 const db = new Serializer(factory, store);
 
