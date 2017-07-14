@@ -1,5 +1,5 @@
 import {Serializer} from 'serialize/serializer';
-import {DocList, DocBase, DocImage, DocText} from './document';
+import {DocList, DocBase, DocImage, DocText, DocDesc} from './document';
 import {Queue} from 'common/promise';
 
 export class DocManagerModel {
@@ -23,10 +23,11 @@ export class DocManagerModel {
     });
   }
 
-  createDoc<T extends DocBase>(type: string, idx?: number, args?: Array<any>): Promise<T> {
+  createDoc(type: string, idx?: number, args?: Array<any>): Promise<DocDesc> {
     return Queue.lastResult(
-      () => this.db.makeObject(type, args),
-      (doc: DocBase) => this.docList.getList().append(doc, idx).then(() => doc)
+      () => this.db.makeObject<DocBase>(type, args),
+      (doc: DocBase) => this.db.makeObject<DocDesc>('DocDesc', [doc.getId(), type]),
+      (desc: DocDesc) => this.docList.getList().append(desc, idx).then(() => desc)
     );
   }
 

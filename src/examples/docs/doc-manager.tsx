@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {DocText, DocList, DocImage, DocBase, PrDoc, register} from './document';
+import {DocDesc, DocText, DocList, DocImage, DocBase, PrDoc, register} from './document';
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
@@ -17,9 +17,9 @@ interface Props {
 }
 
 interface State {
-  editItem?: DocBase;
+  editItem?: DocDesc;
   editText?: string;
-  drag?: DocBase;
+  drag?: DocDesc;
   moveIdx?: number;
 }
 
@@ -37,14 +37,8 @@ export class DocManager extends React.Component<Props, State> {
     return 'doc image';
   }
 
-  private renderDoc(item: DocBase) {
-    if (item instanceof DocText)
-      return this.renderDocText(item);
-    else if (item instanceof DocImage)
-      return this.renderDocImage(item);
-    else if (item instanceof PrDoc)
-      return 'presentation';
-    return 'unknown doc'; 
+  private renderDoc(item: DocDesc) {
+    return item.getType(); 
   }
 
   private getDocIndex(el: HTMLElement) {
@@ -57,7 +51,7 @@ export class DocManager extends React.Component<Props, State> {
     return -1;
   }
 
-  private onDragStart = (e, doc: DocBase, idx: number) => {
+  private onDragStart = (e, doc: DocDesc, idx: number) => {
     let tgt: HTMLElement;
     startDragging({x: 0, y: 0, minDist: 5}, {
       onDragStart: () => {
@@ -85,7 +79,7 @@ export class DocManager extends React.Component<Props, State> {
     })(e);
   }
 
-  private renderItem(item: DocBase, idx: number) {
+  private renderItem(item: DocDesc, idx: number) {
     return (
       <div
         key={'doc-'+item.getId()}
@@ -94,9 +88,9 @@ export class DocManager extends React.Component<Props, State> {
         onMouseDown={e => this.onDragStart(e, item, idx)}
       >
         <div
-          onClick={e => window.location.assign(`docs.html?docId=${item.getId()}`)}
+          onClick={e => window.location.assign(`docs.html?docId=${item.getDocId()}`)}
           style={{cursor: 'pointer', backgroundColor: 'silver', padding: 2, display: 'flex'}}>
-          <div style={{flexGrow: 1}}>{`doc id=${item.getId()}`}</div>
+          <div style={{flexGrow: 1}}>{`doc id=${item.getDocId()}`}</div>
           <i
             style={{cursor: 'pointer'}}
             className={'fa fa-remove'}
@@ -104,9 +98,7 @@ export class DocManager extends React.Component<Props, State> {
               e.stopPropagation();
               e.preventDefault();
 
-              this.props.model.getList().remove(idx).then(()=> {
-                this.setState({});
-              });
+              this.props.model.getList().remove(idx).then(this.updateView);
             }}
           />
         </div>
@@ -120,7 +112,7 @@ export class DocManager extends React.Component<Props, State> {
   private editor: HTMLInputElement;
   private onInputRef = (e: HTMLInputElement) => this.editor = e;
 
-  private renderField(item: DocBase, type: string, set: (text: string) => void, get: () => string): JSX.Element {
+  private renderField(item: DocDesc, type: string, set: (text: string) => void, get: () => string): JSX.Element {
     const onEnter = (e: React.FocusEvent | React.KeyboardEvent) => {
       set.call(item, (e.currentTarget as HTMLInputElement).value);
       this.setState({editText: null});
@@ -157,7 +149,7 @@ export class DocManager extends React.Component<Props, State> {
   render() {
     const model = this.props.model;
     const list = this.props.model.getList();
-    let items = new Array<DocBase>();
+    let items = new Array<DocDesc>();
     for (let n = 0; n < list.getLength(); n++) {
       let item = list.get(n);
       if (!item)

@@ -5,6 +5,62 @@ export {
   ListObj
 }
 
+export class DocDesc extends ObjID {
+  private name: string = 'noname';
+  private desc: string = '';
+  private docId: string = '';
+  private type: string = '';
+
+  private constructor(docId: string, type: string) {
+    super();
+    this.docId = docId;
+    this.type = type;
+  }
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'DocDesc',
+      objects: {
+        name: 'string',
+        desc: 'string',
+        docId: 'string'
+      },
+      make: (docId: string, type: string) => new DocDesc(docId, type)
+    };
+  }
+
+  setName(name: string) {
+    if (this.name == name)
+      return;
+
+    this.name = name;
+    this.modified();
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  setDescr(text: string) {
+    if (this.desc == text)
+      return;
+    this.desc = text;
+    this.modified();
+  }
+
+  getDescr() {
+    return this.desc;
+  }
+
+  getDocId() {
+    return this.docId;
+  }
+
+  getType() {
+    return this.type;
+  }
+}
+
 export class DocBase extends ObjID {
   private name: string = 'noname';
   private desc: string = '';
@@ -103,7 +159,7 @@ export class DocImage extends DocBase {
 }
 
 export class DocList extends ObjID {
-  private list = new ListObj<DocBase>();
+  private list = new ListObj<DocDesc>();
 
   static getDesc(): ObjDesc {
     return {
@@ -243,4 +299,5 @@ export function register(factory: ObjectFactory) {
   factory.register(ListObj);
   factory.register(TextRow);
   factory.register(DocBase);
+  factory.register(DocDesc);
 }

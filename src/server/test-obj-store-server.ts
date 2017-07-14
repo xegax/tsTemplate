@@ -8,7 +8,6 @@ import {Base64Encryptor} from '../common/encryptor';
 
 const srv = createServer({
   port: 8088,
-  encryptor: new Base64Encryptor(),
   baseUrl: '/handler/'
 });
 

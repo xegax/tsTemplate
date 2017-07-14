@@ -1,7 +1,7 @@
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import {ObjectFactory} from 'serialize/object-factory';
-import {register, DocList, DocBase, DocImage, DocText, PrDoc} from 'examples/docs/document';
+import {register, DocDesc, DocList, DocBase, DocImage, DocText, PrDoc} from 'examples/docs/document';
 import {createRequestor} from 'requestor/requestor';
 import {RemoteObjectStore} from 'serialize/obj-store/remote-object-store';
 import {Serializer} from 'serialize/serializer';
@@ -10,12 +10,11 @@ import {DocManagerModel} from './doc-manager-model';
 import {processRoute, ViewRef} from './routes';
 import {PrDocView} from './prdoc-view';
 import {PrDocModel} from './prdoc-model';
-import {Base64Encryptor} from 'common/encryptor';
 
 const factory = new ObjectFactory();
 register(factory);
 
-const req = createRequestor({urlBase: '/handler', encrypor: new Base64Encryptor()});
+const req = createRequestor({urlBase: '/handler'});
 const store = new RemoteObjectStore(req);
 const db = new Serializer(factory, store);
 
