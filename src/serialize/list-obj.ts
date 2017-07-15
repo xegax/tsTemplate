@@ -25,7 +25,7 @@ export class ListObj<T extends ObjID> extends ObjID {
     };
   }
 
-  getItems(from: number, count: number): Array<ObjID> {
+  getItems(from: number, count: number): Array<T> {
     let res = [];
     for (let n = from; n < Math.min(this.length, from + count); n++) {
       let block = this.idx2Block(n);

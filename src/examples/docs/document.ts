@@ -224,6 +224,7 @@ export class FrameObj extends ObjID {
   private width: number = 100;
   private height: number= 50;
   private offs = {x: 0, y: 0};
+  private children = new ListObj<FrameObj>();
 
   static getDesc(): ObjDesc {
     return {
@@ -232,7 +233,8 @@ export class FrameObj extends ObjID {
         x: 'number',
         y: 'number',
         width: 'number',
-        height: 'number'
+        height: 'number',
+        children: 'ListObj'
       },
       make: (x: number,  y: number) => {
         let obj = new FrameObj();
@@ -268,6 +270,10 @@ export class FrameObj extends ObjID {
     this.offs.x = x;
     this.offs.y = y;
   }
+
+  getChildren() {
+    return this.children;
+  }
 }
 
 export class PrDocFrame extends ObjID {
@@ -285,6 +291,10 @@ export class PrDocFrame extends ObjID {
 
   getObjects() {
     return this.objects;
+  }
+
+  getObj(n: number) {
+    return this.objects.get(n);
   }
 }
 

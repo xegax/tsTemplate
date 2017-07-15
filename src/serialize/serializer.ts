@@ -80,6 +80,7 @@ export class Serializer {
   private store: ObjectStoreInterface;
   private readonly listObjName: string = ListObj.getDesc().classId;
   private objCtxImpl: ObjContextImpl;
+  private objects: {[id: string]: ObjID} = {};
 
   constructor(factory: ObjectFactory, store: ObjectStoreInterface) {
     this.factory = factory;
@@ -87,9 +88,14 @@ export class Serializer {
     this.objCtxImpl = new ObjContextImpl(this);
   }
 
-  private newObject(desc: ObjDesc, args?: Array<any>): ObjID {
+  private newObject(desc: ObjDesc, args?: Array<any>, id?: string): ObjID {
+    if (this.objects[id])
+      return this.objects[id];
+
     const obj = desc.make<ObjID>(...args);
     obj.getImpl().initObject({ctx: this.objCtxImpl});
+    if (id)
+      this.objects[id] = obj;
     return obj;
   }
 
@@ -122,7 +128,10 @@ export class Serializer {
     const obj = this.newObject(desc, args);
 
     //создаём всю иерархию объектов удалённо и выставляем ID локальным объектам соответствующие удалённым
-    const ok = this.createDeep(obj).then(() => obj);//Queue.all(...this.createDeep(obj)).then(() => obj);
+    const ok = this.createDeep(obj).then(() => {
+      this.objects[obj.getId()] = obj;
+      return obj;
+    });//Queue.all(...this.createDeep(obj)).then(() => obj);
     ok.catch(err => console.log(err));
     return ok;
   }
@@ -145,7 +154,7 @@ export class Serializer {
         } else {
           const item = deps.obj[id];
           const desc = this.factory.get(item._.subtype);
-          obj = this.newObject(desc);
+          obj = this.newObject(desc, [], id);
           Object.keys(desc.objects).forEach(key => {
             const type = desc.objects[key];
             if (isObjectType(type)) {
@@ -191,6 +200,7 @@ export class Serializer {
     fillMap(obj);
     return this.store.createObjects(id2Json).then(map => {
       Object.keys(map).forEach(id => {
+        this.objects[id] = id2Obj[id];
         id2Obj[id].getImpl().initObject({id: map[id], ctx: this.objCtxImpl});
       });
     });

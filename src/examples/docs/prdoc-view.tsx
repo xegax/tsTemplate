@@ -78,7 +78,7 @@ export class PrDocView extends React.Component<Props, State> {
         key='canvas'
         frame={doc.getFrames().get(this.state.frameIdx)}
         canvasSize={doc.getSize()}
-        makeObj={(x, y) => this.props.model.appendObj(x, y, doc.getFrames().get(this.state.frameIdx))}
+        makeObj={(x, y, parent) => this.props.model.appendObj(x, y, doc.getFrames().get(this.state.frameIdx), parent)}
       />
     );
   }

@@ -22,8 +22,8 @@ export class PrDocModel {
     );
   }
 
-  appendObj(x: number, y: number, frame: PrDocFrame): Promise<FrameObj> {
-    const objs = frame.getObjects();
+  appendObj(x: number, y: number, frame: PrDocFrame, parent?: FrameObj): Promise<FrameObj> {
+    const objs = parent ? parent.getChildren() : frame.getObjects();
     return Queue.lastResult(
       () => this.sr.makeObject(FrameObj.getDesc().classId, [x, y]),
       (obj: FrameObj) => objs.append(obj, objs.getLength()),
