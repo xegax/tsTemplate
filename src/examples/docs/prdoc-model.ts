@@ -1,4 +1,4 @@
-import {PrDoc, PrDocFrame, FrameObj} from './document';
+import {PrDoc, PrDocScene, SceneObj} from './document';
 import {Serializer} from '../../serialize/serializer';
 import {Queue} from 'common/promise';
 
@@ -13,20 +13,20 @@ export class PrDocModel {
     return model;
   }
 
-  appendFrame(): Promise<PrDocFrame> {
+  appendFrame(): Promise<PrDocScene> {
     const frames = this.doc.getFrames();
     return Queue.lastResult(
-      () => this.sr.makeObject(PrDocFrame.getDesc().classId),
-      (frame: PrDocFrame) => frames.append(frame, frames.getLength()),
+      () => this.sr.makeObject(PrDocScene.getDesc().classId),
+      (frame: PrDocScene) => frames.append(frame, frames.getLength()),
       () => frames.get(frames.getLength() - 1)
     );
   }
 
-  appendObj(x: number, y: number, frame: PrDocFrame, parent?: FrameObj): Promise<FrameObj> {
+  appendObj(x: number, y: number, frame: PrDocScene, parent?: SceneObj): Promise<SceneObj> {
     const objs = parent ? parent.getChildren() : frame.getObjects();
     return Queue.lastResult(
-      () => this.sr.makeObject(FrameObj.getDesc().classId, [x, y]),
-      (obj: FrameObj) => objs.append(obj, objs.getLength()),
+      () => this.sr.makeObject(SceneObj.getDesc().classId, [x, y]),
+      (obj: SceneObj) => objs.append(obj, objs.getLength()),
       () => objs.get(objs.getLength() - 1)
     );
   }

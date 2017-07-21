@@ -14,7 +14,7 @@ const classes = {
 interface Props {
   title?: string | React.ReactChildren;
   autoClose?: boolean;
-  children?: React.ReactChildren;
+  children?: JSX.Element;
   onClosed?: () => void;
 }
 
@@ -69,7 +69,7 @@ export class Dialog extends React.Component<Props, State> {
     );
   }
 
-  static showModal(content: React.ReactElement<any>, props?: Props, cont?: ComponentContainer) {
+  static showModal(content: JSX.Element, props?: Props, cont?: ComponentContainer) {
     if (cont == null)
       cont = globalContainer;
     let id;

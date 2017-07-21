@@ -109,7 +109,7 @@ export class Menu extends React.Component<Props, State> {
     if (!item.submenu || this.state.items.indexOf(item) == -1)
       return;
 
-    let style = {
+    let style: React.CSSProperties = {
       position: 'absolute'
     };
 

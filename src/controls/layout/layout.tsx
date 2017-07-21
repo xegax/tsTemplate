@@ -204,7 +204,7 @@ export class Layout extends React.Component<Props, State> {
               height: clearHeight ? 0 : undefined,
               flexGrow: item.grow != null ? item.grow + unshowGrow : undefined
             }}>
-              {React.cloneElement(childMap[item.uid] as React.DOMElement<any>, {
+              {React.cloneElement(childMap[item.uid] as React.DOMElement<any, any>, {
                   width: holder.width,
                   height: holder.height
                 })}

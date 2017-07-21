@@ -3,7 +3,7 @@ import {PrDocModel} from './prdoc-model';
 import {Layout} from 'controls/layout/layout';
 import * as Scheme from 'controls/layout/scheme';
 import {FitToParent} from 'common/fittoparent';
-import {PrDocFrame} from './document';
+import {PrDocScene} from './document';
 import {className} from 'common/common';
 import {PrDocFrameView} from './prdoc-frame-view';
 
@@ -56,7 +56,7 @@ export class PrDocView extends React.Component<Props, State> {
         >
           +frame
         </div>
-        {arr.map((frame: PrDocFrame, idx) => {
+        {arr.map((frame: PrDocScene, idx) => {
           return (
             <div
               key={idx}

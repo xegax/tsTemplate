@@ -17,7 +17,7 @@ function tooltip(text: string) {
 ReactDOM.render((
   <div>
     {rects.map((rect, i) => {
-      let style = {
+      let style: React.CSSProperties = {
         display: 'inline-block',
         position: 'absolute',
         left: rect[0],

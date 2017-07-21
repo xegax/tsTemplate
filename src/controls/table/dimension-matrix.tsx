@@ -22,7 +22,6 @@ import * as Scheme from 'controls/layout/Scheme';
 import {Details} from 'examples/details';
 import {TableData} from 'table/table-data';
 import {loadTable} from 'table/server-table-data';
-import {IThenable} from 'promise';
 import {TextBox} from 'controls/textbox';
 import {RowGroup, ColumnGroup} from 'controls/layout';
 import {ExtTable, ExtTableModel} from 'controls/table/ext-table';

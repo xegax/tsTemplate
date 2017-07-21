@@ -22,7 +22,6 @@ import * as Scheme from 'controls/layout/Scheme';
 import {Details} from 'examples/details';
 import {TableData} from 'table/table-data';
 import {loadTable} from 'table/server-table-data';
-import {IThenable} from 'promise';
 import {TextBox} from 'controls/textbox';
 import {RowGroup, ColumnGroup} from 'controls/layout';
 import {ExtTable, ExtTableModel} from 'controls/table/ext-table';
@@ -68,19 +67,19 @@ class ExtendedTable extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {
+    let state: State = {
       view: new GridModel(),
       detailsRow: -1,
       model: new ExtTableModel()
     };
 
-    this.state.appr = new AppearanceFromLocalStorage('table-example/books', {
+    state.appr = new AppearanceFromLocalStorage('table-example/books', {
       sizes: {},
       columns: [],
       scheme: JSON.stringify(this.getScheme())
     });
-    this.state.columns = new ColumnsModel(null, this.state.appr);
-    this.state.scheme = {root: JSON.parse(this.state.appr.getString('scheme'))};
+    state.columns = new ColumnsModel(null, state.appr);
+    state.scheme = {root: JSON.parse(state.appr.getString('scheme'))};
 
     loadTable('books', {columns: ['id', 'title', 'genre', 'author']}).then(table => {
       table.setParams({columns: []}).then(details => {
@@ -95,7 +94,7 @@ class ExtendedTable extends React.Component<Props, State> {
       });
     });
 
-    this.state.view.addSubscriber((mask) => {
+    state.view.addSubscriber((mask) => {
       if (mask & GridModelEvent.ROWS_RENDER_RANGE && !this.updateStatus.isRunning())
         this.updateStatus.run(1000);
       if (mask & (GridModelEvent.COLUMN_SELECT | GridModelEvent.ROW_SELECT)) {
@@ -103,6 +102,7 @@ class ExtendedTable extends React.Component<Props, State> {
         this.setState({detailsRow});
       }
     });
+    this.state = state;
   }
 
   onDMChanged = (mask: number) => {

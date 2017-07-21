@@ -1,5 +1,6 @@
 import {ObjectFactory, ObjID, ObjDesc} from '../../serialize/object-factory';
 import {ListObj} from '../../serialize/list-obj';
+import {clamp} from 'common/common';
 
 export {
   ListObj
@@ -177,7 +178,7 @@ export class DocList extends ObjID {
 }
 
 export class PrDoc extends DocBase {
-  private frames = new ListObj<PrDocFrame>();
+  private frames = new ListObj<PrDocScene>();
   private width: number = 600;
   private height: number = 500;
 
@@ -218,17 +219,17 @@ export class PrDoc extends DocBase {
   }
 }
 
-export class FrameObj extends ObjID {
+export class SceneObj extends ObjID {
   private x: number = 0;
   private y: number = 0;
   private width: number = 100;
   private height: number= 50;
   private offs = {x: 0, y: 0};
-  private children = new ListObj<FrameObj>();
+  private children = new ListObj<SceneObj>();
 
   static getDesc(): ObjDesc {
     return {
-      classId: 'FrameObj',
+      classId: 'SceneObj',
       objects: {
         x: 'number',
         y: 'number',
@@ -237,7 +238,7 @@ export class FrameObj extends ObjID {
         children: 'ListObj'
       },
       make: (x: number,  y: number) => {
-        let obj = new FrameObj();
+        let obj = new SceneObj();
         if (x != null)
             obj.x = x;
 
@@ -276,16 +277,51 @@ export class FrameObj extends ObjID {
   }
 }
 
-export class PrDocFrame extends ObjID {
-  private objects = new ListObj<FrameObj>();
+export class SceneObjHolder extends ObjID {
+  private obj: SceneObj;
+  private locX: number = 0;
+  private locY: number = 0;
+  private durationMSec: number = 1000;
+  private timeMSec: number = 0;
+
+  private constructor(obj: SceneObj) {
+    super();
+    this.obj = obj;
+  }
 
   static getDesc(): ObjDesc {
     return {
-      classId: 'PrDocFrame',
+      classId: 'SceneObjHolder',
+      objects: {
+        durationMSec: 'number',
+        locX: 'number',
+        locY: 'number'
+      },
+      make: (obj?: SceneObj) => new SceneObjHolder(obj)
+    };
+  }
+
+  setTime(newTime: number) {
+    let timeMSec = newTime % this.durationMSec;
+    if (timeMSec == this.timeMSec)
+      return;
+    
+    this.timeMSec = timeMSec;
+  }
+}
+
+export class PrDocScene extends ObjID {
+  private objects = new ListObj<SceneObj>();
+  private durationMSec: number = 10000;
+  private timeMSec: number = 0;
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'PrDocScene',
       objects: {
         objects: 'ListObj'
       },
-      make: () => new PrDocFrame()
+      make: () => new PrDocScene()
     };
   }
 
@@ -301,8 +337,8 @@ export class PrDocFrame extends ObjID {
 
 export function register(factory: ObjectFactory) {
   factory.register(PrDoc);
-  factory.register(PrDocFrame);
-  factory.register(FrameObj);
+  factory.register(PrDocScene);
+  factory.register(SceneObj);
   factory.register(DocList);
   factory.register(DocText);
   factory.register(DocImage);

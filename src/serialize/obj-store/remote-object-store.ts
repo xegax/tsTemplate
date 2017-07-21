@@ -1,5 +1,5 @@
 import {Requestor} from 'requestor/requestor';
-import {ObjectStoreInterface, ObjTable} from './object-store';
+import {ObjectStoreInterface, ObjTable, Id2Array, Id2Object} from './object-store-interface';
 import {ObjectFactory} from '../object-factory';
 
 export class RemoteObjectStore implements ObjectStoreInterface {
@@ -9,7 +9,7 @@ export class RemoteObjectStore implements ObjectStoreInterface {
     this.requestor = requestor;
   }
 
-  findObject(id: string) {
+  findObject(id: string): Promise<Object & {_: ObjTable}> {
     return this.requestor.sendJSON('findObject', {}, {id});
   }
 
@@ -25,11 +25,11 @@ export class RemoteObjectStore implements ObjectStoreInterface {
     return this.requestor.sendJSON('writeArray', {}, {id, json: arr}).then(data => []);
   }
 
-  appendToList(listId: string, objId: string, idx: number) {
+  appendToList(listId: string, objId: string, idx: number): Promise<any> {
     return this.requestor.sendJSON('appendToList', {}, {listId, objId, idx});
   }
 
-  removeFromList(listId: string, idx: number) {
+  removeFromList(listId: string, idx: number): Promise<any> {
     return this.requestor.sendJSON('removeFromList', {}, {listId, idx});
   }
 
@@ -41,7 +41,7 @@ export class RemoteObjectStore implements ObjectStoreInterface {
     return this.requestor.sendJSON('createList');
   }
 
-  loadObjects(id: string, from?: number, count?: number) {
+  loadObjects(id: string, from?: number, count?: number): Promise<{obj: Id2Object, list: Id2Array}> {
     let params = {id};
     if (from != null)
         params['from'] = from;
@@ -51,11 +51,11 @@ export class RemoteObjectStore implements ObjectStoreInterface {
     return this.requestor.sendJSON('loadObjects', {}, {...params});
   }
 
-  createObjects(objsMap: {[id: string]: {json: Object, type: string}}) {
+  createObjects(objsMap: {[id: string]: {json: Object, type: string}}): Promise<{[id: string]: string}> {
     return this.requestor.sendJSON('createObjects', {}, objsMap);
   }
 
-  getListSize(listId: string) {
+  getListSize(listId: string): Promise<number> {
     return this.requestor.sendJSON('getListSize', {}, {id: listId});
   }
 }

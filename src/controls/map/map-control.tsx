@@ -218,12 +218,12 @@ export class MapControl extends React.Component<Props, State> {
     return <MapRender {...props}/>;
   }
 
-  getMouseRelativeTo(target: Element, event: React.MouseEvent) {
+  getMouseRelativeTo(target: Element, event: React.MouseEvent<HTMLElement>) {
     let rect = target.getBoundingClientRect();
     return {x: event.pageX - rect.left, y: event.pageY - rect.top};
   }
 
-  resizeColumns = (event: React.MouseEvent, column: number) => {
+  resizeColumns = (event: React.MouseEvent<HTMLElement>, column: number) => {
     if (this.props.resizable == false)
       return;
 

@@ -24,7 +24,7 @@ class Test extends React.Component<Props, State> {
   }
 
   render() {
-    let style = {
+    const style: React.CSSProperties = {
       display: 'flex',
       flexDirection: 'column',
       position: 'absolute',

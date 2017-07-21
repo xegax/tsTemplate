@@ -1,5 +1,4 @@
 import {SortColumn} from 'common/table';
-import {IThenable} from 'promise';
 import {FilterCondition} from 'table/filter-condition';
 
 export interface TableParams {

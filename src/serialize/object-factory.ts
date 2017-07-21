@@ -1,4 +1,4 @@
-import {ObjectStoreInterface} from './obj-store/obj-store-interface';
+import {ObjectStoreInterface} from './obj-store/object-store-interface';
 
 export interface ObjContext {
   modified(obj: ObjID);

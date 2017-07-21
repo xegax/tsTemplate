@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {Point} from 'common/point';
-import {IThenable} from 'promise';
 import {findParentNode} from 'common/dom';
 
 const classes = {

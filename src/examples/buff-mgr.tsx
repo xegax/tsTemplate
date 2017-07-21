@@ -2,10 +2,10 @@ import {assign} from 'lodash';
 import {getContainer} from 'examples-main/helpers';
  
 interface BufferSource {
-  load(): Promise.IThenable<BufferSource>;
+  load(): Promise<BufferSource>;
 }
 
-class VideoSource {
+class VideoSource implements BufferSource {
   protected url: string;
   protected el: HTMLVideoElement;
 
@@ -14,7 +14,7 @@ class VideoSource {
     this.el = document.createElement('video');
   }
 
-  load() {
+  load(): Promise<BufferSource> {
     return new Promise((resolve, reject) => {
       this.el.addEventListener('canplay', () => {
         resolve(this);

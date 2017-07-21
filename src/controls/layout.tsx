@@ -2,7 +2,7 @@ import * as React from 'react';
 import {Align, className} from 'common/common';
 
 interface RowGroupProps {
-  children?: React.ReactElement<any>;
+  children?: Array<JSX.Element>;
   grow?: boolean;
   align?: Align;
   margin?: number;  // margin between group items
@@ -46,8 +46,7 @@ export function RowGroup(props: RowGroupProps) {
   );
 }
 
-interface ColumnGroupProps {
-  children?: React.ReactElement<any>;
+interface ColumnGroupProps extends React.HTMLProps<any> {
   grow?: boolean;
   align?: Align;
   margin?: number;  // margin between group items

@@ -1,6 +1,5 @@
 import {Database} from 'sqlite3';
 import * as fs from 'fs';
-import * as Promise from 'promise';
 import {DBPromise} from '../common/db-promise';
 import {Queue} from '../common/promise';
 import {assign} from 'lodash';

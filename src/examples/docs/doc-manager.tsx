@@ -113,7 +113,7 @@ export class DocManager extends React.Component<Props, State> {
   private onInputRef = (e: HTMLInputElement) => this.editor = e;
 
   private renderField(item: DocDesc, type: string, set: (text: string) => void, get: () => string): JSX.Element {
-    const onEnter = (e: React.FocusEvent | React.KeyboardEvent) => {
+    const onEnter = (e: React.FocusEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
       set.call(item, (e.currentTarget as HTMLInputElement).value);
       this.setState({editText: null});
     };

@@ -60,7 +60,7 @@ class Container extends React.Component<Props, State> {
   }
 
   renderBox() {
-    const style = {
+    const style: React.CSSProperties = {
       position: 'absolute',
       width: 64,
       height: 64,

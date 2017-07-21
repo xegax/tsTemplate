@@ -8,8 +8,8 @@ interface Props {
   range?: Array<number>;
   vertical?: boolean;
 
-  onMouseDownThumb?: (e: React.MouseEvent | React.TouchEvent) => void;
-  onMouseDownButton?: (button: number, e: React.MouseEvent | React.TouchEvent) => void;
+  onMouseDownThumb?: (e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => void;
+  onMouseDownButton?: (button: number, e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => void;
 }
 
 interface State {

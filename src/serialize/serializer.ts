@@ -6,7 +6,7 @@ import {
   ObjDesc,
   isObjectType
 } from './object-factory';
-import {ObjectStoreInterface} from './obj-store/obj-store-interface';
+import {ObjectStoreInterface} from './obj-store/object-store-interface';
 import {Queue} from '../common/promise';
 import {ListObj} from './list-obj';
 import {Timer} from '../common/timer';
@@ -30,7 +30,7 @@ class ObjContextImpl implements ObjContext {
 
   private updateDirtyOrder(objs: Array<ObjID>) {
     objs.forEach(obj => {
-      const idx = this.dirtyObjsOrder.arr['findIndex'](item => item.id == obj.getId());
+      const idx = this.dirtyObjsOrder.arr.findIndex(item => item.id == obj.getId());
       const item = this.dirtyObjsOrder.arr[idx];
       if (item && obj.getImpl().getVersion() != item.version) {
         this.dirtyObjsOrder.arr.splice(idx, 1);
@@ -125,7 +125,7 @@ export class Serializer {
   makeObject<T extends ObjID>(type: string, args?: Array<any>): Promise<T> {
     const desc = this.factory.get(type);
     // создаём всю иерархию объектов локально
-    const obj = this.newObject(desc, args);
+    const obj = this.newObject(desc, args) as T;
 
     //создаём всю иерархию объектов удалённо и выставляем ID локальным объектам соответствующие удалённым
     const ok = this.createDeep(obj).then(() => {

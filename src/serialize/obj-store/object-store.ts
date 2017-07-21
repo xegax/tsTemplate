@@ -4,14 +4,14 @@ import {ListObj} from '../list-obj';
 import {
   ObjectStoreInterface,
   ObjTable,
-  GetItemsParams,
+  ItemsRange,
   Id2Object,
   Id2Array
-} from './obj-store-interface';
+} from './object-store-interface';
 
 export {
   ObjTable,
-  GetItemsParams,
+  ItemsRange,
   ObjectStoreInterface
 };
 
@@ -41,7 +41,7 @@ export abstract class ObjectStoreAbstract implements ObjectStoreInterface {
   abstract removeFromList(listId: string, idx: number): Promise<any>;
 
   abstract getListSize(id: string): Promise<number>;
-  abstract getObjectsFromList(id: string, params?: GetItemsParams): Promise<Array<string>>;
+  abstract getObjectsFromList(id: string, params?: ItemsRange): Promise<Array<string>>;
   abstract createList(): Promise<ObjTable>;
 
   private factory: ObjectFactory;
@@ -220,7 +220,7 @@ export class ObjectStore extends ObjectStoreAbstract {
     });
   }
 
-  getObjectsFromList(id: string, params?: GetItemsParams): Promise<Array<string>> {
+  getObjectsFromList(id: string, params?: ItemsRange): Promise<Array<string>> {
     return timerPromise(1, () => {
       if (!this.list[id])
         throw `list with id=${id} not defined`;

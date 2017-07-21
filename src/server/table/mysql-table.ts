@@ -1,4 +1,3 @@
-import {IThenable} from 'promise';
 import {createConnection, IConnection} from 'mysql';
 import {SortColumn, SortDir} from '../../common/table';
 import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../../table/filter-condition';

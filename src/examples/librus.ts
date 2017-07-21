@@ -1,6 +1,5 @@
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import {IThenable} from 'promise';
 import * as xml2js from 'xml2js';
 import * as iconv from 'iconv-lite';
 import {JSONStreamWriter} from './json-stream';
@@ -9,7 +8,7 @@ function endsWith(s: string, ends: string): boolean {
   return s.substr(s.length - ends.length) == ends;
 }
 
-function run7z(argsArr: Array<string>): IThenable<{data: Buffer, error: string, code: number}> {
+function run7z(argsArr: Array<string>): Promise<{data: Buffer, error: string, code: number}> {
   return new Promise((resolve, reject) => {
     var outs = [];
     var errOuts = '';

@@ -42,12 +42,12 @@ export class Details extends React.Component<Props, State> {
   render() {
     return (
       <div>
-        <table width={this.props.width}>
+        <table style={{width: this.props.width}}>
           <tbody>
             {this.state.data.map((item, i) => {
               return (
                   <tr key={'row'+i}>
-                    <td width={'1px'} style={{width: 1, backgroundColor: '#F0F0F0'}}>{item.name}</td>
+                    <td style={{width: 1, backgroundColor: '#F0F0F0'}}>{item.name}</td>
                     <td>{item.value}</td>
                   </tr>
                 );

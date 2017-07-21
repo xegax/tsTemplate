@@ -237,7 +237,7 @@ export class ExtTable extends React.Component<Props, State> {
         }
       }
     ];
-    const onContextMenu = (event: React.MouseEvent) => {
+    const onContextMenu = (event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
       Menu.showAt({x: event.pageX, y: event.pageY}, 
         <Menu
@@ -249,7 +249,7 @@ export class ExtTable extends React.Component<Props, State> {
       );
     };
 
-    const onClickBy = (event: React.MouseEvent) => {
+    const onClickBy = (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
       Menu.showUnder(event.currentTarget as HTMLElement,
         <Menu
@@ -296,7 +296,7 @@ export class ExtTable extends React.Component<Props, State> {
   }
 
   protected wrapCell = (params: WrapCell) => {
-    const onCellContextMenu = (e: React.MouseEvent) => {
+    const onCellContextMenu = (e: React.MouseEvent<HTMLElement>) => {
       e.preventDefault();
     }
 

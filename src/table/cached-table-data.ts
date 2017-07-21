@@ -1,7 +1,6 @@
 import {TableData, TableCell, TableInfo, TableParams} from 'table/table-data';
 import {clamp} from 'common/common';
 import {CacheBlock, Block} from 'common/cache-block';
-import {IThenable} from 'promise';
 
 export {Block} from 'common/cache-block';
 

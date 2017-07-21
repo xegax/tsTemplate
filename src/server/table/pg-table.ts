@@ -1,4 +1,3 @@
-import {IThenable} from 'promise';
 import {Pool, Client} from 'pg';
 import {SortColumn, SortDir} from '../../common/table';
 import {FilterCondition, CompoundCondition, ColumnCondition, ConditionCat, ConditionText} from '../../table/filter-condition';

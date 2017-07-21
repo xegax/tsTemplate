@@ -170,7 +170,7 @@ export class GridRender extends React.Component<Props, State> {
     return [rows.idx, Math.min(rows.idx + rows.num, this.getRows() - 1)];
   }
 
-  onWheel = (event: React.WheelEvent) => {
+  onWheel = (event: React.WheelEvent<HTMLElement>) => {
     let [topRow] = this.props.model.getRowsRange();
     if(event.deltaY < 0)
       topRow -= 1;
@@ -180,7 +180,7 @@ export class GridRender extends React.Component<Props, State> {
     event.preventDefault();
   };
 
-  onKeyDown = (event: React.KeyboardEvent) => {
+  onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     let row = this.props.model.getSelectRow();
     let col = this.props.model.getSelectColumn();
 

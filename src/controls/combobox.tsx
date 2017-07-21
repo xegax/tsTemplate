@@ -58,7 +58,7 @@ export class ComboBox extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {
+    let state: State = this.state = {
       text: '',
       index: props.sourceRow != null ? props.sourceRow : -1,
       popup: false,
@@ -68,8 +68,8 @@ export class ComboBox extends React.Component<Props, State> {
 
     if (props.tableData) {
       let info = props.tableData.getInfo();
-      this.state.items = info.rowNum;
-      this.state.tableData = props.tableData;
+      state.items = info.rowNum;
+      state.tableData = props.tableData;
       this.updateTable(props.tableData);
     }
   }
@@ -157,7 +157,7 @@ export class ComboBox extends React.Component<Props, State> {
     );
   }
 
-  protected onBlur = (e: React.FocusEvent) => {
+  protected onBlur = (e: React.FocusEvent<HTMLElement>) => {
     if (this.props.debug)
       return;
 
@@ -168,7 +168,7 @@ export class ComboBox extends React.Component<Props, State> {
     this.showPopup(false);
   };
 
-  protected onKeyDown = (e: React.KeyboardEvent) => {
+  protected onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     let keyCode = e.keyCode;
 
     let rowOffs = 0;

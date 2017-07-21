@@ -1,6 +1,5 @@
 import {CachedTableData, Block, fillCache, TableRange} from 'table/cached-table-data';
 import {TableData, TableCell, TableInfo, TableParams} from 'table/table-data';
-import {IThenable} from 'promise';
 import {assign} from 'lodash';
 
 export class JSONTableData extends CachedTableData {
@@ -13,7 +12,7 @@ export class JSONTableData extends CachedTableData {
       this.columns = new JSONTableData([cols], null);
   }
 
-  protected loadCacheRange(block: Block, range: TableRange): IThenable<any> {
+  protected loadCacheRange(block: Block, range: TableRange): Promise<any> {
     return new Promise((resolve) => {
       setTimeout(() => {
         fillCache(block, range, (row, col) => ({text: this.data[row][col], raw: this.data[row][col]}));

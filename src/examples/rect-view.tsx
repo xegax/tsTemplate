@@ -326,7 +326,7 @@ class View extends React.Component<Props, State> {
     this.updateCanvasSize();
   }
 
-  onWheel = (event: React.WheelEvent) => {
+  onWheel = (event: React.WheelEvent<HTMLElement>) => {
     const delta = -event.deltaY / Math.abs(event.deltaY);
     this.state.model.setScale(this.state.model.getScale() + delta / 100, this.getPoint(event));
     const scroll = this.getScroll();
@@ -347,7 +347,7 @@ class View extends React.Component<Props, State> {
     return this.state.model.viewPoint2DataPoint({x: event.pageX - bbox.left, y: event.pageY - bbox.top});
   }
 
-  onMouseMove = (event: React.MouseEvent) => {
+  onMouseMove = (event: React.MouseEvent<HTMLElement>) => {
     const i = findClosest(this.getPoint(event), 10 / this.state.model.getScale());
     if (i != this.hoverPoint) {
       this.hoverPoint = i;

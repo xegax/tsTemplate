@@ -9,7 +9,6 @@ import {
   ConditionCat,
   ConditionText
 } from '../../table/filter-condition';
-import {IThenable} from 'promise';
 import {MySQLTableImpl} from './mysql-table';
 import {SQLiteTableImpl} from './sqlite3-table';
 import {PGTableImpl} from './pg-table';

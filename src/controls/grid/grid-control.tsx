@@ -66,14 +66,15 @@ export class GridControl extends React.Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
-    this.state = {};
+    let state: State = {};
 
     if (props.header) {
-      let header = this.state.header = new GridModel();
+      let header = state.header = new GridModel();
       header.setColumns(props.model.getColumns());
       header.setRows(1);
     }
     props.model.addSubscriber(this.onModelChanged);
+    this.state = state;
   }
 
   onModelChanged = (eventMask) => {
@@ -124,12 +125,12 @@ export class GridControl extends React.Component<Props, State> {
     this.props.model.setHeight(height);
   };
 
-  getMouseRelativeTo(target: Element, event: React.MouseEvent) {
+  getMouseRelativeTo(target: Element, event: React.MouseEvent<HTMLElement>) {
     let rect = target.getBoundingClientRect();
     return {x: event.pageX - rect.left, y: event.pageY - rect.top};
   }
 
-  private onResizeColumn(column: number, event: React.MouseEvent | React.TouchEvent) {
+  private onResizeColumn(column: number, event: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) {
     const feature = GridModelFeatures.ROWS_HIGHLIGHTABLE;
     const highlightable = this.props.model.hasFeatures(feature);
     let size = this.props.model.getColumnSize(column);

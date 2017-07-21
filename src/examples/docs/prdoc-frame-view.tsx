@@ -1,17 +1,17 @@
 import * as React from 'react';
-import {PrDocFrame, FrameObj} from './document';
+import {PrDocScene, SceneObj} from './document';
 import {Size} from 'common/point';
 import {startDragging} from 'common/start-dragging';
 import {Queue} from 'common/promise';
 
 interface Props {
-  frame: PrDocFrame;
+  frame: PrDocScene;
   canvasSize: Size;
-  makeObj: (x: number, y: number, parent?: FrameObj) => Promise<FrameObj>;
+  makeObj: (x: number, y: number, parent?: SceneObj) => Promise<SceneObj>;
 }
 
 interface State {
-  hover?: FrameObj;
+  hover?: SceneObj;
 }
 
 const classes = {
@@ -30,7 +30,7 @@ export class PrDocFrameView extends React.Component<Props, State> {
     };
   }
 
-  private renderObj(obj: FrameObj, idx: number, parent?: FrameObj) {
+  private renderObj(obj: SceneObj, idx: number, parent?: SceneObj) {
     let lst = obj.getChildren().getSelectedItems();
     let rect = obj.getRect();
     return (
@@ -55,7 +55,7 @@ export class PrDocFrameView extends React.Component<Props, State> {
     );
   }
 
-  private startDragging(obj: FrameObj, e, parent?: FrameObj) {
+  private startDragging(obj: SceneObj, e, parent?: SceneObj) {
     const rect = obj.getRect();
     startDragging({x: 0, y: 0}, {
       onDragging: (evt) => {
@@ -93,7 +93,7 @@ export class PrDocFrameView extends React.Component<Props, State> {
     })(e);
   }
 
-  private hitTest(x: number, y: number, parent?: FrameObj, skip?: Array<FrameObj>): FrameObj {
+  private hitTest(x: number, y: number, parent?: SceneObj, skip?: Array<SceneObj>): SceneObj {
     let lst = parent ? parent.getChildren().getSelectedItems() : this.props.frame.getObjects().getSelectedItems();
     for (let n = 0; n < lst.length; n++) {
       const rect = lst[n].getRect();
@@ -114,17 +114,17 @@ export class PrDocFrameView extends React.Component<Props, State> {
 
   private renderObjects() {
     let lst = this.props.frame.getObjects();
-    return lst.getItems(0, lst.getLength()).map((obj: FrameObj, idx) => this.renderObj(obj, idx));
+    return lst.getItems(0, lst.getLength()).map((obj: SceneObj, idx) => this.renderObj(obj, idx));
   }
 
   private updateView = () => this.setState({});
 
-  private getPoint(e: React.MouseEvent) {
+  private getPoint(e: React.MouseEvent<HTMLElement>) {
     const bbox = this.canvasRef.getBoundingClientRect();
     return {x:  e.pageX - bbox.left, y: e.pageY - bbox.top};
   }
 
-  private makeObject = (e: React.MouseEvent) => {
+  private makeObject = (e: React.MouseEvent<HTMLElement>) => {
     const pt = this.getPoint(e);
     this.props.makeObj(pt.x, pt.y).then(this.updateView);
   }

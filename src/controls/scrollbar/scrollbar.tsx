@@ -4,6 +4,7 @@ import {startDragging} from 'common/start-dragging';
 import * as d3 from 'd3';
 import {clamp} from 'common/common';
 import {Timer} from 'common/timer';
+import {ScaleLinear} from 'd3-scale';
 
 interface Props {
   width?: number;
@@ -27,7 +28,7 @@ interface State {
 
 class Scrollbar extends React.Component<Props, State> {
   protected vertical: boolean;
-  protected scale: d3.scale.Linear<number, number>;
+  protected scale: ScaleLinear<number, number>;
   protected timer = new Timer(() => {
     this.nextStep();
     this.timer.run(50);
@@ -125,7 +126,7 @@ class Scrollbar extends React.Component<Props, State> {
     let thumbSize = clamp(availableSpace * availableSpace / maxValue, [minThumbSize, availableSpace]);
 
     return {
-      scale: d3.scale.linear()
+      scale: d3.scaleLinear()
         .domain(this.getRangeBounds(thumbSize, props))
         .range([0, props.maxValue])
         .clamp(true),

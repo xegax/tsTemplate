@@ -1,5 +1,5 @@
 import {Requestor} from 'requestor/requestor';
-import {ObjectStoreAbstract, ObjTable, GetItemsParams} from './object-store';
+import {ObjectStoreAbstract, ObjTable, ItemsRange} from './object-store';
 import {ObjectFactory, ObjDesc, ValueType, isObjectType} from '../object-factory';
 import {DBPromise} from '../../common/db-promise';
 import {Database} from 'sqlite3';
@@ -89,7 +89,7 @@ export class SQLObjectStore extends ObjectStoreAbstract {
     ).then(() => store).catch(err => console.log(err));
   }
 
-  findObject(id: string) {
+  findObject(id: string): Promise<Object & {_: ObjTable}> {
     let objType: ObjTable;
     return Queue.lastResult(
       () => this.db.get(OBJ_TABLE, {cond: {id}}),
@@ -173,7 +173,7 @@ export class SQLObjectStore extends ObjectStoreAbstract {
     );
   }
 
-  getObjectsFromList(listId: string, params?: GetItemsParams): Promise<Array<string>> {
+  getObjectsFromList(listId: string, params?: ItemsRange): Promise<Array<string>> {
     let offsLimit = '';
     if (params && params.count)
       offsLimit += ' LIMIT ' + params.count;

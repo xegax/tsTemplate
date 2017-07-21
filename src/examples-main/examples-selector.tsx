@@ -2,6 +2,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {examplesList} from 'examples-main/examples-list';
 
+declare function requirejs(arr: Array<string>);
+
 interface Folder {
   path: string;
   files: number[];
