@@ -1,5 +1,5 @@
-import {ObjectFactory, ObjID, ObjDesc} from '../../serialize/object-factory';
-import {ListObj} from '../../serialize/list-obj';
+import {ObjectFactory, ObjID, ObjDesc} from 'serialize/object-factory';
+import {ListObj} from 'serialize/list-obj';
 import {clamp} from 'common/common';
 
 export {

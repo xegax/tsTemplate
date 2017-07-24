@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {PrDocScene, SceneObj} from './document';
+import {PrDocScene, SceneObj} from '../model/document';
 import {Size} from 'common/point';
 import {startDragging} from 'common/start-dragging';
 import {Queue} from 'common/promise';

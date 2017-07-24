@@ -2,7 +2,7 @@ module.exports = function(grunt) {
   function tsConfig(config) {
     config.ts = {
       default: {
-        tsconfig: true
+        tsconfig: 'dev.tsconfig.json'
       },
       tests: {
         options: {
@@ -87,7 +87,7 @@ module.exports = function(grunt) {
   
   function cleanConfig(config) {
     config.clean = {
-      default: ['build', 'styles/*.css', 'src/*/*.js', 'src/*/*.js.map']
+      default: ['styles/*.css', 'src/*/*.js', 'src/*/*.js.map']
     };
   }
   
@@ -124,7 +124,7 @@ module.exports = function(grunt) {
   
   grunt.initConfig(config); 
   require('load-grunt-tasks')(grunt);
-  
+
   grunt.registerTask('default', ['clean', 'make-examples-list', 'ts:default', 'sass']);
   grunt.registerTask('dev', ['default']);
   grunt.registerTask('tests', ['clean', 'ts:tests', 'sass', 'karma']);

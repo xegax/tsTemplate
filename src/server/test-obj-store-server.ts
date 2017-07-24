@@ -1,10 +1,10 @@
 import {createServer} from './server';
-import {SQLObjectStore} from '../serialize/obj-store/sql-object-store';
-import {ObjectFactory} from '../serialize/object-factory';
-import {ListObj} from '../serialize/list-obj';
-import {DocText, DocList, register} from '../examples/docs/document';
+import {SQLObjectStore} from 'serialize/obj-store/sql-object-store';
+import {ObjectFactory} from 'serialize/object-factory';
+import {ListObj} from 'serialize/list-obj';
+import {DocText, DocList, register} from 'apps/docs/model/document';
 import {Database} from 'sqlite3';
-import {Base64Encryptor} from '../common/encryptor';
+import {Base64Encryptor} from 'common/encryptor';
 
 const srv = createServer({
   port: 8088,

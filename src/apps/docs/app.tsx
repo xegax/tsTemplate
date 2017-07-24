@@ -1,15 +1,26 @@
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import {ObjectFactory} from 'serialize/object-factory';
-import {register, DocDesc, DocList, DocBase, DocImage, DocText, PrDoc} from 'examples/docs/document';
 import {createRequestor} from 'requestor/requestor';
 import {RemoteObjectStore} from 'serialize/obj-store/remote-object-store';
 import {Serializer} from 'serialize/serializer';
-import {DocManager} from './doc-manager';
-import {DocManagerModel} from './doc-manager-model';
-import {processRoute, ViewRef} from './routes';
-import {PrDocView} from './prdoc-view';
-import {PrDocModel} from './prdoc-model';
+
+import {DocManager} from './view/doc-manager';
+import {PrDocView} from './view/prdoc-view';
+
+import {PrDocModel} from './model/prdoc-model';
+import {DocManagerModel} from './model/doc-manager-model';
+import {
+  register,
+  DocDesc,
+  DocList,
+  DocBase,
+  DocImage,
+  DocText,
+  PrDoc
+} from './model/document';
+
+import {processRoute, ViewRef} from '../routes';
 
 const factory = new ObjectFactory();
 register(factory);
@@ -29,7 +40,7 @@ class Container extends React.Component<React.HTMLProps<any>, {}> {
 }
 
 function docView(ref: ViewRef, args: {docId: string}) {
-  db.loadObject(args.docId).then((obj: DocBase) => {
+  db.loadObject(args.docId).then(obj => {
     if (obj instanceof DocText) {
       ref.setView(<div>DocText</div>);
     } else if (obj instanceof DocImage) {

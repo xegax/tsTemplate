@@ -1,5 +1,5 @@
 import {PrDoc, PrDocScene, SceneObj} from './document';
-import {Serializer} from '../../serialize/serializer';
+import {Serializer} from 'serialize/serializer';
 import {Queue} from 'common/promise';
 
 export class PrDocModel {

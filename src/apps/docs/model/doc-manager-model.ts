@@ -12,7 +12,7 @@ export class DocManagerModel {
     let mgr = new DocManagerModel();
     mgr.db = db;
 
-    return db.loadObject('1').then((obj: DocList) => {
+    return db.loadObject<DocList>('1').then((obj: DocList) => {
       mgr.docList = obj;
       return mgr;
     }).catch(err => {

@@ -4,41 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
-    <script src="../vendor/bluebird.min.js"></script>
-    <script src="../vendor/synaptic.js"></script>
-    <script src="../vendor/requirejs/require.js" charset="utf-8"></script>
     <link type='text/css' rel='stylesheet' href='../build/styles.css' />
-    <script src="http://localhost:35729/livereload.js"></script>
-    <link href="../vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
 </head>
 <body class='webui' style='padding: 0px; margin: 0px; overflow: hidden'>
+  <div id='container'></div>
+  <script src='../build/docs.bundle.js'></script>
   <script>
-    requirejs.config({
-      baseUrl: '../src',
-      paths: {
-        'd3': '../vendor/d3/d3.min',
-        'react': '../vendor/react/react',
-        'react-dom': '../vendor/react/react-dom',
-        'lodash': '../vendor/lodash/lodash',
-        'promise': '../vendor/bluebird.min'
-      },
-      shim: {
-        'd3': {
-          'exports': 'd3'
-        }
-      }
-    });
-
-    require(['examples/docs/app']);
-
     WebFont.load({
       custom: {
         families: ['FontAwesome'],
-        urls: ['../vendor/font-awesome/css/font-awesome.min.css']
+        urls: ['../node_modules/font-awesome/css/font-awesome.min.css']
       }
     });
 </script>
-<div id='container'>
-</div>
 </body>
 </html>

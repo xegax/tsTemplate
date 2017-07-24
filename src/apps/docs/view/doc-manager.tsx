@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {DocDesc, DocText, DocList, DocImage, DocBase, PrDoc, register} from './document';
+import {DocDesc, DocText, DocList, DocImage, DocBase, PrDoc, register} from '../model/document';
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
@@ -10,7 +10,7 @@ import {RemoteObjectStore} from 'serialize/obj-store/remote-object-store';
 import {createRequestor} from 'requestor/requestor';
 import {startDragging} from 'common/start-dragging';
 import {Queue} from 'common/promise';
-import {DocManagerModel} from './doc-manager-model';
+import {DocManagerModel} from '../model/doc-manager-model';
 
 interface Props {
   model: DocManagerModel;

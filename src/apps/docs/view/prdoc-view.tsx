@@ -1,9 +1,9 @@
 import * as React from 'react';
-import {PrDocModel} from './prdoc-model';
+import {PrDocModel} from '../model/prdoc-model';
 import {Layout} from 'controls/layout/layout';
 import * as Scheme from 'controls/layout/scheme';
 import {FitToParent} from 'common/fittoparent';
-import {PrDocScene} from './document';
+import {PrDocScene} from '../model/document';
 import {className} from 'common/common';
 import {PrDocFrameView} from './prdoc-frame-view';
 
