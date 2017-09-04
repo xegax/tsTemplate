@@ -10,15 +10,25 @@ interface Params<GET, POST> {
 type Handler<GET, POST> = (
   params: Params<GET, POST>,
   resolve: (result: any) => void,
+  reject: (err: any) => void,
+  holder: Array<() => void>
+) => void;
+
+type DataHandler<GET> = (
+  params: {get: GET, offs: number, count: number, post: Buffer},
+  resolve: (result: any) => void,
   reject: (err: any) => void
 ) => void;
 
 interface HandlerHolder {
-  handler: Handler<any, any>;
+  type: 'json' | 'data';
+  handler: Handler<any, any> | DataHandler<any>;
+  closed: () => void;
 }
 
 interface Server {
-  addJsonHandler<GET, POST>(url: string, handler: Handler<GET, POST>);
+  addJsonHandler<GET, POST>(url: string, handler: Handler<GET, POST>, closed?: () => void);
+  addDataHandler<GET>(url: string, handler: DataHandler<GET>);
 }
 
 function parseUrl(str) {
@@ -59,7 +69,11 @@ export class ServerImpl implements Server  {
   }
 
   addJsonHandler<GET, POST>(url: string, handler: Handler<GET, POST>) {
-    this.handlerMap[url] = {handler};
+    this.handlerMap[url] = {type: 'json', handler, closed: () => {}};
+  }
+
+  addDataHandler<GET>(url: string, handler: DataHandler<GET>) {
+    this.handlerMap[url] = {type: 'data', handler, closed: () => {}};
   }
 
   findHandler(url: string): HandlerHolder {
@@ -93,27 +107,52 @@ export class ServerImpl implements Server  {
       response.end();
     };
 
+    const closes = [];
+    request.connection.on('close', () => {
+      closes.forEach(handler => handler());
+      //console.log('conn close');
+    });
+    //console.log(url);
+
     if (request.method == 'POST') {
-      let postData = '', postJSON;
-      request.on('data', data => postData += data);
+      const jsonHandler = holder.handler as Handler<any, any>;
+      const dataHandler = holder.handler as DataHandler<any>;
+
+      let postData = '';
+      let postJSON: any;
+      let offsData = 0;
+
+      request.on('data', (data: Buffer) => {
+        if (holder.type == 'json') {
+          postData += data.toString();
+        } else {
+          dataHandler({get: params, post: data, offs: offsData, count: data.byteLength}, writeOK, writeErr);
+          offsData += data.byteLength;
+        }
+      });
       request.on('end', () => {
-        postData = this.decrypt(postData);
-        if (postData.length) {
+        if (holder.type == 'json' && postData.length) {
           try {
-            postJSON = JSON.parse(postData);
+            postJSON = JSON.parse(this.decrypt(postData.toString()));
           } catch (e) {
             console.log(e);
           }
+        } else {
+          //console.log('end', offsData);
         }
         try {
-          holder.handler({get: params, post: postJSON}, writeOK, writeErr);
+          if (holder.type == 'json') {
+            jsonHandler({get: params, post: postJSON}, writeOK, writeErr, closes);
+          } else {
+            dataHandler({get: params, offs: offsData, count: 0, post: null}, writeOK, writeErr);
+          }
         } catch (err) {
           writeErr(err);
         }
       });
     } else {
       try {
-        holder.handler({get: params}, writeOK, writeErr);
+        (holder.handler as Handler<any, any>)({get: params}, writeOK, writeErr, closes);
       } catch (err) {
         writeErr(err);
       }

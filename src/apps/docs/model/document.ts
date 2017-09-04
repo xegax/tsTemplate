@@ -3,7 +3,80 @@ import {ListObj} from 'serialize/list-obj';
 import {clamp} from 'common/common';
 
 export {
-  ListObj
+  ListObj,
+  ObjID
+}
+
+export class FileObj extends ObjID {
+  private name: string = '';
+  private size: number = 0;
+  private type: string = '';
+  private descr: string = '';
+
+  private constructor(args?: {name: string, size: number, type: string, descr: string}) {
+    super();
+    if (args) {
+      this.name = args.name || this.name;
+      this.size = args.size || this.size;
+      this.type = args.type || this.type;
+      this.descr = args.descr || this.descr;
+    }
+  }
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'FileObj',
+      objects: {
+        name: 'string',
+        type: 'string',
+        size: 'integer',
+        descr: 'string'
+      },
+      make: (args) => new FileObj(args)
+    };
+  }
+
+  getSize() {
+    return this.size;
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  getType() {
+    return this.type;
+  }
+
+  getDescr() {
+    return this.descr;
+  }
+
+  setDescr(text: string) {
+    if (this.descr == text)
+      return;
+
+    this.descr = text;
+    this.modified();
+  }
+}
+
+export class ServerSideData extends ObjID {
+  private files = new ListObj<FileObj>();
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'ServerSideData',
+      objects: {
+        files: 'ListObj'
+      },
+      make: () => new ServerSideData()
+    }
+  }
+
+  getFiles() {
+    return this.files;
+  }
 }
 
 export class DocDesc extends ObjID {
@@ -334,8 +407,111 @@ export class PrDocScene extends ObjID {
   }
 }
 
+export class CharImage extends ObjID {
+  private url: string = '';
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'CharImage',
+      objects: {
+        url: 'string'
+      },
+      make: () => new CharImage()
+    };
+  }
+}
+
+export class Character extends ObjID {
+  private name: string = '';
+  private desc: string = '';
+  private images = new ListObj<CharImage>();
+
+  constructor(args?: {name: string, descr: string}) {
+    super();
+
+    if (args && args.name)
+      this.name = args.name;
+
+    if (args && args.descr)
+      this.desc = args.descr || '';
+  }
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'Character',
+      objects: {
+        name: 'string',
+        desc: 'string',
+        images: 'ListObj'
+      },
+      make: (args) => new Character(args)
+    };
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  setName(name: string) {
+    if (name == this.name)
+      return;
+
+    this.name = name;
+    this.modified();
+  }
+
+  getDescr() {
+    return this.desc || '';
+  }
+
+  setDescr(descr: string) {
+    if (this.desc == descr)
+      return;
+
+    this.desc = descr;
+    this.modified();
+  }
+}
+
+export class CharacterTable extends ObjID {
+  private chars = new ListObj<Character>();
+  private layout: string = '';
+
+  static getDesc(): ObjDesc {
+    return {
+      classId: 'CharacterTable',
+      objects: {
+        chars: 'ListObj',
+        layout: 'string'
+      },
+      make: () => new CharacterTable()
+    };
+  }
+
+  getList() {
+    return this.chars;
+  }
+
+  setLayout(layout: string) {
+    if (layout == this.layout)
+      return;
+    this.layout = layout;
+    this.modified();
+  }
+
+  getLayout() {
+    return this.layout;
+  }
+}
 
 export function register(factory: ObjectFactory) {
+  factory.register(ServerSideData);
+  factory.register(FileObj);
+
+  factory.register(Character);
+  factory.register(CharacterTable);
+  factory.register(CharImage);
+
   factory.register(PrDoc);
   factory.register(PrDocScene);
   factory.register(SceneObj);

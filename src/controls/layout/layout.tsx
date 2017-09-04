@@ -7,6 +7,10 @@ import {className} from 'common/common';
 import {Timer} from 'common/timer';
 import * as Scheme from './scheme';
 
+export {
+  Scheme
+};
+
 interface Holder {
   obj: Scheme.Children | Scheme.Item;
   parent: Holder;

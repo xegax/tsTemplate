@@ -10,22 +10,41 @@ import {ObjectStoreInterface} from './obj-store/object-store-interface';
 import {Queue} from '../common/promise';
 import {ListObj} from './list-obj';
 import {Timer} from '../common/timer';
+import {RemoteObjectStore} from './obj-store/remote-object-store';
+import {Requestor} from 'requestor/requestor';
 
 const MAX_DIRTY_OBJ_ORDER = 50;
+
+export interface DirtyObjectsOrder {
+  arr: Array<{id: string, version: number}>;
+  version: 0
+}
 
 class ObjContextImpl implements ObjContext {
   private dirtyObjs: {[id: string]: ObjID} = {};
   private timer: Timer;
   private serializer: Serializer;
+  private listeners = new Array<(objs: DirtyObjectsOrder) => void>();
 
-  private dirtyObjsOrder = {
-    arr: Array<{id: string, version: number}>(),
+  private dirtyObjsOrder: DirtyObjectsOrder = {
+    arr: [],
     version: 0
   };
 
   constructor(serializer: Serializer) {
     this.timer = new Timer(this.saveAllDirty);
     this.serializer = serializer;
+  }
+
+  addListener(listener: (objs: DirtyObjectsOrder) => void) {
+    if (this.listeners.indexOf(listener) != -1)
+      return;
+
+    this.listeners.push(listener);
+  }
+
+  getDirtyObjectsOrder() {
+    return this.dirtyObjsOrder;
   }
 
   private updateDirtyOrder(objs: Array<ObjID>) {
@@ -43,7 +62,9 @@ class ObjContextImpl implements ObjContext {
     if (this.dirtyObjsOrder.arr.length > MAX_DIRTY_OBJ_ORDER)
       this.dirtyObjsOrder.arr.splice(0, this.dirtyObjsOrder.arr.length - MAX_DIRTY_OBJ_ORDER);
     this.dirtyObjsOrder.version++;
-    console.log(this.dirtyObjsOrder);
+    this.listeners.forEach((watcher) => watcher(this.dirtyObjsOrder));
+    
+    // console.log(this.dirtyObjsOrder);
   }
 
   private saveAllDirty = () => {
@@ -76,16 +97,47 @@ class ObjContextImpl implements ObjContext {
 }
 
 export class Serializer {
-  private factory: ObjectFactory;
+  private factory = new ObjectFactory();
   private store: ObjectStoreInterface;
   private readonly listObjName: string = ListObj.getDesc().classId;
   private objCtxImpl: ObjContextImpl;
   private objects: {[id: string]: ObjID} = {};
 
-  constructor(factory: ObjectFactory, store: ObjectStoreInterface) {
-    this.factory = factory;
+  constructor(store: ObjectStoreInterface, factory?: ObjectFactory) {
+    this.factory = factory || this.factory;
     this.store = store;
     this.objCtxImpl = new ObjContextImpl(this);
+  }
+
+  addObjectsListener(listener: (objs: DirtyObjectsOrder) => void) {
+    this.objCtxImpl.addListener(listener);
+  }
+
+  getDirtyObjectsOrder() {
+    return this.objCtxImpl.getDirtyObjectsOrder();
+  }
+
+  static remoteStore(req: Requestor): Serializer {
+    return new Serializer(new RemoteObjectStore(req));
+  }
+
+  static startWatch(req: Requestor, onChanged?: () => void) {
+    let version = 0;
+    const watcher = () => {
+      req.getJSON('objects-watch', {version}).then((data: {version: number, objs: Array<{version: number, id: string}>}) => {
+        version = data.version;
+        console.log(data);
+        onChanged();
+        watcher();
+      }).catch(() => {
+        setTimeout(watcher, 1000);
+      });
+    };
+    watcher();
+  }
+
+  getFactory() {
+    return this.factory;
   }
 
   private newObject(desc: ObjDesc, args?: Array<any>, id?: string): ObjID {
@@ -118,7 +170,7 @@ export class Serializer {
           json[k] = obj[k];
       });
       this.store.write(obj.getId(), json);
-      console.log('save', obj.getId(), json);
+      // console.log('save', obj.getId(), json);
     });
   }
 

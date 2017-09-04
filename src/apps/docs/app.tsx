@@ -17,17 +17,16 @@ import {
   DocBase,
   DocImage,
   DocText,
-  PrDoc
+  PrDoc,
+  CharacterTable
 } from './model/document';
+import {CharacterView} from './view/characters';
 
 import {processRoute, ViewRef} from '../routes';
 
-const factory = new ObjectFactory();
-register(factory);
-
 const req = createRequestor({urlBase: '/handler'});
-const store = new RemoteObjectStore(req);
-const db = new Serializer(factory, store);
+const db = Serializer.remoteStore(req);
+register(db.getFactory());
 
 class Container extends React.Component<React.HTMLProps<any>, {}> {
   render() {
@@ -41,7 +40,9 @@ class Container extends React.Component<React.HTMLProps<any>, {}> {
 
 function docView(ref: ViewRef, args: {docId: string}) {
   db.loadObject(args.docId).then(obj => {
-    if (obj instanceof DocText) {
+    if (obj instanceof CharacterTable) {
+      ref.setView(<CharacterView table={obj} createObject={(name, args) => db.makeObject(name, args)}/>);
+    } else if (obj instanceof DocText) {
       ref.setView(<div>DocText</div>);
     } else if (obj instanceof DocImage) {
       ref.setView(<div>DocImage</div>);

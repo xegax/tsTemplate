@@ -39,10 +39,11 @@ export class DBPromise {
     return `${val}`;
   };
 
-  static wrapFunc = (val) => {
+  static wrapFunc = (val: string | number) => {
     if (val == null)
       return 'null';
-    return `"${val}"`;
+    let s = val.toString().replace(/'/g, '\'\'');
+    return `'${s}'`;
   }
 
   static openOrCreate(file: string): Promise<DBPromise> {

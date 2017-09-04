@@ -33,7 +33,9 @@ export class CacheBlock {
   private blocks = Array<Array<Block>>();
 
   constructor(params: Config) {
-    this.params = assign({rowsPerBlock: 300, colsPerBlock: 100}, params);
+    this.params = {...params};
+    this.params.rowsPerBlock = params.rowsPerBlock || 300;
+    this.params.colsPerBlock = params.colsPerBlock || 100;
   }
 
   toBlock(row: number, col: number): BlockCell {

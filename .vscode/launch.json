@@ -25,6 +25,16 @@
 {
   "type": "node",
   "request": "launch",
+  "name": "bet-server",
+  "program": "${workspaceRoot}/src/server/test-bet-server.js",
+  "cwd": "${workspaceRoot}",
+  "env": {
+    "NODE_PATH": "${workspaceRoot}\\src"
+  }
+},
+{
+  "type": "node",
+  "request": "launch",
   "name": "webpack",
   "program": "${workspaceRoot}/node_modules/webpack/bin/webpack.js",
   "cwd": "${workspaceRoot}"
@@ -49,7 +59,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Запустить программу",
+      "name": "test-table",
       "program": "${workspaceRoot}\\src\\server\\test-table-server.js",
       "outFiles": []
     },

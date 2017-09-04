@@ -2,7 +2,7 @@ import {TableData, TableCell, TableInfo, TableParams} from 'table/table-data';
 import {clamp} from 'common/common';
 import {CacheBlock, Block} from 'common/cache-block';
 
-export {Block} from 'common/cache-block';
+export {Block, TableData, TableCell};
 
 export interface TableRange {
   rows: Array<number>;
@@ -43,11 +43,11 @@ export class CachedTableData implements TableData {
 
   protected columns: TableData;
   
-  constructor(rowsNum: number, colsNum: number) {
+  constructor(rowsNum: number, colsNum: number, rowsPerBlock?: number) {
     this.rowsNum = rowsNum;
     this.colsNum = colsNum;
 
-    this.cache = new CacheBlock({totalRows: rowsNum, totalCols: colsNum});
+    this.cache = new CacheBlock({totalRows: rowsNum, totalCols: colsNum, rowsPerBlock});
   }
 
   selectData(rows: Array<number>, cols?: Array<number>): Promise<any> {

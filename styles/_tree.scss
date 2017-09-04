@@ -1,0 +1,36 @@
+$hover-color: #EDF2F8;
+$select-color: #c8e2fb;
+.tree {
+  .grid_render {
+    &--cell {
+      box-sizing: border-box;
+      border-left: 1px solid transparent;
+      border-top: 1px solid transparent;
+      text-overflow: ellipsis;
+      cursor: default;
+      background-color: $cell-bg-color;
+
+      &_rightmost {
+        border-right: 1px solid transparent;
+      }
+
+      &_lowermost {
+        border-bottom: 1px solid transparent;
+      }
+    }
+
+    &--hover_row {
+      background-color: $hover-color;
+    }
+  
+    &--cell {
+      &-select {
+        background-color: $select-color;
+      }
+  
+      &_select_row {
+        background-color: $select-color;
+      }
+    }
+  }
+}

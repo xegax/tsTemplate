@@ -183,6 +183,7 @@ export class GridRender extends React.Component<Props, State> {
   onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     let row = this.props.model.getSelectRow();
     let col = this.props.model.getSelectColumn();
+    this.props.model.clearRowSelect();
 
     if (event.keyCode == KeyCode.ArrowUp) {
       row--;

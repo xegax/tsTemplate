@@ -4,7 +4,7 @@ import {SortColumn} from '../common/table';
 import {getTableMaker, Table} from './table/table';
 
 var srv = createServer({port: 8088});
-const makeTable = getTableMaker('mysql');
+const makeTable = getTableMaker('sqlite');
 
 interface Params {
   columns: Array<string>;

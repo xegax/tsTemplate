@@ -1,13 +1,18 @@
 import * as d3 from 'd3';
 import {Encryptor, EmptyEncryptor} from 'common/encryptor';
 
+interface Options {
+  header?: Object;
+  progress?: (event: ProgressEvent, type: 'download' | 'upload' | 'uploadend') => void;
+}
+
 interface RequestorCore {
-  sendData(url: string, params?: Object, postData?: string): Promise<string>;
+  sendData(url: string, params?: Object, postData?: string, opts?: Options): Promise<string>;
   getData(url: string, params?: Object): Promise<string>;
 }
 
 export abstract class Requestor implements RequestorCore {
-  abstract sendData(url: string, params?: Object, postData?: string): Promise<string>;
+  abstract sendData(url: string, params?: Object, postData?: string, opts?: Options): Promise<string>;
   abstract getData(url: string, params?: Object): Promise<string>;
 
   getJSON<T extends any>(url: string, params?: Object): Promise<T> {
@@ -66,8 +71,8 @@ export class BaseRequestor extends Requestor {
     return {...this.params, ...params};
   }
 
-  sendData(url: string, params?: Object, postData?: string): Promise<string> {
-    return this.requestor.sendData(this.getUrl(url), this.getParams(params), this.encrypt(postData));
+  sendData(url: string, params?: Object, postData?: string, opts?: Options): Promise<string> {
+    return this.requestor.sendData(this.getUrl(url), this.getParams(params), this.encrypt(postData), opts);
   }
 
   getData(url: string, params?: Object): Promise<string> {
@@ -84,13 +89,28 @@ export class BaseRequestor extends Requestor {
 }
 
 class RequestorImpl extends Requestor {
-  sendData(url: string, params?: Object, postData?: string): Promise<string> {
+  sendData(url: string, params?: Object, postData?: string, opts?: Options): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      d3.text(getUrl(url, params)).post(postData, (err, data: string) => {
+      let req = d3.request(getUrl(url, params));
+
+      opts = {...opts, ...{header: {'Cache-Control': 'no-cache'}}};
+      req.on('beforesend', (xhr) => {
+        if (opts.progress) {
+          xhr.upload.addEventListener('progress', (evt) => opts.progress(evt, 'upload'));
+          xhr.upload.addEventListener('loadend', (evt) => opts.progress(evt, 'uploadend'));
+          xhr.addEventListener('progress', (evt) => opts.progress(evt, 'download'));
+        }
+      });
+
+      Object.keys(opts.header).forEach(k => {
+        req.header(k, opts.header[k]);
+      });
+
+      req.post(postData, (err, data: XMLHttpRequest) => {
         if (err) {
           reject(err);
         } else {
-          resolve(data);
+          resolve(data.response);
         }
       });
     });

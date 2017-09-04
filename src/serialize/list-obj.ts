@@ -6,7 +6,7 @@ export class ListObj<T extends ObjID> extends ObjID {
   private cacheBlocks = Array<Array<T>>();
   private selectedRange = {from: 0, count: ListObj.ITEMS_PER_CACHE};
 
-  static ITEMS_PER_CACHE = 1000;
+  static ITEMS_PER_CACHE = 200;
   static getDesc(): ObjDesc {
     return {
       classId: 'ListObj',
@@ -109,7 +109,7 @@ export class ListObj<T extends ObjID> extends ObjID {
 
       const task = [];
       for (let n = fromBlock; n < fromBlock + blocks; n++) {
-        if (this.cacheBlocks[fromBlock])
+        if (this.cacheBlocks[n])
           continue;
         
         task.push(() => this.getImpl().loadFromList(this.getId(), this.block2idx(n), ListObj.ITEMS_PER_CACHE));

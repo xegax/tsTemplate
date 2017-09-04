@@ -1,7 +1,16 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {getContainer} from 'examples-main/helpers';
-import {DocDesc, DocText, DocList, DocImage, DocBase, PrDoc, register} from '../model/document';
+import {
+  CharacterTable,
+  DocDesc,
+  DocText,
+  DocList,
+  DocImage,
+  DocBase,
+  PrDoc,
+  register
+} from '../model/document';
 import {ListObj} from 'serialize/list-obj';
 import {Serializer} from 'serialize/serializer';
 import {ObjectFactory} from 'serialize/object-factory';
@@ -88,7 +97,9 @@ export class DocManager extends React.Component<Props, State> {
         onMouseDown={e => this.onDragStart(e, item, idx)}
       >
         <div
-          onClick={e => window.location.assign(`docs.html?docId=${item.getDocId()}`)}
+          onClick={e => {
+            window.location.assign(`${window.location.pathname}?docId=${item.getDocId()}${window.location.hash}`);
+          }}
           style={{cursor: 'pointer', backgroundColor: 'silver', padding: 2, display: 'flex'}}>
           <div style={{flexGrow: 1}}>{`doc id=${item.getDocId()}`}</div>
           <i
@@ -176,6 +187,12 @@ export class DocManager extends React.Component<Props, State> {
           style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
         >
           +presentation doc
+        </div>
+        <div
+          onClick={() => model.createDoc(CharacterTable.getDesc().classId).then(this.updateView)}
+          style={{cursor: 'pointer', display: 'inline-block', padding: 3}}
+        >
+          +character table
         </div>
         <div>{'items: ' + list.getLength()}</div>
         {items.map((item, idx) => this.renderItem(item, idx))}

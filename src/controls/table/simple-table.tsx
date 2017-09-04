@@ -4,6 +4,10 @@ import {GridModel, GridModelEvent} from 'controls/grid/grid-model';
 import {ColumnsModel} from 'controls/table/columns-model';
 import {TableData} from 'table/table-data';
 
+export {
+  TableData
+};
+
 const classes = {
   cellWrapper: 'table--cell-wrapper'
 };

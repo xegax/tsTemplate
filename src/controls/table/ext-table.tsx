@@ -12,6 +12,10 @@ import {FilterModel} from 'controls/filter/filter-model';
 import {FilterCondition, CompoundCondition} from 'table/filter-condition';
 import {assign} from 'lodash';
 
+export {
+  WrapCell
+};
+
 const classes = {
   headerWrapper: 'table-header-wrapper',
   headerLabel: 'table-header-wrapper__label',
