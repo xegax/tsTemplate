@@ -22,7 +22,52 @@ function memberRates(rates1, rates2) {
   return Math.round(calcRate(r1, r2) * 1000) / 1000;
 }
 
-srv.addJsonHandler<{}, Array<{max1p: number, max2p: number, type: string, rates: Array<number>, source: string, id: string, score: string, players: Array<string> }>>('new-data', (params, done, error) => {
+interface Rates {
+  '1p': number;
+  '2p': number;
+}
+
+let ws: fs.WriteStream = fs.createWriteStream('records.json');
+let pool = Array<{}>();
+const ids: {[id: string]: {counter: number}} = {};
+let recCounter = 0;
+function pushRecord(record: {id: string, source: string, rates: Rates, players: Array<string>, score: string, time: number}) {
+  const id = record.id + record.source;
+  const idi = ids[id] || (ids[id] = {counter: 0});
+  pool.push({...record, time: Date.now(), rc1: idi.counter, rc2: recCounter});
+  if (pool.length >= 500) {
+    flushPool();
+    pool = [];
+  }
+  idi.counter++;
+  recCounter++;
+}
+
+let writenRecs = 0;
+function flushPool(finish: boolean = false) {
+  let s = pool.map(rec => JSON.stringify(rec)).join(',\n ');
+  if (writenRecs > 0) {
+    s = ',\n ' + s;
+  } else {
+    s = '[\n' + s;
+  }
+
+  if (finish) {
+    s += '\n]';
+  }
+
+  ws.write(s);
+  writenRecs += pool.length;
+}
+
+srv.addJsonHandler<{}, Array<{}>>('new-data', (params, done, error) => {
+  params.post.forEach(item => {
+    pushRecord(item as any);
+  });
+  done('ok');
+});
+
+srv.addJsonHandler<{}, Array<{max1p: number, max2p: number, type: string, rates: Array<number>, source: string, id: string, score: string, players: Array<string> }>>('new-data2', (params, done, error) => {
   params.post.forEach(item => {
     const player = players[item.players[0]] || (players[item.players[0]] = {});
     player[item.source] = item;
@@ -71,6 +116,11 @@ let state = {bets: []};
 
 srv.addJsonHandler<{}, {source: string}>('state', (params, done) => {
   done(state);
+});
+
+srv.addJsonHandler<{}, {source: string}>('stop', (params, done) => {
+  flushPool(true);
+  done('ok');
 });
 
 srv.addJsonHandler('stat', (params, done) => {

@@ -63,7 +63,7 @@ function testRemoveFromList(store: SQLObjectStore, listId: string, objs: Array<O
   );
 }
 
-describe('sql-object-store', () => {
+xdescribe('sql-object-store', () => {
   let factory = new ObjectFactory();
   let store: SQLObjectStore;
 

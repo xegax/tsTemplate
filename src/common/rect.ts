@@ -1,3 +1,7 @@
+import {Point} from './point';
+
+export {Point};
+
 export interface Rect {
   x: number;
   y: number;
@@ -19,4 +23,8 @@ export function getRect(x?: number, y?: number, width?: number, height?: number)
     width: width || 0,
     height: height || 0
   };
+}
+
+export function isPointInRect(pt: Point, rect: Rect) {
+  return pt.x >= rect.x && pt.y >= rect.y && pt.x <= rect.x + rect.width && pt.y <= rect.y + rect.height;
 }
